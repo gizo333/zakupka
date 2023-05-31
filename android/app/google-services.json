@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "693271942203",
+    "firebase_url": "https://sclad1-default-rtdb.firebaseio.com",
+    "project_id": "sclad1",
+    "storage_bucket": "sclad1.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:693271942203:android:62885cef9eb23209f0b81e",
+        "android_client_info": {
+          "package_name": "com.example.new_flut_proj"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "693271942203-avq82hvrovpno6uch5hmnl3udv2q0d94.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB9SBz2EL3t-HfVZje0d4uOE-5Ed-BU0xs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "693271942203-avq82hvrovpno6uch5hmnl3udv2q0d94.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "693271942203-s9vnn2ojrngmqe9cskmngr1lahupesi9.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.newflutproj"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
