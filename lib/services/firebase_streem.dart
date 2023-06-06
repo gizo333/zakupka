@@ -1,5 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:new_flut_proj/pages/invent.dart';
+import 'package:new_flut_proj/pages/kabinet.dart';
 import '/pages/verify_email_screen.dart';
 import '/pages/home_screen.dart';
 
@@ -18,7 +20,7 @@ class FirebaseStream extends StatelessWidget {
           if (!snapshot.data!.emailVerified) {
             return const VerifyEmailScreen();
           }
-          return const HomeScreen();
+          return const Kabinet();
         } else {
           return const HomeScreen();
         }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
+import 'package:new_flut_proj/pages/kabinet.dart';
+import 'package:new_flut_proj/pages/stop_minimum.dart';
+import 'package:new_flut_proj/theme/app_bar.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
 import '/pages/login_screen.dart';
@@ -29,20 +32,26 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // убирает надпись debug
-      theme: ThemeData(
-        pageTransitionsTheme: const PageTransitionsTheme(builders: {
-          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
-        }),
-      ),
+       theme: ThemeData(
+         useMaterial3: true,
+         appBarTheme:  const AppBarTheme(
+           backgroundColor: ThemeBar.myThemeBar,
+           foregroundColor: Colors.white
+         ),
+       ),
+
       routes: {
         '/': (context) => const FirebaseStream(),
+        '/kabinet': (context) => const Kabinet(),
         '/home': (context) => const HomeScreen(),
+        '/invent': (context) => const Invent(),
         '/account': (context) => const AccountScreen(),
         '/login': (context) => const LoginScreen(),
-        '/signup': (context) => const SignUpScreen(),
+        '/signup': (context) => SignUpScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
         '/verify_email': (context) => const VerifyEmailScreen(),
-        '/invent': (context) => const Invent(),
+        '/stop_minimum': (context) => StopMinimumPage(),
+
       },
       initialRoute: '/',
     );

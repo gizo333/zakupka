@@ -1,170 +1,122 @@
-import 'package:email_validator/email_validator.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '/services/snack_bar.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class SignUpScreen extends StatefulWidget {
-  const SignUpScreen({super.key});
+class SignUpScreen extends StatelessWidget {
+  final TextEditingController emailController = TextEditingController();
+  final TextEditingController passwordController = TextEditingController();
+  final TextEditingController nameController = TextEditingController();
 
-  @override
-  State<SignUpScreen> createState() => _SignUpScreen();
-}
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-class _SignUpScreen extends State<SignUpScreen> {
-  bool isHiddenPassword = true;
-  TextEditingController emailTextInputController = TextEditingController();
-  TextEditingController passwordTextInputController = TextEditingController();
-  TextEditingController passwordTextRepeatInputController =
-  TextEditingController();
-  final formKey = GlobalKey<FormState>();
+  SignUpScreen({super.key});
 
-  @override
-  void dispose() {
-    emailTextInputController.dispose();
-    passwordTextInputController.dispose();
-    passwordTextRepeatInputController.dispose();
-
-    super.dispose();
-  }
-
-  void togglePasswordView() {
-    setState(() {
-      isHiddenPassword = !isHiddenPassword;
-    });
-  }
-
-  Future<void> signUp() async {
-    final navigator = Navigator.of(context);
-
-    final isValid = formKey.currentState!.validate();
-    if (!isValid) return;
-
-    if (passwordTextInputController.text !=
-        passwordTextRepeatInputController.text) {
-      SnackBarService.showSnackBar(
-        context,
-        'Пароли должны совпадать',
-        true,
-      );
-      return;
-    }
-
+  Future<void> _registerUser(BuildContext context) async {
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailTextInputController.text.trim(),
-        password: passwordTextInputController.text.trim(),
-      );
-    } on FirebaseAuthException catch (e) {
-      print(e.code);
+      final String email = emailController.text.trim();
+      final String password = passwordController.text;
+      final String name = nameController.text.trim();
 
-      if (e.code == 'email-already-in-use') {
-        SnackBarService.showSnackBar(
-          context,
-          'Такой Email уже используется, повторите попытку с использованием другого Email',
-          true,
+      // Проверка формата адреса электронной почты
+      if (!isValidEmail(email)) {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text('Ошибка'),
+              content: Text('Неправильный формат адреса электронной почты'),
+              actions: [
+                TextButton(
+                  child: Text('ОК'),
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ],
+            );
+          },
         );
         return;
-      } else {
-        SnackBarService.showSnackBar(
-          context,
-          'Неизвестная ошибка! Попробуйте еще раз или обратитесь в поддержку.',
-          true,
-        );
       }
-    }
 
-    navigator.pushNamedAndRemoveUntil('/', (Route<dynamic> route) => false);
+      UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      User? user = userCredential.user;
+      if (user != null) {
+        await _firestore.collection('users').doc(user.uid).set({
+          'name': name,
+          'email': email,
+          'pass' : password,
+        });
+
+        // Перенаправление на другую страницу после успешной регистрации
+        Navigator.pushReplacementNamed(context, '/kabinet');
+      }
+    } catch (e) {
+      // Обработка ошибок регистрации
+      print(e);
+    }
+  }
+
+  bool isValidEmail(String email) {
+    // Проверка формата адреса электронной почты с использованием регулярного выражения
+    final String emailRegex =
+        r'^[\w-]+(\.[\w-]+)*@[a-zA-Z\d-]+(\.[a-zA-Z\d-]+)*\.[a-zA-Z\d-]{2,4}$';
+    final RegExp regex = RegExp(emailRegex);
+    return regex.hasMatch(email);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Зарегистрироваться'),
+        title: Text('Авторизация'),
       ),
       body: Padding(
-        padding: const EdgeInsets.all(30.0),
-        child: Form(
-          key: formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                controller: emailTextInputController,
-                validator: (email) =>
-                email != null && !EmailValidator.validate(email)
-                    ? 'Введите правильный Email'
-                    : null,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Введите Email',
+        padding: EdgeInsets.all(16.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextField(
+              controller: emailController,
+              decoration: InputDecoration(
+                labelText: 'Email',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16.0),
+            TextField(
+              controller: passwordController,
+              decoration: InputDecoration(
+                labelText: 'Пароль',
+                border: OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+            SizedBox(height: 16.0),
+            TextField(
+              controller: nameController,
+              decoration: InputDecoration(
+                labelText: 'Имя',
+                border: OutlineInputBorder(),
+              ),
+            ),
+            SizedBox(height: 16.0),
+            ElevatedButton(
+              onPressed: () => _registerUser(context),
+              child: Text('Зарегистрироваться'),
+              style: ButtonStyle(
+                padding: MaterialStateProperty.all<EdgeInsets>(
+                  EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
+                ),
+                textStyle: MaterialStateProperty.all<TextStyle>(
+                  TextStyle(fontSize: 16.0),
                 ),
               ),
-              const SizedBox(height: 30),
-              TextFormField(
-                autocorrect: false,
-                controller: passwordTextInputController,
-                obscureText: isHiddenPassword,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: (value) => value != null && value.length < 6
-                    ? 'Минимум 6 символов'
-                    : null,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: 'Введите пароль',
-                  suffix: InkWell(
-                    onTap: togglePasswordView,
-                    child: Icon(
-                      isHiddenPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              TextFormField(
-                autocorrect: false,
-                controller: passwordTextRepeatInputController,
-                obscureText: isHiddenPassword,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                validator: (value) => value != null && value.length < 6
-                    ? 'Минимум 6 символов'
-                    : null,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: 'Введите пароль еще раз',
-                  suffix: InkWell(
-                    onTap: togglePasswordView,
-                    child: Icon(
-                      isHiddenPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: signUp,
-                child: const Center(child: Text('Регистрация')),
-              ),
-              const SizedBox(height: 30),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
-                  'Войти',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
-                  ),
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

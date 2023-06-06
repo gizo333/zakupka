@@ -32,7 +32,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> login() async {
     final navigator = Navigator.of(context);
-
     final isValid = formKey.currentState!.validate();
     if (!isValid) return;
 
@@ -61,7 +60,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     }
 
-    navigator.pushNamedAndRemoveUntil('/home', (Route<dynamic> route) => false);
+    navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
   }
 
   @override
