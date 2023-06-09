@@ -28,6 +28,11 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  path:
+  flutter_excel:
+  path_provider:
+  excel:
+  file_picker:
   cloud_firestore:
   firebase_core:
   firebase_auth:

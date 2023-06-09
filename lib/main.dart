@@ -8,7 +8,7 @@ import 'package:new_flut_proj/theme/app_bar.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
 import '/pages/login_screen.dart';
-import '/pages/signup_screen.dart';
+import 'package:new_flut_proj/register/sign_up_screen.dart';
 import '/pages/verify_email_screen.dart';
 import '/services/firebase_streem.dart';
 import '/pages/invent.dart';
@@ -41,7 +41,7 @@ class MyApp extends StatelessWidget {
        ),
 
       routes: {
-        '/': (context) => const FirebaseStream(),
+        '/': (context) => FirebaseStream(),
         '/kabinet': (context) => const Kabinet(),
         '/home': (context) => const HomeScreen(),
         '/invent': (context) => const Invent(),
@@ -49,8 +49,8 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => SignUpScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
-        '/verify_email': (context) => const VerifyEmailScreen(),
-        '/stop_minimum': (context) => StopMinimumPage(),
+        //'/verify_email': (context) => const VerifyEmailScreen(),
+        '/stop_minimum': (context) => ExcelToJsonPage(),
 
       },
       initialRoute: '/',

@@ -1,216 +1,131 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:excel/excel.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class PositionClass {
-  late String name;
-  int? hzvalue;
-  int? ml;
-  int? col;
+void main() {
+  runApp(MyApp());
+}
 
-  late TextEditingController nameController;
-  late TextEditingController hzvalueController;
-  late TextEditingController mlController;
-  late TextEditingController colController;
+class MyApp extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Excel to JSON',
+      theme: ThemeData(
+        primarySwatch: Colors.blue,
+      ),
+      home: ExcelToJsonPage(),
+    );
+  }
+}
 
-  PositionClass(String name, int hzvalue, int ml, int col) {
-    this.name = name;
-    this.hzvalue = hzvalue;
-    this.ml = ml;
-    this.col = col;
+class ExcelToJsonPage extends StatefulWidget {
+  @override
+  _ExcelToJsonPageState createState() => _ExcelToJsonPageState();
+}
 
-    nameController = TextEditingController(text: name);
-    hzvalueController = TextEditingController(text: hzvalue.toString());
-    mlController = TextEditingController(text: ml.toString());
-    colController = TextEditingController(text: col.toString());
+class _ExcelToJsonPageState extends State<ExcelToJsonPage> {
+  late String _filePath;
+  bool _conversionSuccessful = false;
+
+  Future<void> _uploadExcelFile() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['xls', 'xlsx'],
+    );
+
+    if (result != null) {
+      setState(() {
+        _filePath = result.files.single.path!;
+      });
+
+      String excelData = await convertExcelToJson(_filePath);
+
+      if (excelData.isNotEmpty) {
+        await saveJsonToFirestore(excelData);
+        setState(() {
+          _conversionSuccessful = true;
+        });
+      }
+    }
   }
 
-  @override
-  bool operator ==(Object other) =>
-      identical(this, other) ||
-      other is PositionClass &&
-          runtimeType == other.runtimeType &&
-          name == other.name;
+  Future<String> convertExcelToJson(String filePath) async {
+    var excel = Excel.decodeBytes(File(filePath).readAsBytesSync());
 
-  @override
-  int get hashCode => name.hashCode;
-}
+    var tableNames = excel.tables.keys.toList();
+    var jsonData = {};
 
+    for (var tableName in tableNames) {
+      var table = excel.tables[tableName]!;
+      var rows = table.rows.map((row) {
+        return row.map((cell) => cell.toString()).toList();
+      }).toList();
+      jsonData[tableName] = rows;
+    }
 
-class StopMinimumPage extends StatefulWidget {
-  const StopMinimumPage({Key? key}) : super(key: key);
+    return json.encode(jsonData);
+  }
 
-  @override
-  State<StopMinimumPage> createState() => _StopMinimumPage();
-}
+  Future<void> saveJsonToFirestore(String jsonData) async {
+    CollectionReference collection =
+    FirebaseFirestore.instance.collection('data');
+    var data = json.decode(jsonData);
 
-class _StopMinimumPage extends State<StopMinimumPage> {
-  List<PositionClass> _lists = [];
-  bool _sortAsc = true;
-  int? _sortColumnIndex;
+    // Convert nested arrays to JSON strings
+    var flattenedData = flattenData(data);
 
-  int compareNumeric(bool ascending, int value1, int value2) {
-    if (ascending) {
-      return value1.compareTo(value2);
+    await collection.add(flattenedData);
+  }
+
+  dynamic flattenData(dynamic data) {
+    if (data is List) {
+      return data.map((item) => flattenData(item)).toList();
+    } else if (data is Map) {
+      Map<String, dynamic> flattenedMap = {};
+      data.forEach((key, value) {
+        if (value is List) {
+          flattenedMap[key] = json.encode(value);
+        } else {
+          flattenedMap[key] = flattenData(value);
+        }
+      });
+      return flattenedMap;
     } else {
-      return value2.compareTo(value1);
+      return data.toString();
     }
   }
-
-  List<FocusNode> focusNodes = [];
-
-  int compareString(bool ascending, String value1, String value2) =>
-      ascending ? value1.compareTo(value2) : value2.compareTo(value1);
-
-  @override
-  void initState() {
-    super.initState();
-    _lists = [PositionClass('', 0, 0, 0)];
-    focusNodes = List.generate(_lists.length, (index) => FocusNode());
-  }
-
-  @override
-  void dispose() {
-    for (var focusNode in focusNodes) {
-      focusNode.dispose();
-    }
-    for (var position in _lists) {
-      position.nameController.dispose();
-      position.hzvalueController.dispose();
-      position.mlController.dispose();
-      position.colController.dispose();
-    }
-    super.dispose();
-  }
-
-  final defaultState = PositionClass('name', 0, 0, 0);
 
   @override
   Widget build(BuildContext context) {
-    final columns = ['Код', 'Name', 'ml', 'col'];
-
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          addNewField();
-        },
-        child: Icon(Icons.add),
-      ),
       appBar: AppBar(
-        title: const Text(
-          'Table',
-          style: TextStyle(color: Colors.white),
-        ),
-        backgroundColor: const Color.fromARGB(186, 0, 0, 0),
+        title: Text('Excel to JSON'),
       ),
-      body: SizedBox.expand(
-        child: Container(
-          color: Color.fromARGB(255, 246, 246, 246),
-          child: SingleChildScrollView(
-            child: DataTable(
-              sortColumnIndex: _sortColumnIndex,
-              sortAscending: _sortAsc,
-              columns: getColumns(columns),
-              rows: createRows(),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            ElevatedButton(
+              onPressed: _uploadExcelFile,
+              child: Text('Upload Excel File'),
             ),
-          ),
+            SizedBox(height: 20.0),
+            if (_conversionSuccessful)
+              Text(
+                'Conversion and saving to Firestore successful!',
+                style: TextStyle(
+                  fontSize: 16.0,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+          ],
         ),
       ),
     );
-  }
-
-  List<DataColumn> getColumns(List<String> columns) =>
-      columns.map((String column) {
-        return DataColumn(
-          label: Text(column),
-          onSort: onSort,
-        );
-      }).toList();
-
-  void onSort(int? columnIndex, bool ascending) {
-    if (columnIndex == 0) {
-      _lists.sort(
-          (user1, user2) => compareString(ascending, user1.name, user2.name));
-    } else if (columnIndex == 1) {
-      _lists.sort((user1, user2) =>
-          compareNumeric(ascending, user1.hzvalue ?? 0, user2.hzvalue ?? 0));
-    } else if (columnIndex == 2) {
-      _lists.sort((user1, user2) =>
-          compareNumeric(ascending, user1.ml ?? 0, user2.ml ?? 0));
-    } else if (columnIndex == 3) {
-      _lists.sort((user1, user2) =>
-          compareNumeric(ascending, user1.col ?? 0, user2.col ?? 0));
-    }
-    setState(() {
-      _sortColumnIndex = columnIndex;
-      _sortAsc = ascending;
-    });
-  }
-
-  void addNewField() {
-    setState(() {
-      _lists.add(PositionClass('', 0, 0, 0));
-      focusNodes.add(FocusNode());
-    });
-  }
-
-  List<DataRow> createRows() {
-    return _lists.asMap().entries.map((entry) {
-      final position = entry.value;
-      final index = entry.key;
-      final focusNode = focusNodes[index];
-
-      return DataRow(
-        cells: [
-          DataCell(
-            TextFormField(
-              controller: position.nameController,
-              keyboardType: TextInputType.name,
-              onChanged: (val) {
-                setState(() {
-                  position.name = val;
-                });
-              },
-            ),
-            showEditIcon: true,
-          ),
-          DataCell(
-            TextFormField(
-              controller: position.hzvalueController,
-              keyboardType: TextInputType.name,
-              onChanged: (val) {
-                setState(() {
-                  position.hzvalue = int.parse(val);
-                });
-              },
-            ),
-            showEditIcon: true,
-          ),
-          DataCell(
-            TextFormField(
-              controller: position.mlController,
-              keyboardType: TextInputType.name,
-              onChanged: (val) {
-                setState(() {
-                  position.ml = int.parse(val);
-                });
-              },
-            ),
-            showEditIcon: true,
-          ),
-          DataCell(
-            TextFormField(
-              // key: UniqueKey(),
-              controller: position.colController,
-              keyboardType: TextInputType.name,
-              onChanged: (val) {
-                setState(() {
-                  position.col =int.parse(val);
-                });
-              },
-            ),
-            showEditIcon: true,
-          ),
-        ],
-      );
-    }).toList();
   }
 }

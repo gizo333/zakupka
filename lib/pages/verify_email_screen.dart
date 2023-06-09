@@ -5,16 +5,24 @@ import '/pages/home_screen.dart';
 import '/services/snack_bar.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
-  const VerifyEmailScreen({super.key});
+  const VerifyEmailScreen({Key? key}) : super(key: key);
 
   @override
-  State<VerifyEmailScreen> createState() => _VerifyEmailScreenState();
+  _VerifyEmailScreenState createState() => _VerifyEmailScreenState();
 }
 
 class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   bool isEmailVerified = false;
-  bool canResendEmail = false;
+  bool _canResendEmail = false;
   Timer? timer;
+
+  bool get canResendEmail => _canResendEmail;
+
+  set canResendEmail(bool value) {
+    setState(() {
+      _canResendEmail = value;
+    });
+  }
 
   @override
   void initState() {
