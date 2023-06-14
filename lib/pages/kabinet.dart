@@ -1,11 +1,10 @@
 import 'package:flutter/material.dart';
-import '/services/snack_bar.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'account_screen.dart';
 
-class Kabinet extends StatelessWidget {
-  const Kabinet({super.key});
+class kabinet extends StatelessWidget {
+  const kabinet({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -13,13 +12,13 @@ class Kabinet extends StatelessWidget {
 
     void goInvent() {
       if (user != null) {
-        Navigator.pushNamed(context, '/invent');
+        Navigator.pushNamed(context, '/table');
       }
     }
 
     void goStop() {
       if (user != null) {
-        Navigator.pushNamed(context, '/stop_minimum');
+        Navigator.pushNamed(context, '/stop');
       }
     }
 
