@@ -1,8 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:excel/excel.dart';
-
 import '../table/classes.dart';
 
 List<Map<String, dynamic>> jsonData = [];

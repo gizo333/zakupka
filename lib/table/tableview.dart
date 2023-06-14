@@ -1,10 +1,9 @@
 import 'dart:convert';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:new_flut_proj/table/sort_help.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
@@ -17,8 +16,19 @@ class TableView extends StatefulWidget {
 }
 
 class _TableViewState extends State<TableView> {
+  late String userId; // Идентификатор пользователя
+
   Future<void> initializeFirebase() async {
     await Firebase.initializeApp();
+    final currentUser = FirebaseAuth.instance.currentUser;
+    setState(() {
+      userId = currentUser!.uid; // Идентификатор пользователя
+    });
+  }
+
+  CollectionReference getFirestoreCollection() {
+    // Получение коллекции Firestore для текущего пользователя
+    return FirebaseFirestore.instance.collection('users').doc(userId).collection('positions');
   }
 
   List<PositionClass> _lists = [];
@@ -133,7 +143,6 @@ class _TableViewState extends State<TableView> {
                     ),
                     child: ListTile(
                       title: Container(
-                        // margin: const EdgeInsets.symmetric(vertical: 15),
                         color: const Color.fromARGB(255, 133, 133, 133),
                         child: Row(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -148,7 +157,6 @@ class _TableViewState extends State<TableView> {
                                   keyboardType: TextInputType.number,
                                   onChanged: (val) {
                                     setState(() {
-                                      // position.code = int.tryParse(val);
                                       if (val.isEmpty) {
                                         position.code = null; // Сброс значения
                                         errorColor = null; // Сброс цвета ошибки
@@ -284,7 +292,7 @@ class _TableViewState extends State<TableView> {
               child: ElevatedButton(
                 onPressed: () async {
                   // Call the function to save JSON data to Firestore
-                  await listToJson(_lists);
+                  saveDataToFirestore();
                 },
                 child: const Text('Save'),
               ),
@@ -293,6 +301,45 @@ class _TableViewState extends State<TableView> {
         ),
       ),
     );
+  }
+
+  Future<void> saveDataToFirestore() async {
+    try {
+      // Инициализация Firebase, если еще не была выполнена
+      await Firebase.initializeApp();
+
+      // Получение коллекции Firestore для текущего пользователя
+      CollectionReference collection = FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .collection('positions');
+
+      // Удаление всех существующих документов в коллекции
+      await collection.get().then((snapshot) {
+        for (DocumentSnapshot doc in snapshot.docs) {
+          doc.reference.delete();
+        }
+      });
+
+      // Сохранение каждого элемента _lists в базу данных
+      for (var position in _lists) {
+        await collection.add(position.toJson());
+      }
+
+      // Отображение успешного сообщения
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Data saved successfully!'),
+        ),
+      );
+    } catch (error) {
+      // Отображение ошибки, если что-то пошло не так
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save data: $error'),
+        ),
+      );
+    }
   }
 
   late String _filePath;
@@ -357,6 +404,7 @@ class _TableViewState extends State<TableView> {
       _lists.sort((user1, user2) =>
           compareNumeric(ascending, user1.itog ?? 0, user2.itog ?? 0));
     }
+
     setState(() {
       _sortColumnIndex = columnIndex;
       _sortAsc = ascending;

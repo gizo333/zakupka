@@ -4,6 +4,9 @@ import 'package:new_flut_proj/pages/kabinet.dart';
 import '/pages/verify_email_screen.dart';
 import '/pages/home_screen.dart';
 
+//Общий смысл этого кода заключается в том, что FirebaseStream - это виджет, который отслеживает изменения состояния аутентификации
+// в Firebase и в зависимости от этого строит соответствующий виджет пользовательского интерфейса.
+
 class FirebaseStream extends StatelessWidget {
   const FirebaseStream({super.key});
 
@@ -19,9 +22,9 @@ class FirebaseStream extends StatelessWidget {
           if (!snapshot.data!.emailVerified) {
             return const VerifyEmailScreen();
           }
-          return const kabinet();
+          return const kabinet(); //если пользователь авторизован переходим на эту страницу
         } else {
-          return const HomeScreen();
+          return const HomeScreen(); //если не авторизован
         }
       },
     );
