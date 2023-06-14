@@ -292,7 +292,7 @@ class _TableViewState extends State<TableView> {
               child: ElevatedButton(
                 onPressed: () async {
                   // Call the function to save JSON data to Firestore
-                  saveDataToFirestore();
+                  savePositionsToFirestore();
                 },
                 child: const Text('Save'),
               ),
@@ -303,44 +303,6 @@ class _TableViewState extends State<TableView> {
     );
   }
 
-  Future<void> saveDataToFirestore() async {
-    try {
-      // Инициализация Firebase, если еще не была выполнена
-      await Firebase.initializeApp();
-
-      // Получение коллекции Firestore для текущего пользователя
-      CollectionReference collection = FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('positions');
-
-      // Удаление всех существующих документов в коллекции
-      await collection.get().then((snapshot) {
-        for (DocumentSnapshot doc in snapshot.docs) {
-          doc.reference.delete();
-        }
-      });
-
-      // Сохранение каждого элемента _lists в базу данных
-      for (var position in _lists) {
-        await collection.add(position.toJson());
-      }
-
-      // Отображение успешного сообщения
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Data saved successfully!'),
-        ),
-      );
-    } catch (error) {
-      // Отображение ошибки, если что-то пошло не так
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save data: $error'),
-        ),
-      );
-    }
-  }
 
   late String _filePath;
   // ignore: unused_field
@@ -416,4 +378,28 @@ class _TableViewState extends State<TableView> {
       _lists.add(PositionClass(null, '', null, null));
     });
   }
+  void savePositionsToFirestore() {
+    // Получение коллекции Firestore для текущего пользователя
+    CollectionReference collection = getFirestoreCollection();
+
+    // Создание объекта WriteBatch
+    WriteBatch batch = FirebaseFirestore.instance.batch();
+
+    for (var position in _lists) {
+      // Создание нового документа с автоматически сгенерированным идентификатором
+      DocumentReference docRef = collection.doc();
+
+      // Установка данных позиции в документ
+      batch.set(docRef, position.toJson());
+    }
+
+    // Выполнение пакетной записи данных
+    batch.commit().then((value) {
+      print('Данные успешно сохранены!');
+    }).catchError((error) {
+      print('Ошибка при сохранении данных: $error');
+    });
+  }
+
+
 }
