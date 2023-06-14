@@ -292,7 +292,7 @@ class _TableViewState extends State<TableView> {
               child: ElevatedButton(
                 onPressed: () async {
                   // Call the function to save JSON data to Firestore
-                  savePositionsToFirestore();
+                  savePositionsToFirestore(context);
                 },
                 child: const Text('Save'),
               ),
@@ -378,28 +378,37 @@ class _TableViewState extends State<TableView> {
       _lists.add(PositionClass(null, '', null, null));
     });
   }
-  void savePositionsToFirestore() {
-    // Получение коллекции Firestore для текущего пользователя
-    CollectionReference collection = getFirestoreCollection();
 
-    // Создание объекта WriteBatch
+
+  void savePositionsToFirestore(BuildContext context) {
+    CollectionReference collection = getFirestoreCollection();
     WriteBatch batch = FirebaseFirestore.instance.batch();
 
     for (var position in _lists) {
-      // Создание нового документа с автоматически сгенерированным идентификатором
       DocumentReference docRef = collection.doc();
-
-      // Установка данных позиции в документ
       batch.set(docRef, position.toJson());
     }
 
-    // Выполнение пакетной записи данных
+    // Инициализация и запуск секундомера
+    Stopwatch stopwatch = Stopwatch()..start();
+
     batch.commit().then((value) {
-      print('Данные успешно сохранены!');
+      stopwatch.stop();
+      Duration duration = stopwatch.elapsed;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Данные успешно сохранены! Время: ${duration.inMilliseconds} мс')),
+      );
     }).catchError((error) {
-      print('Ошибка при сохранении данных: $error');
+      stopwatch.stop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ошибка при сохранении данных: $error')),
+      );
     });
   }
+
+
 
 
 }
