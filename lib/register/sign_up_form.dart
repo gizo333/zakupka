@@ -103,28 +103,35 @@ class _SignUpFormState extends State<SignUpForm> {
             password: '1',
           );
 
-          await connection.open();
+          try {
+            await connection.open();
 
-          final query = '''
+            final query = '''
             INSERT INTO companies (user_id, email, password, company, phone, inn)
             VALUES (@userId, @email, @password, @company, @phone, @inn)
           ''';
 
-          await connection.query(
-            query,
-            substitutionValues: {
-              'userId': user.uid,
-              'email': email,
-              'password': password,
-              'company': company,
-              'phone': phone,
-              'inn': inn,
-            },
-          );
+            await connection.query(
+              query,
+              substitutionValues: {
+                'userId': user.uid,
+                'email': email,
+                'password': password,
+                'company': company,
+                'phone': phone,
+                'inn': inn,
+              },
+            );
 
-          await connection.close();
+            print('Соединение закрыто');
+          } catch (e) {
+            print(e);
+          } finally {
+            await connection.close();
+          }
 
-          Navigator.pushReplacementNamed(context, '/account');
+          Navigator.pushReplacementNamed(context, '/verify_email');
+
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
           await widget.firestore.collection('users').doc(user.uid).set({
@@ -144,28 +151,34 @@ class _SignUpFormState extends State<SignUpForm> {
             password: '1',
           );
 
-          await connection.open();
+          try {
+            await connection.open();
 
-          final query = '''
+            final query = '''
             INSERT INTO users (user_id, email, password, restaurant, full_name, position)
             VALUES (@userId, @email, @password, @restaurant, @fullName, @position)
           ''';
 
-          await connection.query(
-            query,
-            substitutionValues: {
-              'userId': user.uid,
-              'email': email,
-              'password': password,
-              'restaurant': restaurant,
-              'fullName': fullName,
-              'position': position,
-            },
-          );
+            await connection.query(
+              query,
+              substitutionValues: {
+                'userId': user.uid,
+                'email': email,
+                'password': password,
+                'restaurant': restaurant,
+                'fullName': fullName,
+                'position': position,
+              },
+            );
 
-          await connection.close();
+            print('Соединение закрыто');
+          } catch (e) {
+            print(e);
+          } finally {
+            await connection.close();
+          }
 
-          Navigator.pushReplacementNamed(context, '/kabinet');
+          Navigator.pushReplacementNamed(context, '/verify_email');
         }
       }
     } catch (e) {
@@ -173,6 +186,7 @@ class _SignUpFormState extends State<SignUpForm> {
       print(e);
     }
   }
+
 
   @override
   Widget build(BuildContext context) {

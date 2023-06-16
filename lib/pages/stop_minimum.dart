@@ -1,44 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 
+class UserListPage extends StatefulWidget {
+  @override
+  _UserListPageState createState() => _UserListPageState();
+}
 
-class sql extends StatelessWidget {
-  final connection = PostgreSQLConnection(
-    '37.140.241.144',
-    5432,
-    'postgres',
-    username: 'postgres',
-    password: '1',
-  );
+class _UserListPageState extends State<UserListPage> {
+  List<Map<String, dynamic>> userList = [];
 
-  void connectToDatabase() async {
+  @override
+  void initState() {
+    super.initState();
+    fetchDataFromDatabase();
+  }
+
+  Future<void> fetchDataFromDatabase() async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
     try {
       await connection.open();
-      if (connection.isClosed) {
-        print('Не удалось установить соединение с базой данных');
-      } else {
-        print('Соединение с базой данных успешно установлено');
-      }
+
+      final query = 'SELECT * FROM users';
+      final results = await connection.query(query);
+
+      setState(() {
+        userList = results.map((row) => row.toColumnMap()).toList();
+      });
     } catch (e) {
-      print('Ошибка при подключении к базе данных: $e');
+      print(e);
     } finally {
       await connection.close();
     }
   }
 
+
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(
-          title: Text('Подключение к базе данных'),
-        ),
-        body: Center(
-          child: ElevatedButton(
-            onPressed: connectToDatabase,
-            child: Text('Подключиться к базе данных'),
-          ),
-        ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Список пользователей'),
+      ),
+      body: ListView.builder(
+        itemCount: userList.length,
+        itemBuilder: (context, index) {
+          final user = userList[index];
+          return ListTile(
+            title: Text(user['full_name']),
+            subtitle: Text(user['email']),
+          );
+        },
       ),
     );
   }
