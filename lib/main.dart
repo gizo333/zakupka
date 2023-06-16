@@ -50,7 +50,7 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
         '/verify_email': (context) => const VerifyEmailScreen(),
-        '/stop': (context) => SearchFunction(),
+        '/stop': (context) => sql(),
 
       },
       initialRoute: '/',

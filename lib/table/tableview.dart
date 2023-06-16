@@ -1,12 +1,11 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
+import 'package:postgres/postgres.dart';
 
 class TableView extends StatefulWidget {
   const TableView({Key? key}) : super(key: key);
@@ -19,17 +18,12 @@ class _TableViewState extends State<TableView> {
   late String userId; // Идентификатор пользователя
 
   Future<void> initializeFirebase() async {
-    await Firebase.initializeApp();
     final currentUser = FirebaseAuth.instance.currentUser;
     setState(() {
       userId = currentUser!.uid; // Идентификатор пользователя
     });
   }
 
-  CollectionReference getFirestoreCollection() {
-    // Получение коллекции Firestore для текущего пользователя
-    return FirebaseFirestore.instance.collection('users').doc(userId).collection('positions');
-  }
 
   List<PositionClass> _lists = [];
   bool _sortAsc = true;
@@ -291,8 +285,6 @@ class _TableViewState extends State<TableView> {
               padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
               child: ElevatedButton(
                 onPressed: () async {
-                  // Call the function to save JSON data to Firestore
-                  savePositionsToFirestore(context);
                 },
                 child: const Text('Save'),
               ),
@@ -376,35 +368,6 @@ class _TableViewState extends State<TableView> {
   void addNewField() {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
-    });
-  }
-
-
-  void savePositionsToFirestore(BuildContext context) {
-    CollectionReference collection = getFirestoreCollection();
-    WriteBatch batch = FirebaseFirestore.instance.batch();
-
-    for (var position in _lists) {
-      DocumentReference docRef = collection.doc();
-      batch.set(docRef, position.toJson());
-    }
-
-    // Инициализация и запуск секундомера
-    Stopwatch stopwatch = Stopwatch()..start();
-
-    batch.commit().then((value) {
-      stopwatch.stop();
-      Duration duration = stopwatch.elapsed;
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Данные успешно сохранены! Время: ${duration.inMilliseconds} мс')),
-      );
-    }).catchError((error) {
-      stopwatch.stop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ошибка при сохранении данных: $error')),
-      );
     });
   }
 

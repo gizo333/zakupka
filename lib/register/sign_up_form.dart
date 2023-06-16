@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:postgres/postgres.dart';
 import 'validation.dart';
 
 class SignUpForm extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
 
-  SignUpForm({super.key, required this.auth, required this.firestore});
+  SignUpForm({Key? key, required this.auth, required this.firestore});
 
   @override
   _SignUpFormState createState() => _SignUpFormState();
@@ -93,6 +94,36 @@ class _SignUpFormState extends State<SignUpForm> {
             'inn': inn,
           });
 
+          // Сохранение данных в PostgreSQL
+          final connection = PostgreSQLConnection(
+            '37.140.241.144',
+            5432,
+            'postgres',
+            username: 'postgres',
+            password: '1',
+          );
+
+          await connection.open();
+
+          final query = '''
+            INSERT INTO companies (user_id, email, password, company, phone, inn)
+            VALUES (@userId, @email, @password, @company, @phone, @inn)
+          ''';
+
+          await connection.query(
+            query,
+            substitutionValues: {
+              'userId': user.uid,
+              'email': email,
+              'password': password,
+              'company': company,
+              'phone': phone,
+              'inn': inn,
+            },
+          );
+
+          await connection.close();
+
           Navigator.pushReplacementNamed(context, '/account');
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
@@ -103,6 +134,36 @@ class _SignUpFormState extends State<SignUpForm> {
             'fullName': fullName,
             'position': position,
           });
+
+          // Сохранение данных в PostgreSQL
+          final connection = PostgreSQLConnection(
+            '37.140.241.144',
+            5432,
+            'postgres',
+            username: 'postgres',
+            password: '1',
+          );
+
+          await connection.open();
+
+          final query = '''
+            INSERT INTO users (user_id, email, password, restaurant, full_name, position)
+            VALUES (@userId, @email, @password, @restaurant, @fullName, @position)
+          ''';
+
+          await connection.query(
+            query,
+            substitutionValues: {
+              'userId': user.uid,
+              'email': email,
+              'password': password,
+              'restaurant': restaurant,
+              'fullName': fullName,
+              'position': position,
+            },
+          );
+
+          await connection.close();
 
           Navigator.pushReplacementNamed(context, '/kabinet');
         }

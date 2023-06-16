@@ -1,67 +1,44 @@
 import 'package:flutter/material.dart';
+import 'package:postgres/postgres.dart';
 
-class SearchFunction extends StatefulWidget {
-  @override
-  _SearchFunctionState createState() => _SearchFunctionState();
-}
 
-class _SearchFunctionState extends State<SearchFunction> {
-  TextEditingController _searchController = TextEditingController();
-  List<String> _dataList = ['Apple', 'Banana', 'Cherry', 'Durian', 'Elderberry'];
-  List<String> _filteredDataList = [];
+class sql extends StatelessWidget {
+  final connection = PostgreSQLConnection(
+    '37.140.241.144',
+    5432,
+    'postgres',
+    username: 'postgres',
+    password: '1',
+  );
 
-  @override
-  void initState() {
-    super.initState();
-    _filteredDataList.addAll(_dataList);
-  }
-
-  void _filterList(String searchQuery) {
-    _filteredDataList.clear();
-    if (searchQuery.isNotEmpty) {
-      _dataList.forEach((item) {
-        if (item.toLowerCase().contains(searchQuery.toLowerCase())) {
-          _filteredDataList.add(item);
-        }
-      });
-    } else {
-      _filteredDataList.addAll(_dataList);
+  void connectToDatabase() async {
+    try {
+      await connection.open();
+      if (connection.isClosed) {
+        print('Не удалось установить соединение с базой данных');
+      } else {
+        print('Соединение с базой данных успешно установлено');
+      }
+    } catch (e) {
+      print('Ошибка при подключении к базе данных: $e');
+    } finally {
+      await connection.close();
     }
-    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Search Example'),
-      ),
-      body: Column(
-        children: [
-          Padding(
-            padding: EdgeInsets.all(10.0),
-            child: TextField(
-              controller: _searchController,
-              onChanged: (value) {
-                _filterList(value);
-              },
-              decoration: InputDecoration(
-                labelText: 'Search',
-                prefixIcon: Icon(Icons.search),
-              ),
-            ),
+    return MaterialApp(
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Подключение к базе данных'),
+        ),
+        body: Center(
+          child: ElevatedButton(
+            onPressed: connectToDatabase,
+            child: Text('Подключиться к базе данных'),
           ),
-          Expanded(
-            child: ListView.builder(
-              itemCount: _filteredDataList.length,
-              itemBuilder: (context, index) {
-                return ListTile(
-                  title: Text(_filteredDataList[index]),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
