@@ -6,6 +6,7 @@ import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
 import 'package:postgres/postgres.dart';
+import 'package:postgres_pool/postgres_pool.dart';
 
 class TableView extends StatefulWidget {
   const TableView({Key? key}) : super(key: key);
@@ -285,6 +286,7 @@ class _TableViewState extends State<TableView> {
               padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
               child: ElevatedButton(
                 onPressed: () async {
+                  saveDataToPostgreSQL();
                 },
                 child: const Text('Save'),
               ),
@@ -373,5 +375,65 @@ class _TableViewState extends State<TableView> {
 
 
 
+
+  Future<void> saveDataToPostgreSQL() async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    final stopwatch = Stopwatch(); // Создаем объект секундомера
+
+    try {
+      await connection.open();
+
+      // Очистить таблицу перед импортом (если нужно)
+      await connection.execute('DELETE FROM position');
+
+      stopwatch.start(); // Запускаем секундомер
+
+      // Вставить данные в таблицу
+      for (var position in _lists) {
+        await connection.execute(
+          'INSERT INTO position (code, name, ml, itog) VALUES (@code, @name, @ml, @itog)',
+          substitutionValues: {
+            'code': position.code,
+            'name': position.name,
+            'ml': position.ml,
+            'itog': position.itog,
+          },
+        );
+      }
+
+      stopwatch.stop(); // Останавливаем секундомер
+
+      // Закрыть соединение
+      await connection.close();
+
+      // Очистить списки после сохранения данных в БД
+      setState(() {
+        _lists.clear();
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Данные успешно сохранены в PostgreSQL.'),
+        ),
+      );
+
+      final seconds = stopwatch.elapsedMilliseconds / 1000; // Получаем время сохранения в секундах
+      print('Время сохранения: $seconds сек');
+    } catch (e) {
+      print('Ошибка сохранения данных в PostgreSQL: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Ошибка сохранения данных в PostgreSQL.'),
+        ),
+      );
+    }
+  }
 
 }

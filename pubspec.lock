@@ -153,6 +153,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  executor:
+    dependency: transitive
+    description:
+      name: executor
+      sha256: "87d935b31b2bdf7fe2af0b77dd8ffe8864eaade25715e9c68bc49497e48c9851"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.2.3"
   fake_async:
     dependency: transitive
     description:
@@ -457,7 +465,7 @@ packages:
     source: hosted
     version: "3.7.3"
   pool:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: pool
       sha256: "20fe868b6314b322ea036ba325e6fc0711a22948856475e2c2b6306e8ab39c2a"
@@ -472,6 +480,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
+  postgres_pool:
+    dependency: "direct main"
+    description:
+      name: postgres_pool
+      sha256: "589b7aceb97e061db7e78aff6d6e988320aa2a43f232340b51aa2d9b922acacc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.6"
   process:
     dependency: transitive
     description:
@@ -488,6 +504,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.5"
+  retry:
+    dependency: transitive
+    description:
+      name: retry
+      sha256: "822e118d5b3aafed083109c72d5f484c6dc66707885e07c0fbcb8b986bba7efc"
+      url: "https://pub.dev"
+    source: hosted
+    version: "3.1.2"
   rxdart:
     dependency: transitive
     description:

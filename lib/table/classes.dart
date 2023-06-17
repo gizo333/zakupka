@@ -24,7 +24,7 @@ class PositionClass {
       'name': name,
       'ml': ml,
       'itog': itog,
-    };
+   };
   }
 }
 
