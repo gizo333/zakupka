@@ -320,14 +320,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
-  logging:
-    dependency: transitive
-    description:
-      name: logging
-      sha256: "623a88c9594aa774443aa3eb2d41807a48486b5613e67599fb4c41c0ad47c340"
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.2.0"
   matcher:
     dependency: transitive
     description:
@@ -352,14 +344,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
-  mime:
-    dependency: transitive
-    description:
-      name: mime
-      sha256: e4ff8e8564c03f255408decd16e7899da1733852a9110a58fe6d1b817684a63e
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.4"
   nested:
     dependency: transitive
     description:
@@ -488,14 +472,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
-  postgresql2:
-    dependency: "direct main"
-    description:
-      name: postgresql2
-      sha256: fec1114a03b3b201caade763fdf8251a2dd02dc7f2ff689802fe5a3edad17500
-      url: "https://pub.dev"
-    source: hosted
-    version: "1.0.4"
   process:
     dependency: transitive
     description:
@@ -512,14 +488,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.5"
-  rikulo_commons:
-    dependency: transitive
-    description:
-      name: rikulo_commons
-      sha256: e8d22956ba4c9f3cfa7647a1b4cfd9a8516e6d69a978c9260c5316d332de5055
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.2.2"
   rxdart:
     dependency: transitive
     description:

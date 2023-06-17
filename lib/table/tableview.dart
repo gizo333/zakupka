@@ -5,7 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
-import 'package:postgres/postgres.dart';
+import 'save_to_bd.dart';
 
 class TableView extends StatefulWidget {
   const TableView({Key? key}) : super(key: key);
@@ -285,7 +285,7 @@ class _TableViewState extends State<TableView> {
               padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
               child: ElevatedButton(
                 onPressed: () async {
-                  saveDataToPostgreSQL();
+                  saveDataToPostgreSQL(context, _lists);
                 },
                 child: const Text('Save'),
               ),
@@ -373,67 +373,6 @@ class _TableViewState extends State<TableView> {
   }
 
 
-
-
-
-
-  Future<void> saveDataToPostgreSQL() async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
-
-    try {
-      await connection.open();
-
-      // Очистить таблицу перед импортом (если нужно)
-      await connection.execute('DELETE FROM position');
-
-      // Создать список значений для вставки
-      final values = _lists
-          .map((position) => '(${position.code}, \'${_escapeString(position.name)}\', ${position.ml}, ${position.itog})')
-          .join(', ');
-
-      // Замерить время сохранения данных
-      final stopwatch = Stopwatch()..start();
-
-      // Вставить данные в таблицу
-      await connection.execute('INSERT INTO position (code, name, ml, itog) VALUES $values');
-
-      // Остановить и вывести время сохранения в консоль
-      stopwatch.stop();
-      print('Время сохранения в PostgreSQL: ${stopwatch.elapsed.inMilliseconds} мс');
-
-      // Закрыть соединение
-      await connection.close();
-
-      // Очистить списки после сохранения данных в БД
-      setState(() {
-        _lists.clear();
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Данные сохранены в PostgreSQL'),
-        ),
-      );
-    } catch (e) {
-      print('Ошибка при сохранении данных в PostgreSQL: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Ошибка при сохранении данных в PostgreSQL'),
-        ),
-      );
-    }
-  }
-
-// Функция для экранирования специальных символов в строке
-  String _escapeString(String value) {
-    return value.replaceAll("'", "''");
-  }
 
 
 
