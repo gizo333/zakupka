@@ -153,14 +153,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
-  executor:
-    dependency: transitive
-    description:
-      name: executor
-      sha256: "87d935b31b2bdf7fe2af0b77dd8ffe8864eaade25715e9c68bc49497e48c9851"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.2.3"
   fake_async:
     dependency: transitive
     description:
@@ -328,6 +320,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.1"
+  logging:
+    dependency: transitive
+    description:
+      name: logging
+      sha256: "623a88c9594aa774443aa3eb2d41807a48486b5613e67599fb4c41c0ad47c340"
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.2.0"
   matcher:
     dependency: transitive
     description:
@@ -352,6 +352,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.9.1"
+  mime:
+    dependency: transitive
+    description:
+      name: mime
+      sha256: e4ff8e8564c03f255408decd16e7899da1733852a9110a58fe6d1b817684a63e
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.4"
   nested:
     dependency: transitive
     description:
@@ -465,7 +473,7 @@ packages:
     source: hosted
     version: "3.7.3"
   pool:
-    dependency: "direct main"
+    dependency: transitive
     description:
       name: pool
       sha256: "20fe868b6314b322ea036ba325e6fc0711a22948856475e2c2b6306e8ab39c2a"
@@ -480,14 +488,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.6.1"
-  postgres_pool:
+  postgresql2:
     dependency: "direct main"
     description:
-      name: postgres_pool
-      sha256: "589b7aceb97e061db7e78aff6d6e988320aa2a43f232340b51aa2d9b922acacc"
+      name: postgresql2
+      sha256: fec1114a03b3b201caade763fdf8251a2dd02dc7f2ff689802fe5a3edad17500
       url: "https://pub.dev"
     source: hosted
-    version: "2.1.6"
+    version: "1.0.4"
   process:
     dependency: transitive
     description:
@@ -504,14 +512,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "6.0.5"
-  retry:
+  rikulo_commons:
     dependency: transitive
     description:
-      name: retry
-      sha256: "822e118d5b3aafed083109c72d5f484c6dc66707885e07c0fbcb8b986bba7efc"
+      name: rikulo_commons
+      sha256: e8d22956ba4c9f3cfa7647a1b4cfd9a8516e6d69a978c9260c5316d332de5055
       url: "https://pub.dev"
     source: hosted
-    version: "3.1.2"
+    version: "5.2.2"
   rxdart:
     dependency: transitive
     description:
