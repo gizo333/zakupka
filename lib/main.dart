@@ -3,13 +3,13 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
 import 'package:new_flut_proj/pages/kabinet.dart';
 import 'package:new_flut_proj/pages/stop_minimum.dart';
+import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'package:new_flut_proj/table/tableview.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
 import '/pages/login_screen.dart';
 import 'package:new_flut_proj/register/sign_up_screen.dart';
-import '/pages/verify_email_screen.dart';
 import '/services/firebase_streem.dart';
 
 
@@ -32,17 +32,17 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false, // убирает надпись debug
-       theme: ThemeData(
-         useMaterial3: true,
-         appBarTheme:  const AppBarTheme(
-           backgroundColor: ThemeBar.myThemeBar,
-           foregroundColor: Colors.white
-         ),
-       ),
+      theme: ThemeData(
+        useMaterial3: true,
+        appBarTheme:  const AppBarTheme(
+            backgroundColor: ThemeBar.myThemeBar,
+            foregroundColor: Colors.white
+        ),
+      ),
 
       routes: {
         '/': (context) => FirebaseStream(),
-        '/kabinet': (context) => const kabinet(),
+        '/kabinet': (context) => const Kabinet(),
         '/home': (context) => const HomeScreen(),
         '/table': (context) => const TableView(),
         '/account': (context) => const AccountScreen(),

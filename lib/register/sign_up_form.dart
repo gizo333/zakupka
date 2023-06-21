@@ -26,13 +26,14 @@ class _SignUpFormState extends State<SignUpForm> {
 
   bool checkBoxValue1 = true; // По умолчанию checkBoxValue1 включен
   bool checkBoxValue2 = false;
+  bool checkBoxValue3 = false;
 
   String? emailError;
   String? passwordError;
 
   Future<void> _registerUser(BuildContext context) async {
     // Проверка состояния обоих чекбоксов
-    if (!(checkBoxValue1 || checkBoxValue2)) {
+    if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
@@ -132,9 +133,11 @@ class _SignUpFormState extends State<SignUpForm> {
 
           Navigator.pushReplacementNamed(context, '/verify_email');
 
+
+
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
-          await widget.firestore.collection('users').doc(user.uid).set({
+          await widget.firestore.collection('restaurant').doc(user.uid).set({
             'email': email,
             'password': password,
             'restaurant': restaurant,
@@ -155,7 +158,7 @@ class _SignUpFormState extends State<SignUpForm> {
             await connection.open();
 
             final query = '''
-            INSERT INTO users (user_id, email, password, restaurant, full_name, position)
+            INSERT INTO restaurant (user_id, email, password, restaurant, full_name, position)
             VALUES (@userId, @email, @password, @restaurant, @fullName, @position)
           ''';
 
@@ -179,7 +182,58 @@ class _SignUpFormState extends State<SignUpForm> {
           }
 
           Navigator.pushReplacementNamed(context, '/verify_email');
+
+
+        }  else if (checkBoxValue3) {
+          // Регистрация пользователя-ресторана
+          final currentUser = FirebaseAuth.instance.currentUser;
+          await widget.firestore.collection('users_sotrud').doc(currentUser?.uid).set({
+            'email': email,
+            'password': password,
+            'fullName': fullName,
+            'position': position,
+          });
+
+          // Сохранение данных в PostgreSQL
+          final connection = PostgreSQLConnection(
+            '37.140.241.144',
+            5432,
+            'postgres',
+            username: 'postgres',
+            password: '1',
+          );
+
+          try {
+            await connection.open();
+
+            final query = '''
+      INSERT INTO users_sotrud (user_id, email, password, full_name, position)
+      VALUES (@userId, @email, @password, @fullName, @position)
+    ''';
+
+            await connection.query(
+              query,
+              substitutionValues: {
+                'userId': currentUser?.uid,
+                'email': email,
+                'password': password,
+                'fullName': fullName,
+                'position': position,
+              },
+            );
+
+            print('Соединение закрыто');
+          } catch (e) {
+            print(e);
+          } finally {
+            await connection.close();
+          }
+          // Переход на страницу '/verify_email'
+
+          Navigator.pushReplacementNamed(context, '/verify_email');
         }
+
+
       }
     } catch (e) {
       // Обработка ошибок регистрации
@@ -248,6 +302,25 @@ class _SignUpFormState extends State<SignUpForm> {
           ),
           SizedBox(height: 16.0),
         ],
+        if (checkBoxValue3) ...[
+          SizedBox(height: 16.0),
+          TextField(
+            controller: fullNameController,
+            decoration: InputDecoration(
+              labelText: 'ФИО',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 16.0),
+          TextField(
+            controller: positionController,
+            decoration: InputDecoration(
+              labelText: 'Должность',
+              border: OutlineInputBorder(),
+            ),
+          ),
+          SizedBox(height: 16.0),
+        ],
         if (checkBoxValue2) ...[
           TextField(
             controller: companyController,
@@ -274,8 +347,8 @@ class _SignUpFormState extends State<SignUpForm> {
           ),
           SizedBox(height: 16.0),
         ],
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
+        Column(
+          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
@@ -285,15 +358,34 @@ class _SignUpFormState extends State<SignUpForm> {
                     setState(() {
                       if (value != null && value) {
                         checkBoxValue1 = value;
-                        checkBoxValue2 = false; // Сбросить значение второго чекбокса
+                        checkBoxValue2 = false;
+                        checkBoxValue3 = false;// Сбросить значение второго чекбокса
                       }
                     });
                   },
                 ),
-                Text('Вы Ресторан'),
+                Text('Вы представитель ресторана'),
               ],
             ),
-            SizedBox(width: 16.0),
+            SizedBox(width: 15.0),
+            Row(
+              children: [
+                Checkbox(
+                  value: checkBoxValue3,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value != null && value) {
+                        checkBoxValue3 = value;
+                        checkBoxValue1 = false;
+                        checkBoxValue2 = false;
+                      }
+                    });
+                  },
+                ),
+                Text('Вы сотрудник ресторана'),
+              ],
+            ),
+
             Row(
               children: [
                 Checkbox(
@@ -302,7 +394,8 @@ class _SignUpFormState extends State<SignUpForm> {
                     setState(() {
                       if (value != null && value) {
                         checkBoxValue2 = value;
-                        checkBoxValue1 = false; // Сбросить значение первого чекбокса
+                        checkBoxValue1 = false;
+                        checkBoxValue3 = false;// Сбросить значение первого чекбокса
                       }
                     });
                   },

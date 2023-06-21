@@ -51,7 +51,9 @@ Future<void> saveDataToPostgreSQL(BuildContext context, List<dynamic> _lists) as
     );
   }
 }
-
+// _escapeString используется для экранирования специальных символов в строке.
+// Экранирование символов осуществляется путем замены одинарных кавычек (') на двойные кавычки (''),
+// чтобы предотвратить ошибки при выполнении SQL-запросов.
 String _escapeString(String value) {
   return value.replaceAll("'", "''");
 }
