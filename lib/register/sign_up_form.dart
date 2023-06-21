@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'package:postgres/postgres.dart';
 import 'validation.dart';
 
@@ -24,14 +25,19 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController fullNameController = TextEditingController();
   final TextEditingController positionController = TextEditingController();
 
-  bool checkBoxValue1 = true; // По умолчанию checkBoxValue1 включен
-  bool checkBoxValue2 = false;
-  bool checkBoxValue3 = false;
+  static bool checkBoxValue1 = true;
+  static bool checkBoxValue2 = false;
+  static bool checkBoxValue3 = false;
+
+
+
+
 
   String? emailError;
   String? passwordError;
 
   Future<void> _registerUser(BuildContext context) async {
+
     // Проверка состояния обоих чекбоксов
     if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
       showDialog(
@@ -131,7 +137,18 @@ class _SignUpFormState extends State<SignUpForm> {
             await connection.close();
           }
 
-          Navigator.pushReplacementNamed(context, '/verify_email');
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VerifyEmailScreen(
+                checkBoxValue1: checkBoxValue1,
+                checkBoxValue2: checkBoxValue2,
+                checkBoxValue3: checkBoxValue3,
+              ),
+            ),
+          );
+
+         // Navigator.pushReplacementNamed(context, '/verify_email');
 
 
 
@@ -181,7 +198,18 @@ class _SignUpFormState extends State<SignUpForm> {
             await connection.close();
           }
 
-          Navigator.pushReplacementNamed(context, '/verify_email');
+
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VerifyEmailScreen(
+                checkBoxValue1: checkBoxValue1,
+                checkBoxValue2: checkBoxValue2,
+                checkBoxValue3: checkBoxValue3,
+              ),
+            ),
+          );
+         // Navigator.pushReplacementNamed(context, '/verify_email');
 
 
         }  else if (checkBoxValue3) {
@@ -228,9 +256,20 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-          // Переход на страницу '/verify_email'
 
-          Navigator.pushReplacementNamed(context, '/verify_email');
+
+          await Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (context) => VerifyEmailScreen(
+                checkBoxValue1: checkBoxValue1,
+                checkBoxValue2: checkBoxValue2,
+                checkBoxValue3: checkBoxValue3,
+              ),
+            ),
+          );
+
+          //Navigator.pushReplacementNamed(context, '/verify_email');
         }
 
 

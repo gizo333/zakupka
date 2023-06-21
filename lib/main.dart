@@ -28,6 +28,10 @@ void main() async {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
+  get checkBoxValue1 => null;
+  get checkBoxValue2 => null;
+  get checkBoxValue3 => null;
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -49,7 +53,9 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => SignUpScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
-        '/verify_email': (context) => const VerifyEmailScreen(),
+        '/verify_email': (context) => VerifyEmailScreen(checkBoxValue1: checkBoxValue1,
+          checkBoxValue2: checkBoxValue2,
+          checkBoxValue3: checkBoxValue3,),
         '/stop': (context) => UserListPage(),
 
       },

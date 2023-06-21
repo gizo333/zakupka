@@ -5,7 +5,16 @@ import '/pages/home_screen.dart';
 import '/services/snack_bar.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
-  const VerifyEmailScreen({Key? key}) : super(key: key);
+  final bool checkBoxValue1;
+  final bool checkBoxValue2;
+  final bool checkBoxValue3;
+
+  const VerifyEmailScreen({
+    Key? key,
+    required this.checkBoxValue1,
+    required this.checkBoxValue2,
+    required this.checkBoxValue3,
+  }) : super(key: key);
 
   @override
   _VerifyEmailScreenState createState() => _VerifyEmailScreenState();
@@ -24,9 +33,22 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     });
   }
 
+  late bool checkBoxValue1;
+  late bool checkBoxValue2;
+  late bool checkBoxValue3;
+
+
   @override
   void initState() {
     super.initState();
+
+    checkBoxValue1 = widget.checkBoxValue1;
+    checkBoxValue2 = widget.checkBoxValue2;
+    checkBoxValue3 = widget.checkBoxValue3;
+
+    print('checkBoxValue1: $checkBoxValue1');
+    print('checkBoxValue2: $checkBoxValue2');
+    print('checkBoxValue3: $checkBoxValue3');
 
     isEmailVerified = FirebaseAuth.instance.currentUser!.emailVerified;
 
@@ -55,10 +77,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     print(isEmailVerified);
 
-    if (isEmailVerified) {
-      timer?.cancel();
-      navigateToHomeScreen(); // Перенаправление на страницу '/kabinet'
-    }
+    // if (isEmailVerified) {
+    //   timer?.cancel();
+    //   navigateToHomeScreen(); // Перенаправление на страницу '/kabinet'
+    // }
   }
 
   Future<void> sendVerificationEmail() async {
@@ -83,9 +105,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
-  void navigateToHomeScreen() {
-    Navigator.pushReplacementNamed(context, '/kabinet'); // Перенаправление на страницу '/kabinet'
-  }
+
 
   @override
   Widget build(BuildContext context) => isEmailVerified
