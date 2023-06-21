@@ -7,16 +7,8 @@ class RestaurantListPage extends StatefulWidget {
 }
 
 class _RestaurantListPageState extends State<RestaurantListPage> {
-  List<Map<String, dynamic>> restaurantList = [];
-
-  @override
-  void initState() {
-    super.initState();
-    fetchDataFromDatabase();
-  }
-
-  Future<void> fetchDataFromDatabase() async {
-    final connection = PostgreSQLConnection(
+  Future<List<String>> fetchRestaurants() async {
+    final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
       'postgres',
@@ -25,36 +17,62 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     );
 
     try {
-      await connection.open();
+      await postgresConnection.open();
+      final results = await postgresConnection.query('SELECT restaurant FROM restaurant');
+      postgresConnection.close();
 
-      final query = 'SELECT * FROM restaurant';
-      final results = await connection.query(query);
-
-      setState(() {
-        restaurantList = results.map((row) => row.toColumnMap()).toList();
-      });
+      final list = results
+          .map((row) => row[0] as String) // Access the first column (restaurant)
+          .toList();
+      return list;
     } catch (e) {
-      print(e);
+      print('Error fetching restaurants: $e');
+      throw e; // rethrow the error to be caught by the FutureBuilder
     } finally {
-      await connection.close();
+      await postgresConnection.close();
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Список ресторанов'),
-      ),
-      body: ListView.builder(
-        itemCount: restaurantList.length,
-        itemBuilder: (context, index) {
-          final restaurant = restaurantList[index];
-          return ListTile(
-            title: Text(restaurant['name']),
-            subtitle: Text(restaurant['address']),
-          );
-        },
+    return MaterialApp(
+      title: 'Restaurant List',
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: Scaffold(
+        appBar: AppBar(
+          title: Text('Restaurant List'),
+        ),
+        body: FutureBuilder<List<String>>(
+          future: fetchRestaurants(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(
+                child: CircularProgressIndicator(),
+              );
+            } else if (snapshot.hasData) {
+              final restaurants = snapshot.data!;
+              print('Restaurants: $restaurants'); // Выводим список в консоль
+              return ListView.builder(
+                itemCount: restaurants.length,
+                itemBuilder: (context, index) {
+                  final name = restaurants[index];
+
+                  return ListTile(
+                    title: Text(name),
+                  );
+                },
+              );
+            } else if (snapshot.hasError) {
+              return Center(
+                child: Text('Error: ${snapshot.error}'),
+              );
+            }
+
+            return Center(
+              child: Text('No data available'),
+            );
+          },
+        ),
       ),
     );
   }
