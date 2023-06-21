@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
         '/verify_email': (context) => VerifyEmailScreen(checkBoxValue1: checkBoxValue1,
           checkBoxValue2: checkBoxValue2,
           checkBoxValue3: checkBoxValue3,),
-        '/stop': (context) => UserListPage(),
+        '/stop': (context) => RestaurantListPage(),
 
       },
       initialRoute: '/',

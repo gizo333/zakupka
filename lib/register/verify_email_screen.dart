@@ -77,10 +77,18 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     print(isEmailVerified);
 
-    // if (isEmailVerified) {
-    //   timer?.cancel();
-    //   navigateToHomeScreen(); // Перенаправление на страницу '/kabinet'
-    // }
+
+    if (isEmailVerified) {
+      timer?.cancel();
+      if (checkBoxValue1) {
+        Navigator.pushReplacementNamed(context, '/kabinet');
+      } else if (checkBoxValue2) {
+        Navigator.pushReplacementNamed(context, '/stop');
+      } else if (checkBoxValue3) {
+        Navigator.pushReplacementNamed(context, '/table');
+      }
+    }
+
   }
 
   Future<void> sendVerificationEmail() async {
@@ -104,7 +112,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       }
     }
   }
-
 
 
   @override

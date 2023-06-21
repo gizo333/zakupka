@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 
-class UserListPage extends StatefulWidget {
+class RestaurantListPage extends StatefulWidget {
   @override
-  _UserListPageState createState() => _UserListPageState();
+  _RestaurantListPageState createState() => _RestaurantListPageState();
 }
 
-class _UserListPageState extends State<UserListPage> {
-  List<Map<String, dynamic>> userList = [];
+class _RestaurantListPageState extends State<RestaurantListPage> {
+  List<Map<String, dynamic>> restaurantList = [];
 
   @override
   void initState() {
@@ -27,11 +27,11 @@ class _UserListPageState extends State<UserListPage> {
     try {
       await connection.open();
 
-      final query = 'SELECT * FROM users';
+      final query = 'SELECT * FROM restaurant';
       final results = await connection.query(query);
 
       setState(() {
-        userList = results.map((row) => row.toColumnMap()).toList();
+        restaurantList = results.map((row) => row.toColumnMap()).toList();
       });
     } catch (e) {
       print(e);
@@ -40,20 +40,19 @@ class _UserListPageState extends State<UserListPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Список пользователей'),
+        title: Text('Список ресторанов'),
       ),
       body: ListView.builder(
-        itemCount: userList.length,
+        itemCount: restaurantList.length,
         itemBuilder: (context, index) {
-          final user = userList[index];
+          final restaurant = restaurantList[index];
           return ListTile(
-            title: Text(user['full_name']),
-            subtitle: Text(user['email']),
+            title: Text(restaurant['name']),
+            subtitle: Text(restaurant['address']),
           );
         },
       ),

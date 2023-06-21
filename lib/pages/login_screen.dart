@@ -1,10 +1,11 @@
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:postgres/postgres.dart';
 import '/services/snack_bar.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -33,15 +34,68 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> login() async {
     final navigator = Navigator.of(context);
     final isValid = formKey.currentState!.validate();
-    if (!isValid) return;
+    if (isValid == null || isValid == false) return;
 
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailTextInputController.text.trim(),
         password: passwordTextInputController.text.trim(),
       );
+
+      // Получение текущего пользователя
+      final User? user = FirebaseAuth.instance.currentUser;
+
+      // Проверка таблицы, из которой произошел вход
+      if (user != null) {
+        final connection = PostgreSQLConnection(
+          '37.140.241.144',
+          5432,
+          'postgres',
+          username: 'postgres',
+          password: '1',
+        );
+
+        try {
+          await connection.open();
+
+          final query = 'SELECT * FROM users_sotrud WHERE user_id = @userId';
+          final results = await connection.query(query, substitutionValues: {
+            'userId': user.uid,
+          });
+
+          if (results.isNotEmpty) {
+            navigator.pushNamedAndRemoveUntil('/account', (Route<dynamic> route) => false);
+            return;
+          }
+
+          final query2 = 'SELECT * FROM restaurant WHERE user_id = @userId';
+          final results2 = await connection.query(query2, substitutionValues: {
+            'userId': user.uid,
+          });
+
+          if (results2.isNotEmpty) {
+            navigator.pushNamedAndRemoveUntil('/table', (Route<dynamic> route) => false);
+            return;
+          }
+
+          final query3 = 'SELECT * FROM companies WHERE user_id = @userId';
+          final results3 = await connection.query(query3, substitutionValues: {
+            'userId': user.uid,
+          });
+
+          if (results3.isNotEmpty) {
+            navigator.pushNamedAndRemoveUntil('/account', (Route<dynamic> route) => false);
+            return;
+          }
+        } catch (e) {
+          print(e);
+        } finally {
+          await connection.close();
+        }
+      }
     } on FirebaseAuthException catch (e) {
       print(e.code);
+      print(e);
 
       if (e.code == 'user-not-found' || e.code == 'wrong-password') {
         SnackBarService.showSnackBar(
@@ -58,9 +112,12 @@ class _LoginScreenState extends State<LoginScreen> {
         );
         return;
       }
+    } catch (e) {
+      print(e);
     }
 
-    navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
+    // По умолчанию переходим на страницу '/kabinet'
+    // navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
   }
 
   @override

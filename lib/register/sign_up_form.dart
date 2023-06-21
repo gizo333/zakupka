@@ -137,18 +137,7 @@ class _SignUpFormState extends State<SignUpForm> {
             await connection.close();
           }
 
-          await Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyEmailScreen(
-                checkBoxValue1: checkBoxValue1,
-                checkBoxValue2: checkBoxValue2,
-                checkBoxValue3: checkBoxValue3,
-              ),
-            ),
-          );
 
-         // Navigator.pushReplacementNamed(context, '/verify_email');
 
 
 
@@ -199,17 +188,7 @@ class _SignUpFormState extends State<SignUpForm> {
           }
 
 
-          await Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyEmailScreen(
-                checkBoxValue1: checkBoxValue1,
-                checkBoxValue2: checkBoxValue2,
-                checkBoxValue3: checkBoxValue3,
-              ),
-            ),
-          );
-         // Navigator.pushReplacementNamed(context, '/verify_email');
+
 
 
         }  else if (checkBoxValue3) {
@@ -258,18 +237,9 @@ class _SignUpFormState extends State<SignUpForm> {
           }
 
 
-          await Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => VerifyEmailScreen(
-                checkBoxValue1: checkBoxValue1,
-                checkBoxValue2: checkBoxValue2,
-                checkBoxValue3: checkBoxValue3,
-              ),
-            ),
-          );
 
-          //Navigator.pushReplacementNamed(context, '/verify_email');
+
+
         }
 
 
@@ -278,6 +248,18 @@ class _SignUpFormState extends State<SignUpForm> {
       // Обработка ошибок регистрации
       print(e);
     }
+
+    await Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => VerifyEmailScreen(
+          checkBoxValue1: checkBoxValue1,
+          checkBoxValue2: checkBoxValue2,
+          checkBoxValue3: checkBoxValue3,
+        ),
+      ),
+    );
+
   }
 
 
