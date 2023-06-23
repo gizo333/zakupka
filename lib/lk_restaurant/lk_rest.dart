@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:postgres/postgres.dart';
 import '../pages/account_screen.dart';
-
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
@@ -12,18 +12,59 @@ class Kabinet extends StatefulWidget {
 
 class _KabinetState extends State<Kabinet> {
   final user = FirebaseAuth.instance.currentUser;
+  String restaurantName = ''; // Переменная для хранения названия ресторана
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRestaurantName(); // Вызываем функцию при инициализации
+  }
+
+  void fetchRestaurantName() async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    await connection.open();
+
+    final userSotrudResults = await connection.query(
+      'SELECT name_rest FROM users_sotrud WHERE user_id = @userId;',
+      substitutionValues: {'userId': user?.uid},
+    );
+
+    final restaurantResults = await connection.query(
+      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
+      substitutionValues: {'userId': user?.uid},
+    );
+
+    if (userSotrudResults.isNotEmpty) {
+      setState(() {
+        restaurantName = userSotrudResults[0][0].toString();
+      });
+    } else if (restaurantResults.isNotEmpty) {
+      setState(() {
+        restaurantName = restaurantResults[0][0].toString();
+      });
+    }
+
+    await connection.close();
+  }   // отображение название ресторана в зависимости кто заходит
 
   void goInvent() {
     if (user != null) {
       Navigator.pushNamed(context, '/table');
     }
-  }
+  } // функции пути
 
   void goStop() {
     if (user != null) {
       Navigator.pushNamed(context, '/stop');
     }
-  }
+  }  // функции пути
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +72,7 @@ class _KabinetState extends State<Kabinet> {
       backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Кабинет'),
+        title: Text(restaurantName.isNotEmpty ? restaurantName : ""),
         actions: [
           IconButton(
             onPressed: () {
