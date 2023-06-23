@@ -21,7 +21,21 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
     try {
       await postgresConnection.open();
-      final results = await postgresConnection.query('SELECT restaurant_name FROM join_requests WHERE status = \'pending\'');
+      final userRestaurant = 'Erwin'; // Замените 'Erwin' на фактическое значение поля "user_restaurant"
+
+      final results = await postgresConnection.query('''
+  SELECT jr.restaurant_name
+  FROM join_requests jr
+  JOIN restaurant r ON jr.restaurant_name = r.restaurant
+  WHERE r.restaurant = '$userRestaurant'
+''');
+
+
+
+
+
+
+
       postgresConnection.close();
 
       final list = results.map((row) => row[0] as String).toList();

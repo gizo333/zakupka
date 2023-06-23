@@ -114,4 +114,3 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     );
   }
 }
-
