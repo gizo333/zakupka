@@ -15,6 +15,9 @@ class TableView extends StatefulWidget {
 }
 
 class _TableViewState extends State<TableView> {
+  List<PositionClass> _originalList = []; // Copy of the original list
+  String _searchQuery = '';
+
   late String userId; // Идентификатор пользователя
 
   Future<void> initializeFirebase() async {
@@ -24,18 +27,44 @@ class _TableViewState extends State<TableView> {
     });
   }
 
-
   List<PositionClass> _lists = [];
   bool _sortAsc = true;
   // ignore: unused_field
   int? _sortColumnIndex;
   Color? errorColor;
 
+  void _filterList() {
+    setState(() {
+      _lists = _originalList.where((position) {
+        final name = position.name.toLowerCase();
+        return name.contains(_searchQuery.toLowerCase());
+      }).toList();
+    });
+  }
+
+  void _resetSearch() {
+    setState(() {
+      _searchQuery = '';
+      _lists = List.from(_originalList);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     initializeFirebase();
-    _lists = [];
+    loadOriginalList();
+    // _lists = [];
+    // _originalList = []; // Initialize the original list
+  }
+
+  void loadOriginalList() {
+    // Load the original list from a data source
+    // For example, you can fetch data from a database or read from a file
+    setState(() {
+      _originalList = [];
+      _lists = List.from(_originalList);
+    });
   }
 
   @override
@@ -73,11 +102,31 @@ class _TableViewState extends State<TableView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: 'Search',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                    _filterList();
+                  });
+                },
+              ),
+            ),
+            // IconButton(
+            //   icon: Icon(Icons.close),
+            //   onPressed: _resetSearch,
+            // ),
+            // Table c
             Row(
               children: [
                 for (int columnIndex = 0;
-                columnIndex < columns.length;
-                columnIndex++)
+                    columnIndex < columns.length;
+                    columnIndex++)
                   Expanded(
                     child: InkWell(
                       onTap: () {
@@ -115,7 +164,7 @@ class _TableViewState extends State<TableView> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content:
-                          Text('Item dismissed: ${_lists[index].name}'),
+                              Text('Item dismissed: ${_lists[index].name}'),
                         ),
                       );
                       setState(() {
@@ -160,7 +209,7 @@ class _TableViewState extends State<TableView> {
                                         if (parsedValue != null) {
                                           position.code = parsedValue;
                                           errorColor =
-                                          null; // Сброс цвета ошибки
+                                              null; // Сброс цвета ошибки
                                         } else {
                                           position.code = null;
                                           errorColor = Colors.red;
@@ -193,7 +242,7 @@ class _TableViewState extends State<TableView> {
                                   decoration: const InputDecoration(
                                       filled: true,
                                       fillColor:
-                                      Color.fromARGB(255, 230, 230, 230),
+                                          Color.fromARGB(255, 230, 230, 230),
                                       border: OutlineInputBorder(),
                                       hintText: 'Наименование'),
                                   maxLines: null,
@@ -220,7 +269,7 @@ class _TableViewState extends State<TableView> {
                                   decoration: const InputDecoration(
                                       filled: true,
                                       fillColor:
-                                      Color.fromARGB(255, 230, 230, 230),
+                                          Color.fromARGB(255, 230, 230, 230),
                                       border: OutlineInputBorder(),
                                       hintText: 'ед изм'),
                                   controller: position.mlController,
@@ -245,7 +294,7 @@ class _TableViewState extends State<TableView> {
                                   decoration: const InputDecoration(
                                       filled: true,
                                       fillColor:
-                                      Color.fromARGB(255, 230, 230, 230),
+                                          Color.fromARGB(255, 230, 230, 230),
                                       border: OutlineInputBorder(),
                                       hintText: 'Итог'),
                                   maxLines: null,
@@ -296,7 +345,6 @@ class _TableViewState extends State<TableView> {
     );
   }
 
-
   late String _filePath;
   // ignore: unused_field
   bool _conversionSuccessful = false;
@@ -326,6 +374,7 @@ class _TableViewState extends State<TableView> {
         setState(() {
           _lists.add(PositionClass(
               int.tryParse(resultArray[i][0]), resultArray[i][1], null, null));
+          _originalList = List.from(_lists);
         });
       }
 
@@ -351,7 +400,7 @@ class _TableViewState extends State<TableView> {
           compareNumeric(ascending, user1.code ?? 0, user2.code ?? 0));
     } else if (columnIndex == 1) {
       _lists.sort(
-              (user1, user2) => compareString(ascending, user1.name, user2.name));
+          (user1, user2) => compareString(ascending, user1.name, user2.name));
     } else if (columnIndex == 2) {
       _lists.sort((user1, user2) =>
           compareNumeric(ascending, user1.ml ?? 0, user2.ml ?? 0));
@@ -369,15 +418,7 @@ class _TableViewState extends State<TableView> {
   void addNewField() {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
+      _originalList = List.from(_lists);
     });
   }
-
-
-
-
-
-
-
-
-
 }
