@@ -61,7 +61,7 @@ class _LkUserState extends State<LkUser> {
                     backgroundColor: Colors.white70,
                     shadowColor: Colors.blueGrey,
                   ),
-                  child: const Text("Инвентаризация"),
+                  child: const Text("Вакансии"),
                 ),
                 ElevatedButton(
                   onPressed: (){},
@@ -70,7 +70,7 @@ class _LkUserState extends State<LkUser> {
                     backgroundColor: Colors.white70,
                     shadowColor: Colors.blueGrey,
                   ),
-                  child: const Text("Стоп-Минимум"),
+                  child: const Text("Кнопка"),
                 ),
               ],
             ),

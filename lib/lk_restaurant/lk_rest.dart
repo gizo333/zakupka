@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../pages/account_screen.dart';
 
-import 'account_screen.dart';
-import 'home_screen.dart';
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);

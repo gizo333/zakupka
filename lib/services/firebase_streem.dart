@@ -1,8 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:new_flut_proj/pages/kabinet.dart';
+import '../lk_restaurant/lk_rest.dart';
 import '../register/verify_email_screen.dart';
-import 'package:new_flut_proj/register/verify_email_screen.dart';
 import '/pages/home_screen.dart';
 
 //Общий смысл этого кода заключается в том, что FirebaseStream - это виджет, который отслеживает изменения состояния аутентификации

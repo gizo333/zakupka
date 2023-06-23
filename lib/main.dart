@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
-import 'package:new_flut_proj/pages/kabinet.dart';
-import 'package:new_flut_proj/pages/stop_minimum.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'package:new_flut_proj/table/tableview.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
@@ -15,6 +13,7 @@ import '/services/firebase_streem.dart';
 
 import 'firebase_options.dart';
 import 'list_to_rest/list_to_rest.dart';
+import 'lk_restaurant/lk_rest.dart';
 import 'lk_user/lk_user_sotrud.dart';
 
 

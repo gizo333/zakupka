@@ -21,9 +21,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       final results = await postgresConnection.query('SELECT restaurant FROM restaurant');
       postgresConnection.close();
 
-      final list = results
-          .map((row) => row[0] as String)
-          .toList();
+      final list = results.map((row) => row[0] as String).toList();
       return list;
     } catch (e) {
       print('Error fetching restaurants: $e');
@@ -37,7 +35,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Restaurant List'),
+        title: Text('Список ресторанов'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -59,8 +57,24 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
               itemBuilder: (context, index) {
                 final name = restaurants[index];
 
-                return ListTile(
-                  title: Text(name),
+                return Column(
+                  children: [
+                    ListTile(
+                      title: Text(name),
+                      trailing: ElevatedButton(
+                        onPressed: () {
+                          // Действия при нажатии на кнопку "Вступить"
+                          // Можно добавить навигацию на другую страницу или выполнить другие операции
+                        },
+                        child: Text('Вступить'),
+                      ),
+                    ),
+                    Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: Colors.grey,
+                    ),
+                  ],
                 );
               },
             );
