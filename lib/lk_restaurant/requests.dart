@@ -1,13 +1,16 @@
+
+
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 
-class RestaurantListPage extends StatefulWidget {
+
+class JoinRequestsPage extends StatefulWidget {
   @override
-  _RestaurantListPageState createState() => _RestaurantListPageState();
+  _JoinRequestsPageState createState() => _JoinRequestsPageState();
 }
 
-class _RestaurantListPageState extends State<RestaurantListPage> {
-  Future<List<String>> fetchRestaurants() async {
+class _JoinRequestsPageState extends State<JoinRequestsPage> {
+  Future<List<String>> fetchJoinRequests() async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -18,20 +21,20 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
     try {
       await postgresConnection.open();
-      final results = await postgresConnection.query('SELECT restaurant FROM restaurant');
+      final results = await postgresConnection.query('SELECT restaurant_name FROM join_requests WHERE status = \'pending\'');
       postgresConnection.close();
 
       final list = results.map((row) => row[0] as String).toList();
       return list;
     } catch (e) {
-      print('Error fetching restaurants: $e');
+      print('Error fetching join requests: $e');
       throw e;
     } finally {
       await postgresConnection.close();
     }
   }
 
-  Future<void> sendJoinRequest(String restaurantName) async {
+  Future<void> acceptJoinRequest(String restaurantName) async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -43,11 +46,16 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     try {
       await postgresConnection.open();
       await postgresConnection.execute(
-        "INSERT INTO join_requests (restaurant_name, status) VALUES ('${restaurantName}', 'pending')",
+        "UPDATE users_sotrud SET name_rest = '${restaurantName}'",
       );
-      print('Join request sent successfully');
+      await postgresConnection.execute(
+        "UPDATE join_requests SET status = 'accepted' WHERE restaurant_name = '${restaurantName}'",
+      );
+      print('Join request accepted');
+
+      Navigator.pushNamed(context, '/kabinet'); // Переход на страницу '/kabinet' после принятия запроса
     } catch (e) {
-      print('Error sending join request: $e');
+      print('Error accepting join request: $e');
       throw e;
     } finally {
       await postgresConnection.close();
@@ -58,7 +66,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Список ресторанов'),
+        title: Text('Запросы на присоединение'),
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
@@ -67,28 +75,28 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         ),
       ),
       body: FutureBuilder<List<String>>(
-        future: fetchRestaurants(),
+        future: fetchJoinRequests(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(
               child: CircularProgressIndicator(),
             );
           } else if (snapshot.hasData) {
-            final restaurants = snapshot.data!;
+            final joinRequests = snapshot.data!;
             return ListView.builder(
-              itemCount: restaurants.length,
+              itemCount: joinRequests.length,
               itemBuilder: (context, index) {
-                final name = restaurants[index];
+                final restaurantName = joinRequests[index];
 
                 return Column(
                   children: [
                     ListTile(
-                      title: Text(name),
+                      title: Text(restaurantName),
                       trailing: ElevatedButton(
                         onPressed: () {
-                          sendJoinRequest(name); // Отправка запроса на присоединение к ресторану
+                          acceptJoinRequest(restaurantName); // Принятие запроса на присоединение
                         },
-                        child: Text('Вступить'),
+                        child: Text('Принять'),
                       ),
                     ),
                     Divider(
@@ -114,4 +122,3 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     );
   }
 }
-

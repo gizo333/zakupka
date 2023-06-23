@@ -64,7 +64,7 @@ class _KabinetState extends State<Kabinet> {
 
   void goStop() {
     if (user != null) {
-      Navigator.pushNamed(context, '/stop');
+      Navigator.pushNamed(context, '/requests');
     }
   }
 
@@ -123,7 +123,7 @@ class _KabinetState extends State<Kabinet> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: goStop,
                     style: ElevatedButton.styleFrom(
                       foregroundColor: Colors.black,
                       backgroundColor: Colors.white70,

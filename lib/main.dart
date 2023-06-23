@@ -6,6 +6,7 @@ import 'package:new_flut_proj/table/tableview.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
+import 'lk_restaurant/requests.dart';
 import 'register/login_screen.dart';
 import 'package:new_flut_proj/register/sign_up_screen.dart';
 import '/services/firebase_streem.dart';
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
           checkBoxValue3: checkBoxValue3,),
         '/restaurantList': (context) => RestaurantListPage(),
         '/lk-user': (context) => LkUser(),
+        '/requests': (context) => JoinRequestsPage(),
 
       },
       initialRoute: '/',
