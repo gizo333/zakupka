@@ -85,7 +85,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       } else if (checkBoxValue2) {
         Navigator.pushReplacementNamed(context, '/stop');
       } else if (checkBoxValue3) {
-        Navigator.pushReplacementNamed(context, '/table');
+        Navigator.pushReplacementNamed(context, '/lk-user');
       }
     }
 

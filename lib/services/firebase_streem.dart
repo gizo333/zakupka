@@ -10,9 +10,9 @@ import '/pages/home_screen.dart';
 class FirebaseStream extends StatelessWidget {
   const FirebaseStream({super.key});
 
-  get checkBoxValue1 => null;
-  get checkBoxValue2 => null;
-  get checkBoxValue3 => null;
+  get checkBoxValue1 => bool;
+  get checkBoxValue2 => bool;
+  get checkBoxValue3 => bool;
 
   @override
   Widget build(BuildContext context) {

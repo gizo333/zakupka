@@ -31,6 +31,29 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
   }
 
+  Future<void> addToUsersTable(String restaurantName) async {
+    final postgresConnection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    try {
+      await postgresConnection.open();
+      await postgresConnection.execute(
+        "UPDATE users_sotrud SET name_rest = '${restaurantName}'",
+      );
+      print('Record updated successfully');
+    } catch (e) {
+      print('Error updating record: $e');
+      throw e;
+    } finally {
+      await postgresConnection.close();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,6 +86,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                       title: Text(name),
                       trailing: ElevatedButton(
                         onPressed: () {
+                          addToUsersTable(name); // Запись названия ресторана в таблицу users_sotrud
                           // Действия при нажатии на кнопку "Вступить"
                           // Можно добавить навигацию на другую страницу или выполнить другие операции
                         },
