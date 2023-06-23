@@ -64,8 +64,17 @@ class _LoginScreenState extends State<LoginScreen> {
           });
 
           if (results.isNotEmpty) {
-            navigator.pushNamedAndRemoveUntil('/lk-user', (Route<dynamic> route) => false);
-            return;
+            final nameRest = results.first[6] as String?;
+
+            if (nameRest != null && nameRest.isNotEmpty && nameRest != 'null') {
+              // Поле name_rest имеет значение, отличное от пустой строки и 'null'
+              navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
+              return;
+            } else {
+              // Поле name_rest пустое, равно 'null' или равно null
+              navigator.pushNamedAndRemoveUntil('/lk-user', (Route<dynamic> route) => false);
+              return;
+            }
           }
 
           final query2 = 'SELECT * FROM restaurant WHERE user_id = @userId';

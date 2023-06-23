@@ -46,6 +46,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         "UPDATE users_sotrud SET name_rest = '${restaurantName}'",
       );
       print('Record updated successfully');
+
+      // Переход на страницу '/kabinet' после успешной записи
+      Navigator.pushNamed(context, '/kabinet');
     } catch (e) {
       print('Error updating record: $e');
       throw e;
