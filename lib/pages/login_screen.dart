@@ -64,7 +64,7 @@ class _LoginScreenState extends State<LoginScreen> {
           });
 
           if (results.isNotEmpty) {
-            navigator.pushNamedAndRemoveUntil('/account', (Route<dynamic> route) => false);
+            navigator.pushNamedAndRemoveUntil('/lk-user', (Route<dynamic> route) => false);
             return;
           }
 

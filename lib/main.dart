@@ -14,6 +14,8 @@ import '/services/firebase_streem.dart';
 
 
 import 'firebase_options.dart';
+import 'list_to_rest/list_to_rest.dart';
+import 'lk_user/lk_user_sotrud.dart';
 
 
 void main() async {
@@ -56,7 +58,8 @@ class MyApp extends StatelessWidget {
         '/verify_email': (context) => VerifyEmailScreen(checkBoxValue1: checkBoxValue1,
           checkBoxValue2: checkBoxValue2,
           checkBoxValue3: checkBoxValue3,),
-        '/stop': (context) => RestaurantListPage(),
+        '/restaurantList': (context) => RestaurantListPage(),
+        '/lk-user': (context) => LkUser(),
 
       },
       initialRoute: '/',
