@@ -12,13 +12,34 @@ class Kabinet extends StatefulWidget {
 
 class _KabinetState extends State<Kabinet> {
   final user = FirebaseAuth.instance.currentUser;
-  String restaurantName = ''; // Переменная для хранения названия ресторана
+  String restaurantName = '';
+  List<List<dynamic>> restaurantResults = [];
 
   @override
   void initState() {
     super.initState();
-    fetchRestaurantName(); // Вызываем функцию при инициализации
+    fetchRestaurantName();
+    fetchRestaurantData();
   }
+
+  void fetchRestaurantData() async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    await connection.open();
+
+    restaurantResults = await connection.query(
+      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
+      substitutionValues: {'userId': user?.uid},
+    );
+
+    await connection.close();
+  } // проверка что из бд restaurant
 
   void fetchRestaurantName() async {
     final connection = PostgreSQLConnection(
@@ -36,11 +57,6 @@ class _KabinetState extends State<Kabinet> {
       substitutionValues: {'userId': user?.uid},
     );
 
-    final restaurantResults = await connection.query(
-      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
-      substitutionValues: {'userId': user?.uid},
-    );
-
     if (userSotrudResults.isNotEmpty) {
       setState(() {
         restaurantName = userSotrudResults[0][0].toString();
@@ -52,19 +68,20 @@ class _KabinetState extends State<Kabinet> {
     }
 
     await connection.close();
-  }   // отображение название ресторана в зависимости кто заходит
+  } // в зависимости из какой бд, и что указано в поле название ресторана, выводим имя ресторана
+
 
   void goInvent() {
     if (user != null) {
       Navigator.pushNamed(context, '/table');
     }
-  } // функции пути
+  }
 
   void goStop() {
     if (user != null) {
       Navigator.pushNamed(context, '/stop');
     }
-  }  // функции пути
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -72,7 +89,7 @@ class _KabinetState extends State<Kabinet> {
       backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: Text(restaurantName.isNotEmpty ? restaurantName : ""),
+        title: Text(restaurantName),
         actions: [
           IconButton(
             onPressed: () {
@@ -116,20 +133,21 @@ class _KabinetState extends State<Kabinet> {
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    backgroundColor: Colors.white70,
-                    shadowColor: Colors.blueGrey,
+            if (restaurantResults.isNotEmpty)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      shadowColor: Colors.blueGrey,
+                    ),
+                    child: const Text("Запросы"),
                   ),
-                  child: const Text("Заказ"),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
