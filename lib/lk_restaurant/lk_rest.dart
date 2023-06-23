@@ -13,33 +13,13 @@ class Kabinet extends StatefulWidget {
 class _KabinetState extends State<Kabinet> {
   final user = FirebaseAuth.instance.currentUser;
   String restaurantName = '';
-  List<List<dynamic>> restaurantResults = [];
+  bool isInRestaurantTable = false;
 
   @override
   void initState() {
     super.initState();
     fetchRestaurantName();
-    fetchRestaurantData();
   }
-
-  void fetchRestaurantData() async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
-
-    await connection.open();
-
-    restaurantResults = await connection.query(
-      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
-      substitutionValues: {'userId': user?.uid},
-    );
-
-    await connection.close();
-  } // проверка что из бд restaurant
 
   void fetchRestaurantName() async {
     final connection = PostgreSQLConnection(
@@ -57,6 +37,11 @@ class _KabinetState extends State<Kabinet> {
       substitutionValues: {'userId': user?.uid},
     );
 
+    final restaurantResults = await connection.query(
+      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
+      substitutionValues: {'userId': user?.uid},
+    );
+
     if (userSotrudResults.isNotEmpty) {
       setState(() {
         restaurantName = userSotrudResults[0][0].toString();
@@ -64,12 +49,12 @@ class _KabinetState extends State<Kabinet> {
     } else if (restaurantResults.isNotEmpty) {
       setState(() {
         restaurantName = restaurantResults[0][0].toString();
+        isInRestaurantTable = true;
       });
     }
 
     await connection.close();
-  } // в зависимости из какой бд, и что указано в поле название ресторана, выводим имя ресторана
-
+  }
 
   void goInvent() {
     if (user != null) {
@@ -133,7 +118,7 @@ class _KabinetState extends State<Kabinet> {
                 ),
               ],
             ),
-            if (restaurantResults.isNotEmpty)
+            if (isInRestaurantTable)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
