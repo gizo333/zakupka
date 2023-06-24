@@ -81,13 +81,22 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
     try {
       await postgresConnection.open();
+
       await postgresConnection.execute(
-        "UPDATE users_sotrud SET name_rest = '${restaurantName}'",
+        "UPDATE users_sotrud SET name_rest = '$restaurantName'",
       );
+
       await postgresConnection.execute(
-        "UPDATE join_requests SET status = 'accepted' WHERE restaurant_name = '${restaurantName}'",
+        "UPDATE join_requests SET status = 'accepted' WHERE restaurant_name = '$restaurantName'",
       );
+
       print('Join request accepted');
+
+      await postgresConnection.execute(
+        "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName'",
+      );
+
+      print('Join request deleted');
 
       Navigator.pushNamed(context, '/kabinet');
     } catch (e) {
@@ -97,6 +106,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       await postgresConnection.close();
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
