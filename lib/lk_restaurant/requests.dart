@@ -1,8 +1,6 @@
-
-
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 class JoinRequestsPage extends StatefulWidget {
   @override
@@ -10,6 +8,23 @@ class JoinRequestsPage extends StatefulWidget {
 }
 
 class _JoinRequestsPageState extends State<JoinRequestsPage> {
+  String currentUserId = ''; // Идентификатор текущего пользователя
+
+  @override
+  void initState() {
+    super.initState();
+    getCurrentUser(); // Получение текущего пользователя при инициализации
+  }
+
+  Future<void> getCurrentUser() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      setState(() {
+        currentUserId = user.uid; // Установка идентификатора текущего пользователя
+      });
+    }
+  }
+
   Future<List<String>> fetchJoinRequests() async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
@@ -21,20 +36,14 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
     try {
       await postgresConnection.open();
-      final userRestaurant = 'Erwin'; // Замените 'Erwin' на фактическое значение поля "user_restaurant"
+
+      final userRestaurant = await _fetchUserRestaurant(postgresConnection, currentUserId);
 
       final results = await postgresConnection.query('''
-  SELECT jr.restaurant_name
-  FROM join_requests jr
-  JOIN restaurant r ON jr.restaurant_name = r.restaurant
-  WHERE r.restaurant = '$userRestaurant'
-''');
-
-
-
-
-
-
+        SELECT jr.restaurant_name
+        FROM join_requests jr
+        WHERE jr.restaurant_name = '$userRestaurant'
+      ''');
 
       postgresConnection.close();
 
@@ -46,6 +55,19 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     } finally {
       await postgresConnection.close();
     }
+  }
+
+  Future<String> _fetchUserRestaurant(PostgreSQLConnection connection, String currentUserId) async {
+    final userRestaurantQuery = 'SELECT restaurant FROM restaurant WHERE user_id = \'$currentUserId\'';
+
+    final userRestaurantResult = await connection.query(userRestaurantQuery);
+
+    if (userRestaurantResult.isEmpty) {
+      throw Exception('User restaurant not found');
+    }
+
+    final userRestaurant = userRestaurantResult[0][0] as String;
+    return userRestaurant;
   }
 
   Future<void> acceptJoinRequest(String restaurantName) async {
@@ -67,7 +89,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       );
       print('Join request accepted');
 
-      Navigator.pushNamed(context, '/kabinet'); // Переход на страницу '/kabinet' после принятия запроса
+      Navigator.pushNamed(context, '/kabinet');
     } catch (e) {
       print('Error accepting join request: $e');
       throw e;
@@ -84,7 +106,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         leading: IconButton(
           icon: Icon(Icons.arrow_back),
           onPressed: () {
-            Navigator.pop(context); // Возврат на предыдущую страницу
+            Navigator.pop(context);
           },
         ),
       ),
@@ -108,7 +130,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       title: Text(restaurantName),
                       trailing: ElevatedButton(
                         onPressed: () {
-                          acceptJoinRequest(restaurantName); // Принятие запроса на присоединение
+                          acceptJoinRequest(restaurantName);
                         },
                         child: Text('Принять'),
                       ),
