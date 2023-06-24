@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
           });
 
           if (results2.isNotEmpty) {
-            navigator.pushNamedAndRemoveUntil('/table', (Route<dynamic> route) => false);
+            navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
             return;
           }
 

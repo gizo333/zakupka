@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:postgres/postgres.dart';
 
 class RestaurantListPage extends StatefulWidget {
@@ -7,6 +8,9 @@ class RestaurantListPage extends StatefulWidget {
 }
 
 class _RestaurantListPageState extends State<RestaurantListPage> {
+  FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  Map<String, bool> joinRequests = {}; // Словарь для хранения состояний запросов для каждого ресторана
+
   Future<List<String>> fetchRestaurants() async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
@@ -31,7 +35,36 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
   }
 
-  Future<void> addToUsersTable(String restaurantName) async {
+  Future<String> getUserFullName(String userId) async {
+    final postgresConnection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    try {
+      await postgresConnection.open();
+      final result = await postgresConnection.query('SELECT full_name FROM users_sotrud WHERE user_id = \'$userId\'');
+      postgresConnection.close();
+
+      if (result.isNotEmpty) {
+        final fullName = result.first[0] as String;
+        return fullName;
+      } else {
+        return '';
+      }
+    } catch (e) {
+      print('Error fetching user full name: $e');
+      throw e;
+    } finally {
+      await postgresConnection.close();
+    }
+  }
+
+
+  Future<void> sendJoinRequest(String restaurantName, String userFullName) async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -43,14 +76,15 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     try {
       await postgresConnection.open();
       await postgresConnection.execute(
-        "UPDATE users_sotrud SET name_rest = '${restaurantName}'",
+        "INSERT INTO join_requests (restaurant_name, user_full_name, status) VALUES ('$restaurantName', '$userFullName', 'pending')",
       );
-      print('Record updated successfully');
-
-      // Переход на страницу '/kabinet' после успешной записи
-      Navigator.pushNamed(context, '/kabinet');
+      print('Join request sent successfully');
+      // После успешной отправки запроса, устанавливаем состояние запроса для данного ресторана и пользователя
+      setState(() {
+        joinRequests[restaurantName] = true;
+      });
     } catch (e) {
-      print('Error updating record: $e');
+      print('Error sending join request: $e');
       throw e;
     } finally {
       await postgresConnection.close();
@@ -78,30 +112,71 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
             );
           } else if (snapshot.hasData) {
             final restaurants = snapshot.data!;
-            return ListView.builder(
-              itemCount: restaurants.length,
-              itemBuilder: (context, index) {
-                final name = restaurants[index];
+            return FutureBuilder<User?>(
+              future: _firebaseAuth.authStateChanges().first,
+              builder: (context, userSnapshot) {
+                if (userSnapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: CircularProgressIndicator(),
+                  );
+                } else if (userSnapshot.hasData) {
+                  final userId = userSnapshot.data!.uid;
+                  return FutureBuilder<String>(
+                    future: getUserFullName(userId),
+                    builder: (context, fullNameSnapshot) {
+                      if (fullNameSnapshot.connectionState == ConnectionState.waiting) {
+                        return Center(
+                          child: CircularProgressIndicator(),
+                        );
+                      } else if (fullNameSnapshot.hasData) {
+                        final userFullName = fullNameSnapshot.data!;
+                        return ListView.builder(
+                          itemCount: restaurants.length,
+                          itemBuilder: (context, index) {
+                            final name = restaurants[index];
+                            final isRequestSent = joinRequests[name] ?? false; // Получаем состояние запроса для данного ресторана и пользователя
 
-                return Column(
-                  children: [
-                    ListTile(
-                      title: Text(name),
-                      trailing: ElevatedButton(
-                        onPressed: () {
-                          addToUsersTable(name); // Запись названия ресторана в таблицу users_sotrud
-                          // Действия при нажатии на кнопку "Вступить"
-                          // Можно добавить навигацию на другую страницу или выполнить другие операции
-                        },
-                        child: Text('Вступить'),
-                      ),
-                    ),
-                    Divider(
-                      height: 1,
-                      thickness: 1,
-                      color: Colors.grey,
-                    ),
-                  ],
+                            return Column(
+                              children: [
+                                ListTile(
+                                  title: Text(name),
+                                  trailing: ElevatedButton(
+                                    onPressed: isRequestSent
+                                        ? null // Если запрос отправлен, делаем кнопку недоступной
+                                        : () {
+                                      sendJoinRequest(name, userFullName); // Отправка запроса на присоединение к ресторану с именем пользователя
+                                    },
+                                    child: Text('Вступить'),
+                                  ),
+                                ),
+                                Divider(
+                                  height: 1,
+                                  thickness: 1,
+                                  color: Colors.grey,
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      } else if (fullNameSnapshot.hasError) {
+                        return Center(
+                          child: Text('Error: ${fullNameSnapshot.error}'),
+                        );
+                      }
+
+                      return Center(
+                        child: Text('No data available'),
+                      );
+                    },
+                  );
+                } else if (userSnapshot.hasError) {
+                  return Center(
+                    child: Text('Error: ${userSnapshot.error}'),
+                  );
+                }
+
+                return Center(
+                  child: Text('No data available'),
                 );
               },
             );

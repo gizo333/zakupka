@@ -15,6 +15,9 @@ class TableView extends StatefulWidget {
 }
 
 class _TableViewState extends State<TableView> {
+  List<PositionClass> _originalList = []; // Copy of the original list
+  String _searchQuery = '';
+
   late String userId; // Идентификатор пользователя
 
   Future<void> initializeFirebase() async {
@@ -24,18 +27,44 @@ class _TableViewState extends State<TableView> {
     });
   }
 
-
   List<PositionClass> _lists = [];
   bool _sortAsc = true;
   // ignore: unused_field
   int? _sortColumnIndex;
   Color? errorColor;
 
+  void _filterList() {
+    setState(() {
+      _lists = _originalList.where((position) {
+        final name = position.name.toLowerCase();
+        return name.contains(_searchQuery.toLowerCase());
+      }).toList();
+    });
+  }
+
+  void _resetSearch() {
+    setState(() {
+      _searchQuery = '';
+      _lists = List.from(_originalList);
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     initializeFirebase();
-    _lists = [];
+    loadOriginalList();
+    // _lists = [];
+    // _originalList = []; // Initialize the original list
+  }
+
+  void loadOriginalList() {
+    // Load the original list from a data source
+    // For example, you can fetch data from a database or read from a file
+    setState(() {
+      _originalList = [];
+      _lists = List.from(_originalList);
+    });
   }
 
   @override
@@ -73,6 +102,26 @@ class _TableViewState extends State<TableView> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              child: TextField(
+                decoration: InputDecoration(
+                  labelText: 'Search',
+                  prefixIcon: Icon(Icons.search),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _searchQuery = value;
+                    _filterList();
+                  });
+                },
+              ),
+            ),
+            // IconButton(
+            //   icon: Icon(Icons.close),
+            //   onPressed: _resetSearch,
+            // ),
+            // Table c
             Row(
               children: [
                 for (int columnIndex = 0;
@@ -296,7 +345,6 @@ class _TableViewState extends State<TableView> {
     );
   }
 
-
   late String _filePath;
   // ignore: unused_field
   bool _conversionSuccessful = false;
@@ -326,6 +374,7 @@ class _TableViewState extends State<TableView> {
         setState(() {
           _lists.add(PositionClass(
               int.tryParse(resultArray[i][0]), resultArray[i][1], null, null));
+          _originalList = List.from(_lists);
         });
       }
 
@@ -369,15 +418,7 @@ class _TableViewState extends State<TableView> {
   void addNewField() {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
+      _originalList = List.from(_lists);
     });
   }
-
-
-
-
-
-
-
-
-
 }
