@@ -25,7 +25,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     }
   }
 
-  Future<List<String>> fetchJoinRequests() async {
+  Future<List<JoinRequest>> fetchJoinRequests() async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -40,14 +40,17 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       final userRestaurant = await _fetchUserRestaurant(postgresConnection, currentUserId);
 
       final results = await postgresConnection.query('''
-        SELECT jr.restaurant_name
+        SELECT jr.restaurant_name, jr.user_full_name
         FROM join_requests jr
         WHERE jr.restaurant_name = '$userRestaurant'
       ''');
 
       postgresConnection.close();
 
-      final list = results.map((row) => row[0] as String).toList();
+      final list = results.map((row) => JoinRequest(
+        restaurantName: row[0] as String,
+        userFullName: row[1] as String,
+      )).toList();
       return list;
     } catch (e) {
       print('Error fetching join requests: $e');
@@ -81,22 +84,16 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
     try {
       await postgresConnection.open();
-
       await postgresConnection.execute(
         "UPDATE users_sotrud SET name_rest = '$restaurantName'",
       );
-
       await postgresConnection.execute(
         "UPDATE join_requests SET status = 'accepted' WHERE restaurant_name = '$restaurantName'",
       );
-
-      print('Join request accepted');
-
       await postgresConnection.execute(
         "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName'",
       );
-
-      print('Join request deleted');
+      print('Join request accepted');
 
       Navigator.pushNamed(context, '/kabinet');
     } catch (e) {
@@ -106,7 +103,6 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       await postgresConnection.close();
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +116,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
           },
         ),
       ),
-      body: FutureBuilder<List<String>>(
+      body: FutureBuilder<List<JoinRequest>>(
         future: fetchJoinRequests(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -132,15 +128,16 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
             return ListView.builder(
               itemCount: joinRequests.length,
               itemBuilder: (context, index) {
-                final restaurantName = joinRequests[index];
+                final request = joinRequests[index];
 
                 return Column(
                   children: [
                     ListTile(
-                      title: Text(restaurantName),
+                      title: Text(request.restaurantName),
+                      subtitle: Text(request.userFullName),
                       trailing: ElevatedButton(
                         onPressed: () {
-                          acceptJoinRequest(restaurantName);
+                          acceptJoinRequest(request.restaurantName);
                         },
                         child: Text('Принять'),
                       ),
@@ -167,4 +164,14 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       ),
     );
   }
+}
+
+class JoinRequest {
+  final String restaurantName;
+  final String userFullName;
+
+  JoinRequest({
+    required this.restaurantName,
+    required this.userFullName,
+  });
 }
