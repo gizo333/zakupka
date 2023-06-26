@@ -6,11 +6,11 @@ import 'package:new_flut_proj/table/tableview.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
-import '/pages/login_screen.dart';
+import 'lk_restaurant/requests.dart';
+import 'register/login_screen.dart';
 import 'package:new_flut_proj/register/sign_up_screen.dart';
 import '/services/firebase_streem.dart';
-
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'firebase_options.dart';
 import 'list_to_rest/list_to_rest.dart';
 import 'lk_restaurant/lk_rest.dart';
@@ -22,13 +22,14 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp(const MyApp());
+  runApp( MyApp());
 }
 
 
 class MyApp extends StatelessWidget {
-  const MyApp({super.key});
 
+   MyApp({super.key});
+  final User? user = FirebaseAuth.instance.currentUser;
   get checkBoxValue1 => bool;
   get checkBoxValue2 => bool;
   get checkBoxValue3 => bool;
@@ -59,6 +60,7 @@ class MyApp extends StatelessWidget {
           checkBoxValue3: checkBoxValue3,),
         '/restaurantList': (context) => RestaurantListPage(),
         '/lk-user': (context) => LkUser(),
+        '/requests': (context) => JoinRequestsPage(),
 
       },
       initialRoute: '/',

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:postgres/postgres.dart';
 import '../pages/account_screen.dart';
-
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
@@ -12,6 +12,49 @@ class Kabinet extends StatefulWidget {
 
 class _KabinetState extends State<Kabinet> {
   final user = FirebaseAuth.instance.currentUser;
+  String restaurantName = '';
+  bool isInRestaurantTable = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRestaurantName();
+  }
+
+  void fetchRestaurantName() async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    await connection.open();
+
+    final userSotrudResults = await connection.query(
+      'SELECT name_rest FROM users_sotrud WHERE user_id = @userId;',
+      substitutionValues: {'userId': user?.uid},
+    );
+
+    final restaurantResults = await connection.query(
+      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
+      substitutionValues: {'userId': user?.uid},
+    );
+
+    if (userSotrudResults.isNotEmpty) {
+      setState(() {
+        restaurantName = userSotrudResults[0][0].toString();
+      });
+    } else if (restaurantResults.isNotEmpty) {
+      setState(() {
+        restaurantName = restaurantResults[0][0].toString();
+        isInRestaurantTable = true;
+      });
+    }
+
+    await connection.close();
+  }
 
   void goInvent() {
     if (user != null) {
@@ -21,7 +64,7 @@ class _KabinetState extends State<Kabinet> {
 
   void goStop() {
     if (user != null) {
-      Navigator.pushNamed(context, '/stop');
+      Navigator.pushNamed(context, '/requests');
     }
   }
 
@@ -31,7 +74,7 @@ class _KabinetState extends State<Kabinet> {
       backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
-        title: const Text('Кабинет'),
+        title: Text(restaurantName),
         actions: [
           IconButton(
             onPressed: () {
@@ -75,20 +118,21 @@ class _KabinetState extends State<Kabinet> {
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: () {},
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    backgroundColor: Colors.white70,
-                    shadowColor: Colors.blueGrey,
+            if (isInRestaurantTable)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  ElevatedButton(
+                    onPressed: goStop,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      shadowColor: Colors.blueGrey,
+                    ),
+                    child: const Text("Запросы"),
                   ),
-                  child: const Text("Заказ"),
-                ),
-              ],
-            ),
+                ],
+              ),
           ],
         ),
       ),
