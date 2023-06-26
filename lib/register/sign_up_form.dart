@@ -9,6 +9,8 @@ class SignUpForm extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
 
+
+
   SignUpForm({Key? key, required this.auth, required this.firestore});
 
   @override
@@ -16,8 +18,10 @@ class SignUpForm extends StatefulWidget {
 }
 
 class _SignUpFormState extends State<SignUpForm> {
+  bool _isButtonActive = false;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
+  final TextEditingController confirmPasswordController = TextEditingController();
   final TextEditingController companyController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController innController = TextEditingController();
@@ -29,14 +33,36 @@ class _SignUpFormState extends State<SignUpForm> {
   static bool checkBoxValue2 = false;
   static bool checkBoxValue3 = false;
 
-
-
-
-
   String? emailError;
   String? passwordError;
+  String? confirmPasswordError;
+
+  bool isRegistrationButtonActive() {
+    final String email = emailController.text.trim();
+    final String password = passwordController.text;
+    final String confirmPassword = confirmPasswordController.text;
+    final String company = companyController.text.trim();
+    final String phone = phoneController.text.trim();
+    final String inn = innController.text.trim();
+    final String restaurant = restaurantController.text.trim();
+    final String fullName = fullNameController.text.trim();
+    final String position = positionController.text.trim();
+
+    return email.isNotEmpty &&
+        password.isNotEmpty &&
+        confirmPassword.isNotEmpty &&
+        checkPasswordsMatch() &&
+        (_isButtonActive || checkBoxValue1 || checkBoxValue2 || checkBoxValue3) &&
+        ((checkBoxValue1 && restaurant.isNotEmpty && fullName.isNotEmpty && position.isNotEmpty) ||
+            (checkBoxValue2 && company.isNotEmpty && phone.isNotEmpty && inn.isNotEmpty) ||
+            (checkBoxValue3 && fullName.isNotEmpty && position.isNotEmpty));
+  }
+
 
   Future<void> _registerUser(BuildContext context) async {
+
+
+
 
     // Проверка состояния обоих чекбоксов
     if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
@@ -61,6 +87,7 @@ class _SignUpFormState extends State<SignUpForm> {
     try {
       final String email = emailController.text.trim();
       final String password = passwordController.text;
+      final String confirmPassword = confirmPasswordController.text;
       final String company = companyController.text.trim();
       final String phone = phoneController.text.trim();
       final String inn = innController.text.trim();
@@ -84,7 +111,16 @@ class _SignUpFormState extends State<SignUpForm> {
         return;
       }
 
-      UserCredential userCredential = await widget.auth.createUserWithEmailAndPassword(
+      // Проверка совпадения паролей
+      if (password != confirmPassword) {
+        setState(() {
+          confirmPasswordError = 'Пароли не совпадают';
+        });
+        return;
+      }
+
+      UserCredential userCredential =
+      await widget.auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -136,14 +172,12 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-
-
-
-
-
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
-          await widget.firestore.collection('restaurant').doc(user.uid).set({
+          await widget.firestore
+              .collection('restaurant')
+              .doc(user.uid)
+              .set({
             'email': email,
             'password': password,
             'restaurant': restaurant,
@@ -186,15 +220,13 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-
-
-
-
-
-        }  else if (checkBoxValue3) {
+        } else if (checkBoxValue3) {
           // Регистрация пользователя-ресторана
           final currentUser = FirebaseAuth.instance.currentUser;
-          await widget.firestore.collection('users_sotrud').doc(currentUser?.uid).set({
+          await widget.firestore
+              .collection('users_sotrud')
+              .doc(currentUser?.uid)
+              .set({
             'email': email,
             'password': password,
             'fullName': fullName,
@@ -235,19 +267,13 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-
-
-
-
-
         }
-
-
       }
     } catch (e) {
       // Обработка ошибок регистрации
       print(e);
     }
+
 
     await Navigator.pushReplacement(
       context,
@@ -259,9 +285,14 @@ class _SignUpFormState extends State<SignUpForm> {
         ),
       ),
     );
-
   }
 
+  bool checkPasswordsMatch() {
+    final String password = passwordController.text;
+    final String confirmPassword = confirmPasswordController.text;
+
+    return password == confirmPassword;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -278,6 +309,7 @@ class _SignUpFormState extends State<SignUpForm> {
           onChanged: (value) {
             setState(() {
               emailError = null;
+              _isButtonActive = isRegistrationButtonActive();
             });
           },
         ),
@@ -293,8 +325,25 @@ class _SignUpFormState extends State<SignUpForm> {
           onChanged: (value) {
             setState(() {
               passwordError = null;
+              _isButtonActive = isRegistrationButtonActive();
             });
           },
+        ),
+        SizedBox(height: 16.0),
+        TextField(
+          controller: confirmPasswordController,
+          decoration: InputDecoration(
+            labelText: 'Подтвердите пароль',
+            border: OutlineInputBorder(),
+            errorText: !checkPasswordsMatch() ? 'Пароли не совпадают' : null,
+          ),
+
+          obscureText: true,
+    onChanged: (value) {
+      setState(() {
+        _isButtonActive = isRegistrationButtonActive();
+      });
+    }
         ),
         SizedBox(height: 16.0),
         if (checkBoxValue1) ...[
@@ -304,6 +353,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'Ресторан',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
           TextField(
@@ -312,6 +366,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'ФИО',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
           TextField(
@@ -320,6 +379,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'Должность',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
         ],
@@ -331,6 +395,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'ФИО',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
           TextField(
@@ -339,6 +408,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'Должность',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
         ],
@@ -349,6 +423,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'Название компании',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
           TextField(
@@ -357,6 +436,11 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'Номер телефона',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
           TextField(
@@ -365,11 +449,15 @@ class _SignUpFormState extends State<SignUpForm> {
               labelText: 'ИНН',
               border: OutlineInputBorder(),
             ),
+              onChanged: (value) {
+                setState(() {
+                  _isButtonActive = isRegistrationButtonActive();
+                });
+              }
           ),
           SizedBox(height: 16.0),
         ],
         Column(
-          // mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Row(
               children: [
@@ -380,33 +468,14 @@ class _SignUpFormState extends State<SignUpForm> {
                       if (value != null && value) {
                         checkBoxValue1 = value;
                         checkBoxValue2 = false;
-                        checkBoxValue3 = false;// Сбросить значение второго чекбокса
+                        checkBoxValue3 = false;
                       }
                     });
                   },
                 ),
-                Text('Вы представитель ресторана'),
+                Text('Ресторан'),
               ],
             ),
-            SizedBox(width: 15.0),
-            Row(
-              children: [
-                Checkbox(
-                  value: checkBoxValue3,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      if (value != null && value) {
-                        checkBoxValue3 = value;
-                        checkBoxValue1 = false;
-                        checkBoxValue2 = false;
-                      }
-                    });
-                  },
-                ),
-                Text('Вы сотрудник ресторана'),
-              ],
-            ),
-
             Row(
               children: [
                 Checkbox(
@@ -414,32 +483,44 @@ class _SignUpFormState extends State<SignUpForm> {
                   onChanged: (bool? value) {
                     setState(() {
                       if (value != null && value) {
-                        checkBoxValue2 = value;
                         checkBoxValue1 = false;
-                        checkBoxValue3 = false;// Сбросить значение первого чекбокса
+                        checkBoxValue2 = value;
+                        checkBoxValue3 = false;
                       }
                     });
                   },
                 ),
-                Text('Вы Поставщик'),
+                Text('Компания'),
+              ],
+            ),
+            Row(
+              children: [
+                Checkbox(
+                  value: checkBoxValue3,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      if (value != null && value) {
+                        checkBoxValue1 = false;
+                        checkBoxValue2 = false;
+                        checkBoxValue3 = value;
+                      }
+                    });
+                  },
+                ),
+                Text('Пользователь'),
               ],
             ),
           ],
         ),
-        SizedBox(height: 16.0),
         ElevatedButton(
-          onPressed: () => _registerUser(context),
+          onPressed: isRegistrationButtonActive() ? () {
+            _isButtonActive = true;
+            _registerUser(context);
+          } : null,
           child: Text('Зарегистрироваться'),
-          style: ButtonStyle(
-            padding: MaterialStateProperty.all<EdgeInsets>(
-              EdgeInsets.symmetric(horizontal: 24.0, vertical: 12.0),
-            ),
-            textStyle: MaterialStateProperty.all<TextStyle>(
-              TextStyle(fontSize: 16.0),
-            ),
-          ),
         ),
       ],
     );
+
   }
 }
