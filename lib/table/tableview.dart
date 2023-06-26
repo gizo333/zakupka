@@ -125,8 +125,8 @@ class _TableViewState extends State<TableView> {
             Row(
               children: [
                 for (int columnIndex = 0;
-                columnIndex < columns.length;
-                columnIndex++)
+                    columnIndex < columns.length;
+                    columnIndex++)
                   Expanded(
                     child: InkWell(
                       onTap: () {
@@ -164,7 +164,7 @@ class _TableViewState extends State<TableView> {
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
                           content:
-                          Text('Item dismissed: ${_lists[index].name}'),
+                              Text('Item dismissed: ${_lists[index].name}'),
                         ),
                       );
                       setState(() {
@@ -209,7 +209,7 @@ class _TableViewState extends State<TableView> {
                                         if (parsedValue != null) {
                                           position.code = parsedValue;
                                           errorColor =
-                                          null; // Сброс цвета ошибки
+                                              null; // Сброс цвета ошибки
                                         } else {
                                           position.code = null;
                                           errorColor = Colors.red;
@@ -242,7 +242,7 @@ class _TableViewState extends State<TableView> {
                                   decoration: const InputDecoration(
                                       filled: true,
                                       fillColor:
-                                      Color.fromARGB(255, 230, 230, 230),
+                                          Color.fromARGB(255, 230, 230, 230),
                                       border: OutlineInputBorder(),
                                       hintText: 'Наименование'),
                                   maxLines: null,
@@ -269,7 +269,7 @@ class _TableViewState extends State<TableView> {
                                   decoration: const InputDecoration(
                                       filled: true,
                                       fillColor:
-                                      Color.fromARGB(255, 230, 230, 230),
+                                          Color.fromARGB(255, 230, 230, 230),
                                       border: OutlineInputBorder(),
                                       hintText: 'ед изм'),
                                   controller: position.mlController,
@@ -294,7 +294,7 @@ class _TableViewState extends State<TableView> {
                                   decoration: const InputDecoration(
                                       filled: true,
                                       fillColor:
-                                      Color.fromARGB(255, 230, 230, 230),
+                                          Color.fromARGB(255, 230, 230, 230),
                                       border: OutlineInputBorder(),
                                       hintText: 'Итог'),
                                   maxLines: null,
@@ -400,7 +400,7 @@ class _TableViewState extends State<TableView> {
           compareNumeric(ascending, user1.code ?? 0, user2.code ?? 0));
     } else if (columnIndex == 1) {
       _lists.sort(
-              (user1, user2) => compareString(ascending, user1.name, user2.name));
+          (user1, user2) => compareString(ascending, user1.name, user2.name));
     } else if (columnIndex == 2) {
       _lists.sort((user1, user2) =>
           compareNumeric(ascending, user1.ml ?? 0, user2.ml ?? 0));
