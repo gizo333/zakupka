@@ -33,6 +33,7 @@ dependencies:
   open_file:
   path:
   flutter_excel:
+  provider:
   path_provider:
   excel:
   file_picker:

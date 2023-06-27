@@ -16,6 +16,11 @@ class TableView extends StatefulWidget {
 
 class _TableViewState extends State<TableView> {
   List<PositionClass> _originalList = []; // Copy of the original list
+  List<PositionClass> _lists = [];
+  bool _sortAsc = true;
+  // ignore: unused_field
+  int? _sortColumnIndex;
+  Color? errorColor;
   String _searchQuery = '';
 
   late String userId; // Идентификатор пользователя
@@ -27,14 +32,9 @@ class _TableViewState extends State<TableView> {
     });
   }
 
-  List<PositionClass> _lists = [];
-  bool _sortAsc = true;
-  // ignore: unused_field
-  int? _sortColumnIndex;
-  Color? errorColor;
-
   void _filterList() {
     setState(() {
+      // меняет массив _lists
       _lists = _originalList.where((position) {
         final name = position.name.toLowerCase();
         return name.contains(_searchQuery.toLowerCase());
@@ -53,18 +53,8 @@ class _TableViewState extends State<TableView> {
   void initState() {
     super.initState();
     initializeFirebase();
-    loadOriginalList();
-    // _lists = [];
-    // _originalList = []; // Initialize the original list
-  }
-
-  void loadOriginalList() {
-    // Load the original list from a data source
-    // For example, you can fetch data from a database or read from a file
-    setState(() {
-      _originalList = [];
-      _lists = List.from(_originalList);
-    });
+    _originalList = [];
+    _lists = [];
   }
 
   @override
@@ -78,7 +68,6 @@ class _TableViewState extends State<TableView> {
     super.dispose();
   }
 
-  final defaultState = PositionClass(null, '', null, null);
   @override
   Widget build(BuildContext context) {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
@@ -121,7 +110,6 @@ class _TableViewState extends State<TableView> {
             //   icon: Icon(Icons.close),
             //   onPressed: _resetSearch,
             // ),
-            // Table c
             Row(
               children: [
                 for (int columnIndex = 0;
@@ -157,7 +145,6 @@ class _TableViewState extends State<TableView> {
                 itemBuilder: (context, index) {
                   final position = _lists[index];
                   return Dismissible(
-                    // key: UniqueKey(),
                     key: Key(position.hashCode.toString()),
                     direction: DismissDirection.endToStart,
                     onDismissed: (direction) {
@@ -333,8 +320,10 @@ class _TableViewState extends State<TableView> {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
               child: ElevatedButton(
-                onPressed: () async {
-                  saveDataToPostgreSQL(context, _lists);
+                // Сохраняет значение _листс в базу данных
+                onPressed: () {
+                  saveItog(_lists);
+                  // saveDataToPostgreSQL(context, _lists);
                 },
                 child: const Text('Save'),
               ),
@@ -343,6 +332,24 @@ class _TableViewState extends State<TableView> {
         ),
       ),
     );
+  }
+
+  void saveItog(List<PositionClass> list) {
+    int itog = 0;
+    for (int i = 0; i < list.length; i++) {
+      itog += list[i].ml ?? 0;
+      list[i].itog = (list[i].itog ?? 0) + (list[i].ml ?? 0);
+      print(list[i].itog);
+      Future.microtask(() {
+        setState(() {
+          _lists[i].itog = list[i].itog;
+          _lists[i].itogController.text = list[i].itog?.toString() ?? '';
+        });
+      });
+    }
+    setState(() {
+      _lists = list;
+    });
   }
 
   late String _filePath;
@@ -418,6 +425,7 @@ class _TableViewState extends State<TableView> {
   void addNewField() {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
+      // _originalList.add(PositionClass(null, '', null, null));
       _originalList = List.from(_lists);
     });
   }
