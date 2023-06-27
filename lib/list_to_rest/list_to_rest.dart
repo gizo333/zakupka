@@ -78,7 +78,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
       await cancelJoinRequest(previousRestaurantName);
     }
-
+    final userId = _firebaseAuth.currentUser!.uid;
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -90,7 +90,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     try {
       await postgresConnection.open();
       await postgresConnection.execute(
-        "INSERT INTO join_requests (restaurant_name, user_full_name, status) VALUES ('$restaurantName', '$userFullName', 'pending')",
+        "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending')",
       );
       print('Join request sent successfully');
 

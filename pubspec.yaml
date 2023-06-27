@@ -38,6 +38,7 @@ dependencies:
   excel:
   file_picker:
   cloud_firestore:
+  flutter_local_notifications:
   firebase_core:
   firebase_auth:
   email_validator:

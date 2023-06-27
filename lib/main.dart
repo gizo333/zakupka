@@ -4,6 +4,7 @@ import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'package:new_flut_proj/table/tableview.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
+import 'package:provider/provider.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
 import 'list_to_rest/restaurant_list_bloc.dart';
@@ -16,7 +17,6 @@ import 'firebase_options.dart';
 import 'list_to_rest/list_to_rest.dart';
 import 'lk_restaurant/lk_rest.dart';
 import 'lk_user/lk_user_sotrud.dart';
-import 'package:provider/provider.dart';
 
 
 void main() async {
@@ -32,7 +32,6 @@ void main() async {
     ),
   );
 }
-
 
 
 class MyApp extends StatelessWidget {
