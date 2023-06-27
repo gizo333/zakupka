@@ -13,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool isHiddenPassword = true;
+  bool isWrongPassword = false;
   TextEditingController emailTextInputController = TextEditingController();
   TextEditingController passwordTextInputController = TextEditingController();
   final formKey = GlobalKey<FormState>();
@@ -107,6 +108,9 @@ class _LoginScreenState extends State<LoginScreen> {
       print(e);
 
       if (e.code == 'user-not-found' || e.code == 'wrong-password') {
+        setState(() {
+          isWrongPassword = true;
+        });
         SnackBarService.showSnackBar(
           context,
           'Неправильный email или пароль. Повторите попытку',
@@ -160,9 +164,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 autocorrect: false,
                 controller: passwordTextInputController,
                 obscureText: isHiddenPassword,
-                validator: (value) => value != null && value.length < 6
-                    ? 'Минимум 6 символов'
-                    : null,
+                onChanged: (value) {
+                  setState(() {
+                    isWrongPassword = false;
+                  });
+                },
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Введите пароль';
+                  }
+                  if (value.length < 6) {
+                    return 'Минимум 6 символов';
+                  }
+                  if (isWrongPassword) {
+                    return 'Неверный пароль';
+                  }
+                  return null;
+                },
                 autovalidateMode: AutovalidateMode.onUserInteraction,
                 decoration: InputDecoration(
                   border: const OutlineInputBorder(),
@@ -177,7 +195,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
+                style: TextStyle(
+                  color: isWrongPassword ? Colors.red : Colors.black,
+                ),
               ),
+
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: login,
