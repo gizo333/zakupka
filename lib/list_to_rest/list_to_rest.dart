@@ -69,7 +69,16 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
 
-  Future<void> sendJoinRequest(String restaurantName, String userFullName) async {
+  Future<void> sendJoinRequest(
+      String restaurantName, String userFullName) async {
+    final restaurantListProvider =
+    Provider.of<RestaurantListProvider>(context, listen: false);
+
+    if (restaurantListProvider.selectedRestaurant != null) {
+      final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
+      await cancelJoinRequest(previousRestaurantName);
+    }
+
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -86,7 +95,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       print('Join request sent successfully');
 
       // Обновление состояния запроса в провайдере
-      final restaurantListProvider = Provider.of<RestaurantListProvider>(context, listen: false);
+      restaurantListProvider.selectedRestaurant = restaurantName;
       restaurantListProvider.joinRequests[restaurantName] = 'pending';
       restaurantListProvider.notifyListeners();
     } catch (e) {
@@ -97,7 +106,15 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
   }
 
+
   Future<void> cancelJoinRequest(String restaurantName) async {
+    final restaurantListProvider =
+    Provider.of<RestaurantListProvider>(context, listen: false);
+
+    if (restaurantListProvider.selectedRestaurant == restaurantName) {
+      restaurantListProvider.selectedRestaurant = null;
+    }
+
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -114,7 +131,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       print('Join request canceled successfully');
 
       // Обновление состояния запроса в провайдере
-      final restaurantListProvider = Provider.of<RestaurantListProvider>(context, listen: false);
       restaurantListProvider.joinRequests.remove(restaurantName);
       restaurantListProvider.notifyListeners();
     } catch (e) {
@@ -124,6 +140,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       await postgresConnection.close();
     }
   }
+
 
 
 
@@ -179,11 +196,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                           itemBuilder: (context, index) {
                             final name = restaurants[index];
                             final isRequestSent = _restaurantListProvider.getRequestStatus(name) == 'pending';
-
-
-                            // Получите статус запроса из _restaurantListProvider
-                            // final requestStatus = _restaurantListProvider
-                            //     .getRequestStatus(name);
 
                             return Column(
                               children: [
