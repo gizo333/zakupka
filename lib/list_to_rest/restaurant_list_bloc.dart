@@ -2,9 +2,13 @@ import 'package:flutter/foundation.dart';
 
 class RestaurantListProvider extends ChangeNotifier {
   String? selectedRestaurant;
-  Map<String, String> joinRequests = {};
+  Map<String, Map<String, String>> joinRequests = {};
 
-  String getRequestStatus(String restaurantName) {
-    return joinRequests[restaurantName] ?? '';
+  String getRequestStatus(String restaurantName, String userId) {
+    final userRequests = joinRequests[restaurantName];
+    if (userRequests != null) {
+      return userRequests[userId] ?? '';
+    }
+    return '';
   }
 }

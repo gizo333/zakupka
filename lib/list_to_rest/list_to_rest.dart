@@ -70,16 +70,16 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
 
-  Future<void> sendJoinRequest(
-      String restaurantName, String userFullName) async {
-    final restaurantListProvider =
-    Provider.of<RestaurantListProvider>(context, listen: false);
+  Future<void> sendJoinRequest(String restaurantName, String userFullName,
+      String userId) async {
+    final restaurantListProvider = Provider.of<RestaurantListProvider>(
+        context, listen: false);
 
     if (restaurantListProvider.selectedRestaurant != null) {
       final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
-      await cancelJoinRequest(previousRestaurantName);
+      await cancelJoinRequest(previousRestaurantName, userId);
     }
-    final userId = _firebaseAuth.currentUser!.uid;
+
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -87,7 +87,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       username: 'postgres',
       password: '1',
     );
+
     final buttonStateValue = buttonState;
+
     try {
       await postgresConnection.open();
       await postgresConnection.execute(
@@ -97,7 +99,10 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
       // Обновление состояния запроса в провайдере
       restaurantListProvider.selectedRestaurant = restaurantName;
-      restaurantListProvider.joinRequests[restaurantName] = 'pending';
+      if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
+        restaurantListProvider.joinRequests[restaurantName] = {};
+      }
+      restaurantListProvider.joinRequests[restaurantName]![userId] = 'pending';
       restaurantListProvider.notifyListeners();
     } catch (e) {
       print('Error sending join request: $e');
@@ -107,10 +112,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
   }
 
-
-  Future<void> cancelJoinRequest(String restaurantName) async {
-    final restaurantListProvider =
-    Provider.of<RestaurantListProvider>(context, listen: false);
+  Future<void> cancelJoinRequest(String restaurantName, String userId) async {
+    final restaurantListProvider = Provider.of<RestaurantListProvider>(
+        context, listen: false);
 
     if (restaurantListProvider.selectedRestaurant == restaurantName) {
       restaurantListProvider.selectedRestaurant = null;
@@ -127,12 +131,12 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     try {
       await postgresConnection.open();
       await postgresConnection.execute(
-        "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName'",
+        "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName' AND user_id = '$userId'",
       );
       print('Join request canceled successfully');
 
       // Обновление состояния запроса в провайдере
-      restaurantListProvider.joinRequests.remove(restaurantName);
+      restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
       restaurantListProvider.notifyListeners();
     } catch (e) {
       print('Error canceling join request: $e');
@@ -141,10 +145,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       await postgresConnection.close();
     }
   }
-
-
-
-
 
 
   @override
@@ -196,7 +196,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                           itemCount: restaurants.length,
                           itemBuilder: (context, index) {
                             final name = restaurants[index];
-                            final isRequestSent = _restaurantListProvider.getRequestStatus(name) == 'pending';
+                            final isRequestSent =
+                                _restaurantListProvider.getRequestStatus(
+                                    name, userId) == 'pending';
 
                             return Column(
                               children: [
@@ -205,16 +207,17 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                   trailing: isRequestSent
                                       ? ElevatedButton(
                                     onPressed: () {
-                                      cancelJoinRequest(name);
+                                      cancelJoinRequest(name, userId);
                                     },
                                     child: Text('Отменить'),
                                   )
                                       : ElevatedButton(
                                     onPressed: () {
                                       setState(() {
-                                        buttonState = true; // обновление значения кнопки
+                                        buttonState = true;
                                       });
-                                      sendJoinRequest(name, userFullName);
+                                      sendJoinRequest(
+                                          name, userFullName, userId);
                                     },
                                     child: Text('Вступить'),
                                   ),
@@ -228,7 +231,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                             );
                           },
                         );
-
                       } else if (fullNameSnapshot.hasError) {
                         return Center(
                           child: Text('Error: ${fullNameSnapshot.error}'),
