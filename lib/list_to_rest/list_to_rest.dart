@@ -10,6 +10,7 @@ class RestaurantListPage extends StatefulWidget {
 }
 
 class _RestaurantListPageState extends State<RestaurantListPage> {
+  bool buttonState = true;
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   Map<String, bool> joinRequests = {
   }; // Словарь для хранения состояний запросов для каждого ресторана
@@ -86,11 +87,11 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       username: 'postgres',
       password: '1',
     );
-
+    final buttonStateValue = buttonState;
     try {
       await postgresConnection.open();
       await postgresConnection.execute(
-        "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending')",
+        "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
       );
       print('Join request sent successfully');
 
@@ -210,6 +211,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                   )
                                       : ElevatedButton(
                                     onPressed: () {
+                                      setState(() {
+                                        buttonState = true; // обновление значения кнопки
+                                      });
                                       sendJoinRequest(name, userFullName);
                                     },
                                     child: Text('Вступить'),
@@ -222,9 +226,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                 ),
                               ],
                             );
-
                           },
                         );
+
                       } else if (fullNameSnapshot.hasError) {
                         return Center(
                           child: Text('Error: ${fullNameSnapshot.error}'),

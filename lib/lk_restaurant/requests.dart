@@ -99,8 +99,9 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         "UPDATE join_requests SET status = 'accepted' WHERE restaurant_name = '$restaurantName'",
       );
       await postgresConnection.execute(
-        "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName'",
+        "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName' AND status = 'accepted'",
       );
+
       print('Join request accepted');
 
       Navigator.pushNamed(context, '/kabinet');
