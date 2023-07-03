@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../lk_user/new_teble.dart';
+
 class JoinRequestsPage extends StatefulWidget {
   @override
   _JoinRequestsPageState createState() => _JoinRequestsPageState();
@@ -49,7 +51,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
       final list = results.map((row) => JoinRequest(
         restaurantName: row[0] as String,
-        userFullName: row[1] as String,
+        userFullName: row[1] as String, userId: '',
       )).toList();
       return list;
     } catch (e) {
@@ -60,8 +62,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     }
   }
 
-  Future<String> _fetchUserRestaurant(PostgreSQLConnection connection, String currentUserId) async {
-    final userRestaurantQuery = 'SELECT restaurant FROM restaurant WHERE user_id = \'$currentUserId\'';
+  Future<String> _fetchUserRestaurant(PostgreSQLConnection connection, String userId) async {
+    final userRestaurantQuery = 'SELECT restaurant FROM restaurant WHERE user_id = \'$userId\'';
 
     final userRestaurantResult = await connection.query(userRestaurantQuery);
 
@@ -73,7 +75,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     return userRestaurant;
   }
 
-  Future<void> acceptJoinRequest(String restaurantName) async {
+  Future<void> acceptJoinRequest(String restaurantName, String userId) async {
     final postgresConnection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -84,15 +86,25 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
     try {
       await postgresConnection.open();
-      await postgresConnection.execute(
-        "UPDATE users_sotrud SET name_rest = '$restaurantName'",
+      final userIdResult = await postgresConnection.query(
+        "SELECT user_id FROM join_requests WHERE restaurant_name = '$restaurantName'",
       );
+
+      if (userIdResult.isNotEmpty) {
+        final userId = userIdResult.first[0] as String;
+        await postgresConnection.execute(
+          "UPDATE users_sotrud SET name_rest = '$restaurantName' WHERE user_id = '$userId'",
+        );
+      }
+
       await postgresConnection.execute(
         "UPDATE join_requests SET status = 'accepted' WHERE restaurant_name = '$restaurantName'",
       );
+      final acceptedUserId = userIdResult.first[0] as String;
       await postgresConnection.execute(
-        "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName'",
+        "DELETE FROM join_requests WHERE user_id = '$acceptedUserId' AND status = 'accepted'",
       );
+
       print('Join request accepted');
 
       Navigator.pushNamed(context, '/kabinet');
@@ -103,6 +115,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       await postgresConnection.close();
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +150,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       subtitle: Text(request.userFullName),
                       trailing: ElevatedButton(
                         onPressed: () {
-                          acceptJoinRequest(request.restaurantName);
+                          acceptJoinRequest(request.restaurantName, request.userId);
+                          createTableForUsers();
                         },
                         child: Text('Принять'),
                       ),
@@ -169,9 +183,11 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 class JoinRequest {
   final String restaurantName;
   final String userFullName;
+  final String userId; // Add userId property
 
   JoinRequest({
     required this.restaurantName,
     required this.userFullName,
+    required this.userId, // Include userId in the constructor
   });
 }
