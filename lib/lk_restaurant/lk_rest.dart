@@ -68,6 +68,12 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
+  void listsNavigation() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/listsNavigator');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -81,7 +87,8 @@ class _KabinetState extends State<Kabinet> {
               if (user != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AccountScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const AccountScreen()),
                 );
               }
             },
@@ -133,6 +140,15 @@ class _KabinetState extends State<Kabinet> {
                   ),
                 ],
               ),
+            ElevatedButton(
+              onPressed: listsNavigation,
+              style: ElevatedButton.styleFrom(
+                foregroundColor: Colors.black,
+                backgroundColor: Colors.white70,
+                shadowColor: Colors.blueGrey,
+              ),
+              child: const Text("Хуй-Минимум"),
+            ),
           ],
         ),
       ),
