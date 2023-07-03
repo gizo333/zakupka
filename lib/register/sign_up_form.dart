@@ -28,27 +28,21 @@ class _SignUpFormState extends State<SignUpForm> {
   static bool checkBoxValue1 = true;
   static bool checkBoxValue2 = false;
   static bool checkBoxValue3 = false;
-
-
-
-
-
   String? emailError;
   String? passwordError;
 
   Future<void> _registerUser(BuildContext context) async {
-
     // Проверка состояния обоих чекбоксов
     if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
       showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text('Ошибка'),
-            content: Text('Выберите одно из условий'),
+            title: const Text('Ошибка'),
+            content: const Text('Выберите одно из условий'),
             actions: [
               TextButton(
-                child: Text('ОК'),
+                child: const Text('ОК'),
                 onPressed: () => Navigator.pop(context),
               ),
             ],
@@ -84,7 +78,8 @@ class _SignUpFormState extends State<SignUpForm> {
         return;
       }
 
-      UserCredential userCredential = await widget.auth.createUserWithEmailAndPassword(
+      UserCredential userCredential =
+          await widget.auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -136,11 +131,6 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-
-
-
-
-
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
           await widget.firestore.collection('restaurant').doc(user.uid).set({
@@ -186,15 +176,13 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-
-
-
-
-
-        }  else if (checkBoxValue3) {
+        } else if (checkBoxValue3) {
           // Регистрация пользователя-ресторана
           final currentUser = FirebaseAuth.instance.currentUser;
-          await widget.firestore.collection('users_sotrud').doc(currentUser?.uid).set({
+          await widget.firestore
+              .collection('users_sotrud')
+              .doc(currentUser?.uid)
+              .set({
             'email': email,
             'password': password,
             'fullName': fullName,
@@ -235,14 +223,7 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await connection.close();
           }
-
-
-
-
-
         }
-
-
       }
     } catch (e) {
       // Обработка ошибок регистрации
@@ -259,9 +240,7 @@ class _SignUpFormState extends State<SignUpForm> {
         ),
       ),
     );
-
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -380,7 +359,8 @@ class _SignUpFormState extends State<SignUpForm> {
                       if (value != null && value) {
                         checkBoxValue1 = value;
                         checkBoxValue2 = false;
-                        checkBoxValue3 = false;// Сбросить значение второго чекбокса
+                        checkBoxValue3 =
+                            false; // Сбросить значение второго чекбокса
                       }
                     });
                   },
@@ -406,7 +386,6 @@ class _SignUpFormState extends State<SignUpForm> {
                 Text('Вы сотрудник ресторана'),
               ],
             ),
-
             Row(
               children: [
                 Checkbox(
@@ -416,7 +395,8 @@ class _SignUpFormState extends State<SignUpForm> {
                       if (value != null && value) {
                         checkBoxValue2 = value;
                         checkBoxValue1 = false;
-                        checkBoxValue3 = false;// Сбросить значение первого чекбокса
+                        checkBoxValue3 =
+                            false; // Сбросить значение первого чекбокса
                       }
                     });
                   },

@@ -15,20 +15,18 @@ import 'firebase_options.dart';
 import 'list_to_rest/list_to_rest.dart';
 import 'lk_restaurant/lk_rest.dart';
 import 'lk_user/lk_user_sotrud.dart';
-
+import 'lk_restaurant/lists_navigator.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  runApp( MyApp());
+  runApp(MyApp());
 }
 
-
 class MyApp extends StatelessWidget {
-
-   MyApp({super.key});
+  MyApp({super.key});
   final User? user = FirebaseAuth.instance.currentUser;
   get checkBoxValue1 => bool;
   get checkBoxValue2 => bool;
@@ -40,10 +38,9 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // убирает надпись debug
       theme: ThemeData(
         useMaterial3: true,
-        appBarTheme:  const AppBarTheme(
+        appBarTheme: const AppBarTheme(
             backgroundColor: ThemeBar.myThemeBar,
-            foregroundColor: Colors.white
-        ),
+            foregroundColor: Colors.white),
       ),
 
       routes: {
@@ -55,13 +52,15 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => SignUpScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
-        '/verify_email': (context) => VerifyEmailScreen(checkBoxValue1: checkBoxValue1,
-          checkBoxValue2: checkBoxValue2,
-          checkBoxValue3: checkBoxValue3,),
+        '/verify_email': (context) => VerifyEmailScreen(
+              checkBoxValue1: checkBoxValue1,
+              checkBoxValue2: checkBoxValue2,
+              checkBoxValue3: checkBoxValue3,
+            ),
         '/restaurantList': (context) => RestaurantListPage(),
         '/lk-user': (context) => LkUser(),
         '/requests': (context) => JoinRequestsPage(),
-
+        '/listsNavigator': (context) => ListsNavigatorPage(),
       },
       initialRoute: '/',
     );

@@ -16,6 +16,11 @@ class TableView extends StatefulWidget {
 
 class _TableViewState extends State<TableView> {
   List<PositionClass> _originalList = []; // Copy of the original list
+  List<PositionClass> _lists = [];
+  bool _sortAsc = true;
+  // ignore: unused_field
+  int? _sortColumnIndex;
+  Color? errorColor;
   String _searchQuery = '';
 
   late String userId; // Идентификатор пользователя
@@ -27,14 +32,9 @@ class _TableViewState extends State<TableView> {
     });
   }
 
-  List<PositionClass> _lists = [];
-  bool _sortAsc = true;
-  // ignore: unused_field
-  int? _sortColumnIndex;
-  Color? errorColor;
-
   void _filterList() {
     setState(() {
+      // меняет массив _lists
       _lists = _originalList.where((position) {
         final name = position.name.toLowerCase();
         return name.contains(_searchQuery.toLowerCase());
@@ -53,18 +53,8 @@ class _TableViewState extends State<TableView> {
   void initState() {
     super.initState();
     initializeFirebase();
-    loadOriginalList();
-    // _lists = [];
-    // _originalList = []; // Initialize the original list
-  }
-
-  void loadOriginalList() {
-    // Load the original list from a data source
-    // For example, you can fetch data from a database or read from a file
-    setState(() {
-      _originalList = [];
-      _lists = List.from(_originalList);
-    });
+    _originalList = [];
+    _lists = [];
   }
 
   @override
@@ -78,11 +68,9 @@ class _TableViewState extends State<TableView> {
     super.dispose();
   }
 
-  final defaultState = PositionClass(null, '', null, null);
   @override
   Widget build(BuildContext context) {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
-
     return Scaffold(
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -100,28 +88,24 @@ class _TableViewState extends State<TableView> {
       body: Container(
         color: const Color.fromARGB(255, 246, 246, 246),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          // crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              child: TextField(
-                decoration: InputDecoration(
-                  labelText: 'Search',
-                  prefixIcon: Icon(Icons.search),
-                ),
-                onChanged: (value) {
-                  setState(() {
-                    _searchQuery = value;
-                    _filterList();
-                  });
-                },
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Поиск',
+                prefixIcon: Icon(Icons.search),
               ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                  _filterList();
+                });
+              },
             ),
             // IconButton(
             //   icon: Icon(Icons.close),
             //   onPressed: _resetSearch,
             // ),
-            // Table c
             Row(
               children: [
                 for (int columnIndex = 0;
@@ -133,7 +117,7 @@ class _TableViewState extends State<TableView> {
                         onSort(columnIndex, !_sortAsc);
                       },
                       child: Container(
-                        padding: const EdgeInsets.symmetric(vertical: 5),
+                        padding: const EdgeInsets.symmetric(vertical: 1),
                         color: Colors.grey[200],
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -157,7 +141,6 @@ class _TableViewState extends State<TableView> {
                 itemBuilder: (context, index) {
                   final position = _lists[index];
                   return Dismissible(
-                    // key: UniqueKey(),
                     key: Key(position.hashCode.toString()),
                     direction: DismissDirection.endToStart,
                     onDismissed: (direction) {
@@ -173,148 +156,135 @@ class _TableViewState extends State<TableView> {
                     },
                     background: Container(
                       color: Colors.red,
-                      child: const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 20.0),
-                          child: Icon(
-                            Icons.delete,
-                            color: Colors.white,
+                      child: const Row(
+                        mainAxisAlignment: MainAxisAlignment
+                            .end, // Выравнивание по правому краю
+                        children: [
+                          SizedBox(
+                            width: 60, // Размер фоновой области
+                            child: Icon(
+                              Icons.delete,
+                              color: Colors.white,
+                            ),
                           ),
-                        ),
+                        ],
                       ),
                     ),
                     child: ListTile(
-                      title: Container(
-                        color: const Color.fromARGB(255, 133, 133, 133),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Flexible(
-                              fit: FlexFit.loose,
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                child: TextFormField(
-                                  maxLines: null,
-                                  controller: position.codeController,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      if (val.isEmpty) {
-                                        position.code = null; // Сброс значения
-                                        errorColor = null; // Сброс цвета ошибки
-                                      } else {
-                                        // Проверка и конвертация введенного значения
-                                        final parsedValue = int.tryParse(val);
-                                        if (parsedValue != null) {
-                                          position.code = parsedValue;
-                                          errorColor =
-                                              null; // Сброс цвета ошибки
-                                        } else {
-                                          position.code = null;
-                                          errorColor = Colors.red;
-                                        }
-                                      }
-                                    });
-                                  },
-                                  onFieldSubmitted: (_) {
-                                    if (index == _lists.length - 1) {
-                                      addNewField();
+                      title: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              maxLines: 4,
+                              controller: position.codeController,
+                              keyboardType: TextInputType.number,
+                              onChanged: (val) {
+                                setState(() {
+                                  if (val.isEmpty) {
+                                    position.code = null; // Сброс значения
+                                    errorColor = null; // Сброс цвета ошибки
+                                  } else {
+                                    // Проверка и конвертация введенного значения
+                                    final parsedValue = int.tryParse(val);
+                                    if (parsedValue != null) {
+                                      position.code = parsedValue;
+                                      errorColor = null; // Сброс цвета ошибки
+                                    } else {
+                                      position.code = null;
+                                      errorColor = Colors.red;
                                     }
-                                  },
-                                  style: TextStyle(color: errorColor),
-                                  decoration: InputDecoration(
-                                    filled: true,
-                                    fillColor: const Color.fromARGB(
-                                        255, 230, 230, 230),
-                                    border: const OutlineInputBorder(),
-                                    errorStyle: TextStyle(color: errorColor),
-                                    hintText: 'Код',
-                                  ),
-                                ),
+                                  }
+                                });
+                              },
+                              onFieldSubmitted: (_) {
+                                if (index == _lists.length - 1) {
+                                  addNewField();
+                                }
+                              },
+                              style: TextStyle(color: errorColor),
+                              decoration: const InputDecoration(
+                                filled: true,
+                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                border: OutlineInputBorder(),
+                                hintText: 'Код',
                               ),
                             ),
-                            Flexible(
-                              fit: FlexFit.tight,
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                child: TextFormField(
-                                  decoration: const InputDecoration(
-                                      filled: true,
-                                      fillColor:
-                                          Color.fromARGB(255, 230, 230, 230),
-                                      border: OutlineInputBorder(),
-                                      hintText: 'Наименование'),
-                                  maxLines: null,
-                                  controller: position.nameController,
-                                  keyboardType: TextInputType.name,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      position.name = val;
-                                    });
-                                  },
-                                  onFieldSubmitted: (_) {
-                                    if (index == _lists.length - 1) {
-                                      addNewField();
-                                    }
-                                  },
-                                ),
+                          ),
+                          SizedBox(width: 15), // Промежуток шириной 10
+                          Expanded(
+                            flex: 2,
+                            // fit: FlexFit.tight,
+                            child: TextFormField(
+                              decoration: const InputDecoration(
+                                filled: true,
+                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                border: OutlineInputBorder(),
                               ),
+                              maxLines: 4,
+                              controller: position.nameController,
+                              keyboardType: TextInputType.name,
+                              onChanged: (val) {
+                                setState(() {
+                                  position.name = val;
+                                });
+                              },
+                              onFieldSubmitted: (_) {
+                                if (index == _lists.length - 1) {
+                                  addNewField();
+                                }
+                              },
                             ),
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                child: TextFormField(
-                                  maxLines: null,
-                                  decoration: const InputDecoration(
-                                      filled: true,
-                                      fillColor:
-                                          Color.fromARGB(255, 230, 230, 230),
-                                      border: OutlineInputBorder(),
-                                      hintText: 'ед изм'),
-                                  controller: position.mlController,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      position.ml = int.tryParse(val);
-                                    });
-                                  },
-                                  onFieldSubmitted: (_) {
-                                    if (index == _lists.length - 1) {
-                                      addNewField();
-                                    }
-                                  },
-                                ),
+                          ),
+                          SizedBox(width: 15), // Промежуток шириной 10
+                          Expanded(
+                            child: TextFormField(
+                              maxLines: 4,
+                              decoration: const InputDecoration(
+                                filled: true,
+                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                border: OutlineInputBorder(),
                               ),
+                              controller: position.mlController,
+                              keyboardType: TextInputType.number,
+                              onChanged: (val) {
+                                setState(() {
+                                  position.ml = int.tryParse(val);
+                                });
+                              },
+                              onFieldSubmitted: (_) {
+                                if (index == _lists.length - 1) {
+                                  addNewField();
+                                }
+                              },
                             ),
-                            Flexible(
-                              child: Container(
-                                padding: const EdgeInsets.all(2),
-                                child: TextFormField(
-                                  decoration: const InputDecoration(
-                                      filled: true,
-                                      fillColor:
-                                          Color.fromARGB(255, 230, 230, 230),
-                                      border: OutlineInputBorder(),
-                                      hintText: 'Итог'),
-                                  maxLines: null,
-                                  controller: position.itogController,
-                                  keyboardType: TextInputType.number,
-                                  onChanged: (val) {
-                                    setState(() {
-                                      position.itog = int.tryParse(val);
-                                    });
-                                  },
-                                  onFieldSubmitted: (_) {
-                                    if (index == _lists.length - 1) {
-                                      addNewField();
-                                    }
-                                  },
-                                ),
+                          ),
+                          SizedBox(width: 15), // Промежуток шириной 10
+                          Expanded(
+                            flex: 1,
+                            child: TextFormField(
+                              decoration: const InputDecoration(
+                                filled: true,
+                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                border: OutlineInputBorder(),
                               ),
+                              maxLines: 4,
+                              controller: position.itogController,
+                              keyboardType: TextInputType.number,
+                              onChanged: (val) {
+                                setState(() {
+                                  position.itog = int.tryParse(val);
+                                });
+                              },
+                              onFieldSubmitted: (_) {
+                                if (index == _lists.length - 1) {
+                                  addNewField();
+                                }
+                              },
                             ),
-                          ],
-                        ),
+                          ),
+                        ],
                       ),
                     ),
                   );
@@ -333,8 +303,10 @@ class _TableViewState extends State<TableView> {
               alignment: Alignment.centerLeft,
               padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
               child: ElevatedButton(
-                onPressed: () async {
-                  saveDataToPostgreSQL(context, _lists);
+                // Сохраняет значение _листс в базу данных
+                onPressed: () {
+                  saveItog(_lists);
+                  // saveDataToPostgreSQL(context, _lists);
                 },
                 child: const Text('Save'),
               ),
@@ -343,6 +315,24 @@ class _TableViewState extends State<TableView> {
         ),
       ),
     );
+  }
+
+  void saveItog(List<PositionClass> list) {
+    int itog = 0;
+    for (int i = 0; i < list.length; i++) {
+      itog += list[i].ml ?? 0;
+      list[i].itog = (list[i].itog ?? 0) + (list[i].ml ?? 0);
+      print(list[i].itog);
+      Future.microtask(() {
+        setState(() {
+          _lists[i].itog = list[i].itog;
+          _lists[i].itogController.text = list[i].itog?.toString() ?? '';
+        });
+      });
+    }
+    setState(() {
+      _lists = list;
+    });
   }
 
   late String _filePath;
@@ -418,6 +408,7 @@ class _TableViewState extends State<TableView> {
   void addNewField() {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
+      // _originalList.add(PositionClass(null, '', null, null));
       _originalList = List.from(_lists);
     });
   }
