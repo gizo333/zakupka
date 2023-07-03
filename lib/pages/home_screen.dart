@@ -18,6 +18,12 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void push() {
+    if (user == null) {
+      Navigator.pushNamed(context, '/push');
+    }
+  }
+
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -38,6 +44,10 @@ class _HomeScreenState extends State<HomeScreen> {
             OutlinedButton(
               onPressed: login,
               child: Text("Авторизация"),
+            ),
+            OutlinedButton(
+              onPressed: push,
+              child: Text("Пуш"),
             ),
             // OutlinedButton(onPressed: nu, child: Text(""))
           ],

@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:postgres/postgres.dart';
@@ -19,7 +20,33 @@ class _KabinetState extends State<Kabinet> {
   void initState() {
     super.initState();
     fetchRestaurantName();
+    //updateDeviceToken();
   }
+
+
+
+  // void updateDeviceToken() async { // записывет токен в бд
+  //   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  //   final String? deviceToken = await _firebaseMessaging.getToken();
+  //
+  //   final connection = PostgreSQLConnection(
+  //     '37.140.241.144',
+  //     5432,
+  //     'postgres',
+  //     username: 'postgres',
+  //     password: '1',
+  //   );
+  //
+  //   await connection.open();
+  //
+  //   await connection.execute(
+  //     'UPDATE restaurant SET device_token = @deviceToken WHERE user_id = @userId;',
+  //     substitutionValues: {'deviceToken': deviceToken, 'userId': user?.uid},
+  //   );
+  //
+  //   await connection.close();
+  // }
+
 
   void fetchRestaurantName() async {
     final connection = PostgreSQLConnection(
@@ -68,9 +95,9 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void listsNavigation() {
+  void goMinimum() {
     if (user != null) {
-      Navigator.pushNamed(context, '/listsNavigator');
+      Navigator.pushNamed(context, '/push');
     }
   }
 
@@ -87,8 +114,7 @@ class _KabinetState extends State<Kabinet> {
               if (user != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const AccountScreen()),
+                  MaterialPageRoute(builder: (context) => const AccountScreen()),
                 );
               }
             },
@@ -115,7 +141,7 @@ class _KabinetState extends State<Kabinet> {
                   child: const Text("Инвентаризация"),
                 ),
                 ElevatedButton(
-                  onPressed: goStop,
+                  onPressed: goMinimum,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.black,
                     backgroundColor: Colors.white70,
@@ -140,15 +166,6 @@ class _KabinetState extends State<Kabinet> {
                   ),
                 ],
               ),
-            ElevatedButton(
-              onPressed: listsNavigation,
-              style: ElevatedButton.styleFrom(
-                foregroundColor: Colors.black,
-                backgroundColor: Colors.white70,
-                shadowColor: Colors.blueGrey,
-              ),
-              child: const Text("Хуй-Минимум"),
-            ),
           ],
         ),
       ),
