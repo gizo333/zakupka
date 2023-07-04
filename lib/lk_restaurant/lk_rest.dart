@@ -100,6 +100,12 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
+    void goListsNavigator(){
+    if (user != null) {
+      Navigator.pushNamed(context, '/listsNavigator');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
