@@ -33,14 +33,19 @@ dependencies:
   open_file:
   path:
   flutter_excel:
+  provider:
   path_provider:
   excel:
   file_picker:
   cloud_firestore:
+  flutter_spinkit:
+  firebase_messaging:
+  flutter_local_notifications:
   firebase_core:
   firebase_auth:
   email_validator:
   firebase_core_web:
+  vibration:
   flutter:
     sdk: flutter
 

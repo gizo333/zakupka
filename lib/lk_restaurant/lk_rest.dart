@@ -46,6 +46,7 @@ class _KabinetState extends State<Kabinet> {
   //   await connection.close();
   // }
 
+
   void fetchRestaurantName() async {
     final connection = PostgreSQLConnection(
       '37.140.241.144',
@@ -93,15 +94,9 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void goMinimum() {
+  void goMinimum(){
     if (user != null) {
       Navigator.pushNamed(context, '/push');
-    }
-  }
-
-  void goListsNavigator() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/listsNavigator');
     }
   }
 
@@ -118,8 +113,7 @@ class _KabinetState extends State<Kabinet> {
               if (user != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (context) => const AccountScreen()),
+                  MaterialPageRoute(builder: (context) => const AccountScreen()),
                 );
               }
             },
