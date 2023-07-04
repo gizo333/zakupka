@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:postgres/postgres.dart';
 import '../pages/account_screen.dart';
 
@@ -23,8 +24,6 @@ class _KabinetState extends State<Kabinet> {
     //updateDeviceToken();
   }
 
-
-
   // void updateDeviceToken() async { // записывет токен в бд
   //   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
   //   final String? deviceToken = await _firebaseMessaging.getToken();
@@ -46,7 +45,6 @@ class _KabinetState extends State<Kabinet> {
   //
   //   await connection.close();
   // }
-
 
   void fetchRestaurantName() async {
     final connection = PostgreSQLConnection(
@@ -101,6 +99,12 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
+  void goListsNavigator() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/listsNavigator');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -114,7 +118,8 @@ class _KabinetState extends State<Kabinet> {
               if (user != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AccountScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const AccountScreen()),
                 );
               }
             },
@@ -163,6 +168,15 @@ class _KabinetState extends State<Kabinet> {
                       shadowColor: Colors.blueGrey,
                     ),
                     child: const Text("Запросы"),
+                  ),
+                  ElevatedButton(
+                    onPressed: goListsNavigator,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      shadowColor: Colors.blueGrey,
+                    ),
+                    child: const Text("Хуйня!"),
                   ),
                 ],
               ),

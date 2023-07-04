@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
 import 'package:new_flut_proj/pages/push.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
@@ -83,6 +84,7 @@ class MyApp extends StatelessWidget {
         '/restaurantList': (context) => RestaurantListPage(),
         '/lk-user': (context) => LkUser(),
         '/requests': (context) => JoinRequestsPage(),
+        '/listsNavigator': (context) => ListsNavigatorPage(),
         // '/push': (context) => StopPage(
         // ),
       },
