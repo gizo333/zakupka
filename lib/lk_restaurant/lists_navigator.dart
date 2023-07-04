@@ -23,9 +23,10 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     try {
       await connection.open();
 
-      final result = await connection
-          .query('SELECT table_name FROM information_schema.tables '
-              'WHERE table_schema = \'public\'');
+      final result = await connection.query(
+        'SELECT table_name FROM information_schema.tables '
+        "WHERE table_schema = 'public' AND table_name LIKE 'user\\_%'",
+      );
 
       setState(() {
         _tableList = result.map((row) => row[0] as String).toList();

@@ -4,12 +4,11 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'package:postgres/postgres.dart';
 import 'validation.dart';
+import '../lk_user/new_teble.dart';
 
 class SignUpForm extends StatefulWidget {
   final FirebaseAuth auth;
   final FirebaseFirestore firestore;
-
-
 
   SignUpForm({Key? key, required this.auth, required this.firestore});
 
@@ -21,7 +20,8 @@ class _SignUpFormState extends State<SignUpForm> {
   bool _isButtonActive = false;
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
-  final TextEditingController confirmPasswordController = TextEditingController();
+  final TextEditingController confirmPasswordController =
+      TextEditingController();
   final TextEditingController companyController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController innController = TextEditingController();
@@ -52,18 +52,22 @@ class _SignUpFormState extends State<SignUpForm> {
         password.isNotEmpty &&
         confirmPassword.isNotEmpty &&
         checkPasswordsMatch() &&
-        (_isButtonActive || checkBoxValue1 || checkBoxValue2 || checkBoxValue3) &&
-        ((checkBoxValue1 && restaurant.isNotEmpty && fullName.isNotEmpty && position.isNotEmpty) ||
-            (checkBoxValue2 && company.isNotEmpty && phone.isNotEmpty && inn.isNotEmpty) ||
+        (_isButtonActive ||
+            checkBoxValue1 ||
+            checkBoxValue2 ||
+            checkBoxValue3) &&
+        ((checkBoxValue1 &&
+                restaurant.isNotEmpty &&
+                fullName.isNotEmpty &&
+                position.isNotEmpty) ||
+            (checkBoxValue2 &&
+                company.isNotEmpty &&
+                phone.isNotEmpty &&
+                inn.isNotEmpty) ||
             (checkBoxValue3 && fullName.isNotEmpty && position.isNotEmpty));
   }
 
-
   Future<void> _registerUser(BuildContext context) async {
-
-
-
-
     // Проверка состояния обоих чекбоксов
     if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
       showDialog(
@@ -120,7 +124,7 @@ class _SignUpFormState extends State<SignUpForm> {
       }
 
       UserCredential userCredential =
-      await widget.auth.createUserWithEmailAndPassword(
+          await widget.auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -174,10 +178,7 @@ class _SignUpFormState extends State<SignUpForm> {
           }
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
-          await widget.firestore
-              .collection('restaurant')
-              .doc(user.uid)
-              .set({
+          await widget.firestore.collection('restaurant').doc(user.uid).set({
             'email': email,
             'password': password,
             'restaurant': restaurant,
@@ -274,7 +275,6 @@ class _SignUpFormState extends State<SignUpForm> {
       print(e);
     }
 
-
     await Navigator.pushReplacement(
       context,
       MaterialPageRoute(
@@ -331,130 +331,120 @@ class _SignUpFormState extends State<SignUpForm> {
         ),
         SizedBox(height: 16.0),
         TextField(
-          controller: confirmPasswordController,
-          decoration: InputDecoration(
-            labelText: 'Подтвердите пароль',
-            border: OutlineInputBorder(),
-            errorText: !checkPasswordsMatch() ? 'Пароли не совпадают' : null,
-          ),
-
-          obscureText: true,
-    onChanged: (value) {
-      setState(() {
-        _isButtonActive = isRegistrationButtonActive();
-      });
-    }
-        ),
+            controller: confirmPasswordController,
+            decoration: InputDecoration(
+              labelText: 'Подтвердите пароль',
+              border: OutlineInputBorder(),
+              errorText: !checkPasswordsMatch() ? 'Пароли не совпадают' : null,
+            ),
+            obscureText: true,
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            }),
         SizedBox(height: 16.0),
         if (checkBoxValue1) ...[
           TextField(
-            controller: restaurantController,
-            decoration: InputDecoration(
-              labelText: 'Ресторан',
-              border: OutlineInputBorder(),
-            ),
+              controller: restaurantController,
+              decoration: InputDecoration(
+                labelText: 'Ресторан',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
           TextField(
-            controller: fullNameController,
-            decoration: InputDecoration(
-              labelText: 'ФИО',
-              border: OutlineInputBorder(),
-            ),
+              controller: fullNameController,
+              decoration: InputDecoration(
+                labelText: 'ФИО',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
           TextField(
-            controller: positionController,
-            decoration: InputDecoration(
-              labelText: 'Должность',
-              border: OutlineInputBorder(),
-            ),
+              controller: positionController,
+              decoration: InputDecoration(
+                labelText: 'Должность',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
         ],
         if (checkBoxValue3) ...[
           SizedBox(height: 16.0),
           TextField(
-            controller: fullNameController,
-            decoration: InputDecoration(
-              labelText: 'ФИО',
-              border: OutlineInputBorder(),
-            ),
+              controller: fullNameController,
+              decoration: InputDecoration(
+                labelText: 'ФИО',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
           TextField(
-            controller: positionController,
-            decoration: InputDecoration(
-              labelText: 'Должность',
-              border: OutlineInputBorder(),
-            ),
+              controller: positionController,
+              decoration: InputDecoration(
+                labelText: 'Должность',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
         ],
         if (checkBoxValue2) ...[
           TextField(
-            controller: companyController,
-            decoration: InputDecoration(
-              labelText: 'Название компании',
-              border: OutlineInputBorder(),
-            ),
+              controller: companyController,
+              decoration: InputDecoration(
+                labelText: 'Название компании',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
           TextField(
-            controller: phoneController,
-            decoration: InputDecoration(
-              labelText: 'Номер телефона',
-              border: OutlineInputBorder(),
-            ),
+              controller: phoneController,
+              decoration: InputDecoration(
+                labelText: 'Номер телефона',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
           TextField(
-            controller: innController,
-            decoration: InputDecoration(
-              labelText: 'ИНН',
-              border: OutlineInputBorder(),
-            ),
+              controller: innController,
+              decoration: InputDecoration(
+                labelText: 'ИНН',
+                border: OutlineInputBorder(),
+              ),
               onChanged: (value) {
                 setState(() {
                   _isButtonActive = isRegistrationButtonActive();
                 });
-              }
-          ),
+              }),
           SizedBox(height: 16.0),
         ],
         Column(
@@ -513,14 +503,18 @@ class _SignUpFormState extends State<SignUpForm> {
           ],
         ),
         ElevatedButton(
-          onPressed: isRegistrationButtonActive() ? () {
-            _isButtonActive = true;
-            _registerUser(context);
-          } : null,
+          onPressed: isRegistrationButtonActive()
+              ? () {
+                  _isButtonActive = true;
+                  _registerUser(context);
+                  if (checkBoxValue1) {
+                    createTableForUsers();
+                  }
+                }
+              : null,
           child: Text('Зарегистрироваться'),
         ),
       ],
     );
-
   }
 }
