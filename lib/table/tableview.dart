@@ -206,7 +206,7 @@ class _TableViewState extends State<TableView> {
                               style: TextStyle(color: errorColor),
                               decoration: const InputDecoration(
                                 filled: true,
-                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                fillColor: Color.fromARGB(255, 255, 255, 255),
                                 border: OutlineInputBorder(),
                                 hintText: 'Код',
                               ),
@@ -219,7 +219,7 @@ class _TableViewState extends State<TableView> {
                             child: TextFormField(
                               decoration: const InputDecoration(
                                 filled: true,
-                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                fillColor: Color.fromARGB(255, 255, 255, 255),
                                 border: OutlineInputBorder(),
                               ),
                               maxLines: 4,
@@ -243,7 +243,7 @@ class _TableViewState extends State<TableView> {
                               maxLines: 4,
                               decoration: const InputDecoration(
                                 filled: true,
-                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                fillColor: Color.fromARGB(255, 255, 255, 255),
                                 border: OutlineInputBorder(),
                               ),
                               controller: position.mlController,
@@ -266,7 +266,7 @@ class _TableViewState extends State<TableView> {
                             child: TextFormField(
                               decoration: const InputDecoration(
                                 filled: true,
-                                fillColor: Color.fromARGB(255, 230, 230, 230),
+                                fillColor: Color.fromARGB(255, 255, 255, 255),
                                 border: OutlineInputBorder(),
                               ),
                               maxLines: 4,

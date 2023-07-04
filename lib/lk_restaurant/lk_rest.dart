@@ -1,6 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:postgres/postgres.dart';
 import '../pages/account_screen.dart';
 
@@ -22,8 +23,6 @@ class _KabinetState extends State<Kabinet> {
     fetchRestaurantName();
     //updateDeviceToken();
   }
-
-
 
   // void updateDeviceToken() async { // записывет токен в бд
   //   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
@@ -95,7 +94,7 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void goMinimum() {
+  void goMinimum(){
     if (user != null) {
       Navigator.pushNamed(context, '/push');
     }
@@ -163,6 +162,15 @@ class _KabinetState extends State<Kabinet> {
                       shadowColor: Colors.blueGrey,
                     ),
                     child: const Text("Запросы"),
+                  ),
+                  ElevatedButton(
+                    onPressed: goListsNavigator,
+                    style: ElevatedButton.styleFrom(
+                      foregroundColor: Colors.black,
+                      backgroundColor: Colors.white70,
+                      shadowColor: Colors.blueGrey,
+                    ),
+                    child: const Text("Хуйня!"),
                   ),
                 ],
               ),
