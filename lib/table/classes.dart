@@ -18,13 +18,13 @@ class PositionClass {
     itogController = TextEditingController(text: itog?.toString() ?? '');
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'code': code,
-      'name': name,
-      'ml': ml,
-      'itog': itog,
-   };
-  }
+  // Map<String, dynamic> toJson() {
+  //   return {
+  //     'code': code,
+  //     'name': name,
+  //     'ml': ml,
+  //     'itog': itog,
+  //  };
+  // }
 }
 
