@@ -12,6 +12,8 @@ class ListsNavigatorPage extends StatefulWidget {
 
 class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   List<String> _tableList = [];
+  TextEditingController _tableNameController = TextEditingController();
+  late String realName;
 
   Future<void> fetchTableListFromPostgreSQL() async {
     final connection = PostgreSQLConnection(
@@ -71,8 +73,14 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     try {
       await connection.open();
 
-      final tableName =
-          'restaurant_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
+      String tableName;
+      if (_tableNameController.text.isNotEmpty) {
+        tableName =
+            'restaurant_${user?.uid?.toLowerCase()}_${_tableNameController.text}';
+      } else {
+        tableName =
+            'restaurant_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
+      }
 
       await connection.execute(
         'CREATE TABLE $tableName ('
@@ -146,19 +154,35 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       appBar: AppBar(
         title: Text('Table List'),
       ),
-      body: ListView.builder(
-        itemCount: _tableList.length,
-        itemBuilder: (context, index) {
-          final tableName = _tableList[index];
-          return ListTile(
-            title: Text(tableName),
-            trailing: IconButton(
-              icon: Icon(Icons.delete),
-              onPressed: () => deleteTable(tableName),
+      body: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              controller: _tableNameController,
+              decoration: InputDecoration(
+                labelText: 'Table Name',
+              ),
             ),
-            onTap: () => navigateToTableView(tableName),
-          );
-        },
+          ),
+          Expanded(
+            child: ListView.builder(
+              itemCount: _tableList.length,
+              itemBuilder: (context, index) {
+                final tableName = _tableList[index];
+                print(tableName.split('_').last);
+                return ListTile(
+                  title: Text(tableName.split('_').last),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete),
+                    onPressed: () => deleteTable(tableName),
+                  ),
+                  onTap: () => navigateToTableView(tableName),
+                );
+              },
+            ),
+          ),
+        ],
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: createRestaurantTable,
