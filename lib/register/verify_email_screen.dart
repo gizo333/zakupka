@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '/pages/home_screen.dart';
 import '/services/snack_bar.dart';
+import '../lk_user/new_teble.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   final bool checkBoxValue1;
@@ -37,7 +38,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   late bool checkBoxValue2;
   late bool checkBoxValue3;
 
-
   @override
   void initState() {
     super.initState();
@@ -57,7 +57,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
       timer = Timer.periodic(
         const Duration(seconds: 3),
-            (_) => checkEmailVerified(),
+        (_) => checkEmailVerified(),
       );
     }
   }
@@ -77,10 +77,10 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     print(isEmailVerified);
 
-
     if (isEmailVerified) {
       timer?.cancel();
       if (checkBoxValue1) {
+        createTableForUsers();
         Navigator.pushReplacementNamed(context, '/kabinet');
       } else if (checkBoxValue2) {
         Navigator.pushReplacementNamed(context, '/stop');
@@ -88,7 +88,6 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
         Navigator.pushReplacementNamed(context, '/lk-user');
       }
     }
-
   }
 
   Future<void> sendVerificationEmail() async {
@@ -113,49 +112,48 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) => isEmailVerified
       ? const HomeScreen()
       : Scaffold(
-    resizeToAvoidBottomInset: false,
-    appBar: AppBar(
-      title: const Text('Верификация Email адреса'),
-    ),
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Письмо с подтверждением было отправлено на вашу электронную почту.',
-              style: TextStyle(
-                fontSize: 20,
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            title: const Text('Верификация Email адреса'),
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Письмо с подтверждением было отправлено на вашу электронную почту.',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: canResendEmail ? sendVerificationEmail : null,
+                    icon: const Icon(Icons.email),
+                    label: const Text('Повторно отправить'),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () async {
+                      timer?.cancel();
+                      await FirebaseAuth.instance.currentUser!.delete();
+                    },
+                    child: const Text(
+                      'Отменить',
+                      style: TextStyle(
+                        color: Colors.blue,
+                      ),
+                    ),
+                  )
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: canResendEmail ? sendVerificationEmail : null,
-              icon: const Icon(Icons.email),
-              label: const Text('Повторно отправить'),
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: () async {
-                timer?.cancel();
-                await FirebaseAuth.instance.currentUser!.delete();
-              },
-              child: const Text(
-                'Отменить',
-                style: TextStyle(
-                  color: Colors.blue,
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    ),
-  );
+          ),
+        );
 }
