@@ -32,8 +32,6 @@ class _TableViewState extends State<TableView> {
       password: '1',
     );
 
-    final user = FirebaseAuth.instance.currentUser;
-
     try {
       await connection.open();
 
@@ -346,7 +344,7 @@ class _TableViewState extends State<TableView> {
               child: ElevatedButton(
                 // Сохраняет значение _листс в базу данных
                 onPressed: () {
-                  // saveItog(_lists);
+                  saveItog(_lists);
                   // saveDataToPostgreSQL(context, _lists);
                   saveDataToPostgreSQL(_lists, widget.tableName);
                 },
@@ -398,6 +396,7 @@ class _TableViewState extends State<TableView> {
   }
 
   void saveItog(List<PositionClass> list) {
+    // ignore: unused_local_variable
     int itog = 0;
     for (int i = 0; i < list.length; i++) {
       itog += list[i].ml ?? 0;
