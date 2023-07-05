@@ -507,9 +507,6 @@ class _SignUpFormState extends State<SignUpForm> {
               ? () {
                   _isButtonActive = true;
                   _registerUser(context);
-                  if (checkBoxValue1) {
-                    createTableForUsers();
-                  }
                 }
               : null,
           child: Text('Зарегистрироваться'),

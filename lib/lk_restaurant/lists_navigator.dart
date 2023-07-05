@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 
@@ -20,12 +21,14 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       password: '1',
     );
 
+    final user = FirebaseAuth.instance.currentUser;
+
     try {
       await connection.open();
 
       final result = await connection.query(
         'SELECT table_name FROM information_schema.tables '
-        "WHERE table_schema = 'public' AND table_name LIKE 'user\\_%'",
+        "WHERE table_schema = 'public' AND table_name LIKE 'restaurant\\_${user?.uid.toLowerCase()}'",
       );
 
       setState(() {
