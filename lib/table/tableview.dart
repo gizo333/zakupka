@@ -2,21 +2,61 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:postgres/postgres.dart';
 import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
 
 class TableView extends StatefulWidget {
-  const TableView({Key? key}) : super(key: key);
+  final String tableName;
+
+  const TableView({required this.tableName, Key? key}) : super(key: key);
+  // const TableView({Key? key}) : super(key: key);
 
   @override
   State<TableView> createState() => _TableViewState();
 }
 
 class _TableViewState extends State<TableView> {
+  // List<Map<String, dynamic>> _tableData = [];
   List<PositionClass> _originalList = []; // Copy of the original list
   List<PositionClass> _lists = [];
+
+  Future<void> fetchTableDataFromPostgreSQL() async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    final user = FirebaseAuth.instance.currentUser;
+
+    try {
+      await connection.open();
+
+      final result = await connection.query(
+        'SELECT code, name, ml, itog FROM ${widget.tableName}',
+      );
+
+      _lists = result.map((row) {
+        int code = int.tryParse(row[0].toString()) ?? 0;
+        String name = row[1].toString();
+        int ml = int.tryParse(row[2].toString()) ?? 0;
+        int itog = int.tryParse(row[3].toString()) ?? 0;
+
+        return PositionClass(code, name, ml, itog);
+      }).toList();
+      setState(() {});
+
+      await connection.close();
+    } catch (e) {
+      print('Error fetching table data from PostgreSQL: $e');
+    }
+  }
+
   bool _sortAsc = true;
   // ignore: unused_field
   int? _sortColumnIndex;
@@ -53,6 +93,7 @@ class _TableViewState extends State<TableView> {
   void initState() {
     super.initState();
     initializeFirebase();
+    fetchTableDataFromPostgreSQL();
     _originalList = [];
     _lists = [];
   }
@@ -305,8 +346,9 @@ class _TableViewState extends State<TableView> {
               child: ElevatedButton(
                 // Сохраняет значение _листс в базу данных
                 onPressed: () {
-                  saveItog(_lists);
+                  // saveItog(_lists);
                   // saveDataToPostgreSQL(context, _lists);
+                  saveDataToPostgreSQL(_lists, widget.tableName);
                 },
                 child: const Text('Save'),
               ),
@@ -315,6 +357,44 @@ class _TableViewState extends State<TableView> {
         ),
       ),
     );
+  }
+
+  Future<void> saveDataToPostgreSQL(
+      List<PositionClass> list, String tableName) async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    try {
+      await connection.open();
+
+      // Очищаем таблицу перед сохранением новых данных
+      await connection.execute('DELETE FROM $tableName');
+
+      for (final position in list) {
+        final code = position.code ?? 0;
+        final name = position.name ?? '';
+        final itog = position.itog ?? 0;
+        final ml = position.ml ?? 0;
+
+        await connection.execute(
+            'INSERT INTO $tableName (code, name, itog, ml) VALUES (@code, @name, @itog, @ml)',
+            substitutionValues: {
+              'code': code,
+              'name': name,
+              'itog': itog,
+              'ml': ml,
+            });
+      }
+
+      await connection.close();
+    } catch (e) {
+      print('Error saving data to PostgreSQL: $e');
+    }
   }
 
   void saveItog(List<PositionClass> list) {
