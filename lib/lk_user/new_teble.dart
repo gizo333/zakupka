@@ -1,13 +1,10 @@
 import 'package:postgres/postgres.dart';
 
+import '../connect_BD/connect.dart';
+
+
 void createTableForUsers() async {
-  final postgresConnection = PostgreSQLConnection(
-    '37.140.241.144',
-    5432,
-    'postgres',
-    username: 'postgres',
-    password: '1',
-  );
+  final postgresConnection = createDatabaseConnection();
 
   try {
     await postgresConnection.open();

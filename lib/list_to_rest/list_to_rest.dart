@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:postgres/postgres.dart';
 import 'package:provider/provider.dart';
+import '../connect_BD/connect.dart';
 import 'restaurant_list_bloc.dart';
 
 class RestaurantListPage extends StatefulWidget {
@@ -17,13 +18,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Map<String, bool> joinRequests = {};
 
   Future<List<String>> fetchRestaurants() async {
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    final postgresConnection = createDatabaseConnection();
 
     try {
       await postgresConnection.open();
@@ -43,13 +38,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
   Future<String> getUserFullName(String userId) async {
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    final postgresConnection = createDatabaseConnection();
 
     try {
       await postgresConnection.open();
@@ -81,13 +70,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       await cancelJoinRequest(previousRestaurantName, userId);
     }
 
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    final postgresConnection = createDatabaseConnection();
 
     final buttonStateValue = buttonState;
 
@@ -123,13 +106,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       restaurantListProvider.selectedRestaurant = null;
     }
 
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    final postgresConnection = createDatabaseConnection();
 
     try {
       await postgresConnection.open();

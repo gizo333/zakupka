@@ -2,6 +2,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
+import '../connect_BD/connect.dart';
 import '/services/snack_bar.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -48,19 +49,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
       // Проверка таблицы, из которой произошел вход
       if (user != null) {
-        final connection = PostgreSQLConnection(
-          '37.140.241.144',
-          5432,
-          'postgres',
-          username: 'postgres',
-          password: '1',
-        );
+        final postgresConnection = createDatabaseConnection();
 
         try {
-          await connection.open();
+          await postgresConnection.open();
 
           final query = 'SELECT * FROM users_sotrud WHERE user_id = @userId';
-          final results = await connection.query(query, substitutionValues: {
+          final results = await postgresConnection.query(query, substitutionValues: {
             'userId': user.uid,
           });
 
@@ -79,7 +74,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           final query2 = 'SELECT * FROM restaurant WHERE user_id = @userId';
-          final results2 = await connection.query(query2, substitutionValues: {
+          final results2 = await postgresConnection.query(query2, substitutionValues: {
             'userId': user.uid,
           });
 
@@ -89,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
           }
 
           final query3 = 'SELECT * FROM companies WHERE user_id = @userId';
-          final results3 = await connection.query(query3, substitutionValues: {
+          final results3 = await postgresConnection.query(query3, substitutionValues: {
             'userId': user.uid,
           });
 
@@ -100,7 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
         } catch (e) {
           print(e);
         } finally {
-          await connection.close();
+          await postgresConnection.close();
         }
       }
     } on FirebaseAuthException catch (e) {

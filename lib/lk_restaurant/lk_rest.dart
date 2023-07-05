@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:postgres/postgres.dart';
+import '../connect_BD/connect.dart';
 import '../pages/account_screen.dart';
 
 class Kabinet extends StatefulWidget {
@@ -21,49 +22,21 @@ class _KabinetState extends State<Kabinet> {
   void initState() {
     super.initState();
     fetchRestaurantName();
-    //updateDeviceToken();
   }
 
-  // void updateDeviceToken() async { // записывет токен в бд
-  //   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  //   final String? deviceToken = await _firebaseMessaging.getToken();
-  //
-  //   final connection = PostgreSQLConnection(
-  //     '37.140.241.144',
-  //     5432,
-  //     'postgres',
-  //     username: 'postgres',
-  //     password: '1',
-  //   );
-  //
-  //   await connection.open();
-  //
-  //   await connection.execute(
-  //     'UPDATE restaurant SET device_token = @deviceToken WHERE user_id = @userId;',
-  //     substitutionValues: {'deviceToken': deviceToken, 'userId': user?.uid},
-  //   );
-  //
-  //   await connection.close();
-  // }
 
 
   void fetchRestaurantName() async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    final postgresConnection = createDatabaseConnection();
 
-    await connection.open();
+    await postgresConnection.open();
 
-    final userSotrudResults = await connection.query(
+    final userSotrudResults = await postgresConnection.query(
       'SELECT name_rest FROM users_sotrud WHERE user_id = @userId;',
       substitutionValues: {'userId': user?.uid},
     );
 
-    final restaurantResults = await connection.query(
+    final restaurantResults = await postgresConnection.query(
       'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
       substitutionValues: {'userId': user?.uid},
     );
@@ -79,7 +52,7 @@ class _KabinetState extends State<Kabinet> {
       });
     }
 
-    await connection.close();
+    await postgresConnection.close();
   }
 
   void goInvent() {
