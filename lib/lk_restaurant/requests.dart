@@ -151,7 +151,6 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       trailing: ElevatedButton(
                         onPressed: () {
                           acceptJoinRequest(request.restaurantName, request.userId);
-                          createTableForUsers();
                         },
                         child: Text('Принять'),
                       ),
