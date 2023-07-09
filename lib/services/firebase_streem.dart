@@ -29,7 +29,7 @@ class FirebaseStream extends StatelessWidget {
               checkBoxValue2: checkBoxValue2,
               checkBoxValue3: checkBoxValue3,);
           }
-          return const LkUser(); //если пользователь авторизован переходим на эту страницу
+          return const Kabinet(); //если пользователь авторизован переходим на эту страницу
         } else {
           return const HomeScreen(); //если не авторизован
         }
