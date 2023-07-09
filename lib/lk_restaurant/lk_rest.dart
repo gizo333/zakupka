@@ -67,9 +67,9 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void goMinimum(){
+  void goExcel(){
     if (user != null) {
-      Navigator.pushNamed(context, '/push');
+      Navigator.pushNamed(context, '/excel');
     }
   }
 
@@ -119,13 +119,13 @@ class _KabinetState extends State<Kabinet> {
                   child: const Text("Инвентаризация"),
                 ),
                 ElevatedButton(
-                  onPressed: goMinimum,
+                  onPressed: goExcel,
                   style: ElevatedButton.styleFrom(
                     foregroundColor: Colors.black,
                     backgroundColor: Colors.white70,
                     shadowColor: Colors.blueGrey,
                   ),
-                  child: const Text("Стоп-Минимум"),
+                  child: const Text("Excel"),
                 ),
               ],
             ),
