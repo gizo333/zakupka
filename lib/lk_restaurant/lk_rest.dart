@@ -1,10 +1,12 @@
-import 'package:firebase_messaging/firebase_messaging.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
-import 'package:postgres/postgres.dart';
 import '../connect_BD/connect.dart';
+import '../connect_BD/connect_web.dart';
 import '../pages/account_screen.dart';
+import 'dart:io';
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
@@ -25,34 +27,96 @@ class _KabinetState extends State<Kabinet> {
   }
 
 
-
   void fetchRestaurantName() async {
-    final postgresConnection = createDatabaseConnection();
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      // Mobile device
+      final postgresConnection = createDatabaseConnection();
+      await postgresConnection.open();
 
-    await postgresConnection.open();
+      try {
+        final userSotrudResults = await postgresConnection.query(
+          'SELECT name_rest FROM users_sotrud WHERE user_id = @userId;',
+          substitutionValues: {'userId': user?.uid},
+        );
 
-    final userSotrudResults = await postgresConnection.query(
-      'SELECT name_rest FROM users_sotrud WHERE user_id = @userId;',
-      substitutionValues: {'userId': user?.uid},
-    );
+        final restaurantResults = await postgresConnection.query(
+          'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
+          substitutionValues: {'userId': user?.uid},
+        );
 
-    final restaurantResults = await postgresConnection.query(
-      'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
-      substitutionValues: {'userId': user?.uid},
-    );
+        if (userSotrudResults.isNotEmpty) {
+          setState(() {
+            restaurantName = userSotrudResults[0][0].toString();
+          });
+        } else if (restaurantResults.isNotEmpty) {
+          setState(() {
+            restaurantName = restaurantResults[0][0].toString();
+            isInRestaurantTable = true;
+          });
+        }
+      } finally {
+        await postgresConnection.close();
+      }
+    } else {
+      // Browser
+      final userSotrudResults = await getDataFromServer('users_sotrud', 'user_id');
+      final restaurantResults = await getDataFromServer('restaurant', 'user_id');
+      final userId = user?.uid;
 
-    if (userSotrudResults.isNotEmpty) {
-      setState(() {
-        restaurantName = userSotrudResults[0][0].toString();
-      });
-    } else if (restaurantResults.isNotEmpty) {
-      setState(() {
-        restaurantName = restaurantResults[0][0].toString();
-        isInRestaurantTable = true;
-      });
+      if (userSotrudResults.isNotEmpty) {
+        final isUserFoundInUsersSotrud = userSotrudResults.contains(userId);
+        if (isUserFoundInUsersSotrud) {
+          setState(() {
+            restaurantName = userSotrudResults[0].toString();
+          });
+          return;
+        }
+      }
+
+      if (restaurantResults.isNotEmpty) {
+        final userId = user?.uid.toString();
+        final restaurantUrl = 'http://37.140.241.144:8080/api/restaurant/';
+        // final url = 'http://37.140.241.144:8080/api/restaurant/user_id';
+        //
+        // final response = await http.get(Uri.parse(url));
+        //
+        // if (response.statusCode == 200) {
+        //   final data = jsonDecode(response.body) as List<dynamic>;
+        //
+        //   if (data.contains(userId)) {
+        //     print('Массив данных содержит user.uid: $userId');
+        //   } else {
+        //     print('Массив данных не содержит user.uid: $userId');
+        //   }
+        // } else {
+        //   print('Ошибка при получении данных: ${response.statusCode}');
+        // }
+
+
+        final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
+        if (restaurantResponse.statusCode == 200) {
+          final restaurantData = jsonDecode(restaurantResponse.body) as List<dynamic>;
+
+          final matchingRestaurant = restaurantData.firstWhere(
+                (result) => result['user_id'] == userId,
+            orElse: () => null,
+          );
+
+          if (matchingRestaurant != null) {
+             restaurantName = matchingRestaurant['restaurant'].toString();
+            setState(() {
+              isInRestaurantTable = true;
+            });
+          } else {
+            // Обработка случая, когда ресторан с указанным user_id не найден
+          }
+        } else {
+          throw Exception('Ошибка при получении данных: ${restaurantResponse.statusCode}');
+        }
+      }
+
     }
 
-    await postgresConnection.close();
   }
 
   void goInvent() {
