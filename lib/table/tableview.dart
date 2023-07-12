@@ -78,6 +78,7 @@ class _TableViewState extends State<TableView> {
         return name.contains(_searchQuery.toLowerCase());
       }).toList();
     });
+    saveDataToPostgreSQL(_lists, widget.tableName);
   }
 
   void _resetSearch() {
@@ -216,6 +217,7 @@ class _TableViewState extends State<TableView> {
                         children: [
                           Expanded(
                             child: TextFormField(
+                              // readOnly: true,
                               maxLines: 4,
                               controller: position.codeController,
                               keyboardType: TextInputType.number,
@@ -256,6 +258,7 @@ class _TableViewState extends State<TableView> {
                             flex: 2,
                             // fit: FlexFit.tight,
                             child: TextFormField(
+                              // readOnly: true,
                               decoration: const InputDecoration(
                                 filled: true,
                                 fillColor: Color.fromARGB(255, 255, 255, 255),
@@ -407,7 +410,7 @@ class _TableViewState extends State<TableView> {
                         onPressed: () async {
                           await fetchAndSetItogFromDatabase(widget.tableName);
                           saveItog(_lists);
-                          saveDataToPostgreSQL(_lists, widget.tableName);
+                          await saveDataToPostgreSQL(_lists, widget.tableName);
                         },
                         child: const Text(
                           'Save',
@@ -477,7 +480,7 @@ class _TableViewState extends State<TableView> {
 
       final result = await connection.query('SELECT itog FROM $tableName');
 
-      for (int i = 0; i < _lists.length; i++) {
+      for (int i = 0; i < result.length; i++) {
         final itogValue =
             result[i][0]; // Получить значение "итог" из результата запроса
 
@@ -553,6 +556,7 @@ class _TableViewState extends State<TableView> {
         });
       }
     }
+    saveDataToPostgreSQL(_lists, widget.tableName);
   }
 
   List<DataColumn> getColumns(List<String> columns) =>
@@ -582,6 +586,7 @@ class _TableViewState extends State<TableView> {
       _sortColumnIndex = columnIndex;
       _sortAsc = ascending;
     });
+    saveDataToPostgreSQL(_lists, widget.tableName);
   }
 
   void addNewField() {
@@ -590,5 +595,6 @@ class _TableViewState extends State<TableView> {
       // _originalList.add(PositionClass(null, '', null, null));
       _originalList = List.from(_lists);
     });
+    saveDataToPostgreSQL(_lists, widget.tableName);
   }
 }
