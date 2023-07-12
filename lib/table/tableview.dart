@@ -111,12 +111,12 @@ class _TableViewState extends State<TableView> {
   Widget build(BuildContext context) {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
     return Scaffold(
-      floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          addNewField();
-        },
-        child: const Icon(Icons.add),
-      ),
+      // floatingActionButton: FloatingActionButton(
+      //   onPressed: () {
+      //     addNewField();
+      //   },
+      //   child: const Icon(Icons.add),
+      // ),
       appBar: AppBar(
         title: const Text(
           'Table',
@@ -303,7 +303,8 @@ class _TableViewState extends State<TableView> {
                           Expanded(
                             flex: 1,
                             child: TextFormField(
-                              decoration: const InputDecoration(
+                              readOnly: true,
+                              decoration: InputDecoration(
                                 filled: true,
                                 fillColor: Color.fromARGB(255, 255, 255, 255),
                                 border: OutlineInputBorder(),
@@ -331,24 +332,91 @@ class _TableViewState extends State<TableView> {
               ),
             ),
             Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
-              child: ElevatedButton(
-                onPressed: _uploadExcelFile,
-                child: const Text('Upload Excel File'),
-              ),
-            ),
-            Container(
-              alignment: Alignment.centerLeft,
-              padding: const EdgeInsets.only(bottom: 10, top: 10, left: 10),
-              child: ElevatedButton(
-                // Сохраняет значение _листс в базу данных
-                onPressed: () {
-                  saveItog(_lists);
-                  // saveDataToPostgreSQL(context, _lists);
-                  saveDataToPostgreSQL(_lists, widget.tableName);
-                },
-                child: const Text('Save'),
+              color: const Color.fromARGB(106, 158, 158, 158),
+              child: Column(
+                mainAxisSize: MainAxisSize.min, // Ограничение по вертикали
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 10),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        SizedBox(
+                          width: 170,
+                          child: Container(
+                            padding: const EdgeInsets.only(
+                                bottom: 10, top: 10, left: 10),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Colors.black, // Цвет фона первой кнопки
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10)),
+                                ),
+                              ),
+                              onPressed: _uploadExcelFile,
+                              child: const Text(
+                                'xls Файл',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                        SizedBox(
+                          width: 170,
+                          child: Container(
+                            padding: const EdgeInsets.only(
+                                bottom: 10, top: 10, right: 10),
+                            child: ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor:
+                                    Colors.black, // Цвет фона второй кнопки
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(10)),
+                                ),
+                              ),
+                              onPressed: addNewField,
+                              child: const Text(
+                                'Добавить поле',
+                                style: TextStyle(
+                                    color: Colors.white, fontSize: 14),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
+                    child: SizedBox(
+                      width: 100,
+                      height: 40,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.black, // Цвет фона третьей кнопки
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                        ),
+                        onPressed: () async {
+                          await fetchAndSetItogFromDatabase(widget.tableName);
+                          saveItog(_lists);
+                          saveDataToPostgreSQL(_lists, widget.tableName);
+                        },
+                        child: const Text(
+                          'Save',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ],
@@ -395,6 +463,36 @@ class _TableViewState extends State<TableView> {
     }
   }
 
+  Future<void> fetchAndSetItogFromDatabase(String tableName) async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    try {
+      await connection.open();
+
+      final result = await connection.query('SELECT itog FROM $tableName');
+
+      for (int i = 0; i < _lists.length; i++) {
+        final itogValue =
+            result[i][0]; // Получить значение "итог" из результата запроса
+
+        setState(() {
+          _lists[i].itog = itogValue;
+          _lists[i].itogController.text = itogValue.toString();
+        });
+      }
+
+      await connection.close();
+    } catch (e) {
+      print('Error fetching "itog" from the database: $e');
+    }
+  }
+
   void saveItog(List<PositionClass> list) {
     // ignore: unused_local_variable
     int itog = 0;
@@ -406,6 +504,8 @@ class _TableViewState extends State<TableView> {
         setState(() {
           _lists[i].itog = list[i].itog;
           _lists[i].itogController.text = list[i].itog?.toString() ?? '';
+          list[i].ml = 0;
+          _lists[i].mlController.text = '';
         });
       });
     }
