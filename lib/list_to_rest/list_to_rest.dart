@@ -22,19 +22,19 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
 
   Future<void> fetchAndPrintRestaurants() async {
-    List<String> restaurants = await fetchRestaurants();
+    List<String> restaurants = await fetchRestaurants(searchQuery);
     for (var restaurant in restaurants) {
-      print('Restaurant: $restaurant');
+      //print('Restaurant: $restaurant');
     }
   }
 
 
-  Future<List<String>> fetchRestaurants({String searchQuery = ''}) async {
+  Future<List<String>> fetchRestaurants(String searchQuery) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
       List<dynamic> data = await getDataFromServer('restaurant', 'restaurant');
-      print('Received data: $data');  // Add this line to log the data
-      return data.cast<String>();
+      List<String> filteredData = data.where((item) => item.contains(searchQuery)).cast<String>().toList();
+      return filteredData;
     } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       // Использовать Postgres для Android и IOS
       final postgresConnection = createDatabaseConnection();
@@ -60,11 +60,18 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
 
+
+
   Future<String> getUserFullName(String userId) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
-      List<dynamic> data = await getDataFromServer('users_sotrud', userId);
-      return data.isNotEmpty ? data.first as String : '';
+      Map<String, dynamic> data = await getUserData('users_sotrud', userId);
+      if (data.containsKey(userId)) {
+        // userId найден в данных, делаем что-то дальше
+      } else {
+        // userId не найден в данных
+      }
+      return data.isNotEmpty ? (data[userId] as String?) ?? '' : '';
     } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       // Использовать Postgres для Android и IOS
       final postgresConnection = createDatabaseConnection();
@@ -76,8 +83,8 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         );
 
         if (result.isNotEmpty) {
-          final fullName = result.first[0] as String;
-          return fullName;
+          final fullName = result.first[0] as String?;
+          return fullName ?? '';
         } else {
           return '';
         }
@@ -91,6 +98,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       throw UnsupportedError('This platform is not supported');
     }
   }
+
+
+
 
   Future<void> sendJoinRequest(String restaurantName, String userFullName, String userId, RestaurantListProvider restaurantListProvider) async {
     if (kIsWeb) {
@@ -213,7 +223,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
           ),
           Expanded(
             child: FutureBuilder<List<String>>(
-              future: fetchRestaurants(),
+              future: fetchRestaurants(searchQuery),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -239,67 +249,75 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                         return FutureBuilder<String>(
                           future: getUserFullName(userId),
                           builder: (context, fullNameSnapshot) {
-                            if (fullNameSnapshot.connectionState ==
-                                ConnectionState.waiting) {
-                              return Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            } else if (fullNameSnapshot.hasData) {
-                              final userFullName = fullNameSnapshot.data!;
-                              return ListView.builder(
-                                itemCount: restaurants.length,
-                                itemBuilder: (context, index) {
-                                  final name = restaurants[index];
-                                  final isRequestSent =
-                                      _restaurantListProvider.getRequestStatus(
-                                          name, userId) == 'pending';
-
-                                  return Column(
-                                    children: [
-                                      ListTile(
-                                        title: Text(name),
-                                        trailing: isRequestSent
-                                            ? ElevatedButton(
-                                          onPressed: () {
-                                            final restaurantListProvider = Provider.of<RestaurantListProvider>(context, listen: false);
-                                           // cancelJoinRequest(name, userId, restaurantListProvider);
-                                          },
-                                          child: Text('Отменить'),
-                                        )
-
-                                            : ElevatedButton(
-                                          onPressed: () {
-                                            final restaurantListProvider = Provider.of<RestaurantListProvider>(context, listen: false);
-                                            setState(() {
-                                              buttonState = true;
-                                            });
-                                           // sendJoinRequest(name, userFullName, userId, restaurantListProvider);
-                                          },
-                                          child: Text('Вступить'),
-                                        )
-                                        ,
-                                      ),
-                                      Divider(
-                                        height: 1,
-                                        thickness: 1,
-                                        color: Colors.grey,
-                                      ),
-                                    ],
+                            switch (fullNameSnapshot.connectionState) {
+                              case ConnectionState.none:
+                                return Text('Future not started yet');
+                              case ConnectionState.waiting:
+                                return Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              case ConnectionState.active:
+                                return Text('Future still active, not done yet');
+                              case ConnectionState.done:
+                                if (fullNameSnapshot.hasError) {
+                                  return Center(
+                                    child: Text('Error: ${fullNameSnapshot.error}'),
                                   );
-                                },
-                              );
-                            } else if (fullNameSnapshot.hasError) {
-                              return Center(
-                                child: Text(
-                                    'Error: ${fullNameSnapshot.error}'),
-                              );
-                            }
+                                } else if (fullNameSnapshot.hasData) {
+                                  final userFullName = fullNameSnapshot.data!;
+                                  return ListView.builder(
+                                    itemCount: restaurants.length,
+                                    itemBuilder: (context, index) {
+                                      final name = restaurants[index];
+                                      final isRequestSent =
+                                          _restaurantListProvider.getRequestStatus(name, userId) ==
+                                              'pending';
 
-                            return Center(
-                              child: Text('3'),
-                            );
+                                      return Column(
+                                        children: [
+                                          ListTile(
+                                            title: Text(name),
+                                            trailing: isRequestSent
+                                                ? ElevatedButton(
+                                              onPressed: () {
+                                                final restaurantListProvider =
+                                                Provider.of<RestaurantListProvider>(context,
+                                                    listen: false);
+                                                 cancelJoinRequest(name, userId, restaurantListProvider);
+                                              },
+                                              child: Text('Отменить'),
+                                            )
+                                                : ElevatedButton(
+                                              onPressed: () {
+                                                final restaurantListProvider =
+                                                Provider.of<RestaurantListProvider>(context,
+                                                    listen: false);
+                                                setState(() {
+                                                  buttonState = true;
+                                                });
+                                                 sendJoinRequest(name, userFullName, userId, restaurantListProvider);
+                                              },
+                                              child: Text('Вступить'),
+                                            ),
+                                          ),
+                                          Divider(
+                                            height: 1,
+                                            thickness: 1,
+                                            color: Colors.grey,
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  );
+                                } else {
+                                  return Center(
+                                    child: Text('Unknown error occurred'),
+                                  );
+                                }
+                            }
                           },
                         );
+
 
 
 
