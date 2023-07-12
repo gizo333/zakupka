@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'package:postgres/postgres.dart';
+import '../connect_BD/connect.dart';
 import 'validation.dart';
 import '../lk_user/new_teble.dart';
 
@@ -142,23 +143,17 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL
-          final connection = PostgreSQLConnection(
-            '37.140.241.144',
-            5432,
-            'postgres',
-            username: 'postgres',
-            password: '1',
-          );
+          final postgresConnection = createDatabaseConnection();
 
           try {
-            await connection.open();
+            await postgresConnection.open();
 
             final query = '''
             INSERT INTO companies (user_id, email, password, company, phone, inn)
             VALUES (@userId, @email, @password, @company, @phone, @inn)
           ''';
 
-            await connection.query(
+            await postgresConnection.query(
               query,
               substitutionValues: {
                 'userId': user.uid,
@@ -174,7 +169,7 @@ class _SignUpFormState extends State<SignUpForm> {
           } catch (e) {
             print(e);
           } finally {
-            await connection.close();
+            await postgresConnection.close();
           }
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
@@ -187,23 +182,17 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL
-          final connection = PostgreSQLConnection(
-            '37.140.241.144',
-            5432,
-            'postgres',
-            username: 'postgres',
-            password: '1',
-          );
+          final postgresConnection = createDatabaseConnection();
 
           try {
-            await connection.open();
+            await postgresConnection.open();
 
             final query = '''
             INSERT INTO restaurant (user_id, email, password, restaurant, full_name, position)
             VALUES (@userId, @email, @password, @restaurant, @fullName, @position)
           ''';
 
-            await connection.query(
+            await postgresConnection.query(
               query,
               substitutionValues: {
                 'userId': user.uid,
@@ -219,7 +208,7 @@ class _SignUpFormState extends State<SignUpForm> {
           } catch (e) {
             print(e);
           } finally {
-            await connection.close();
+            await postgresConnection.close();
           }
         } else if (checkBoxValue3) {
           // Регистрация пользователя-ресторана
@@ -235,23 +224,17 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL
-          final connection = PostgreSQLConnection(
-            '37.140.241.144',
-            5432,
-            'postgres',
-            username: 'postgres',
-            password: '1',
-          );
+          final postgresConnection = createDatabaseConnection();
 
           try {
-            await connection.open();
+            await postgresConnection.open();
 
             final query = '''
       INSERT INTO users_sotrud (user_id, email, password, full_name, position)
       VALUES (@userId, @email, @password, @fullName, @position)
     ''';
 
-            await connection.query(
+            await postgresConnection.query(
               query,
               substitutionValues: {
                 'userId': currentUser?.uid,
@@ -266,7 +249,7 @@ class _SignUpFormState extends State<SignUpForm> {
           } catch (e) {
             print(e);
           } finally {
-            await connection.close();
+            await postgresConnection.close();
           }
         }
       }

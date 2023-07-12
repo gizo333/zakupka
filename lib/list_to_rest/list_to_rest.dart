@@ -1,8 +1,13 @@
+import 'dart:convert';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:postgres/postgres.dart';
 import 'package:provider/provider.dart';
+import '../connect_BD/connect.dart';
+import '../connect_BD/connect_web.dart';
 import 'restaurant_list_bloc.dart';
+import 'dart:io';
 
 class RestaurantListPage extends StatefulWidget {
   @override
@@ -16,14 +21,8 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   Map<String, bool> joinRequests = {};
 
-  Future<List<String>> fetchRestaurants() async {
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+  Future<List<String>> fetchRestaurants() async { //поиск по БД
+    final postgresConnection = createDatabaseConnection();
 
     try {
       await postgresConnection.open();
@@ -43,77 +42,112 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
   Future<String> getUserFullName(String userId) async {
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      final postgresConnection = createDatabaseConnection();
 
-    try {
-      await postgresConnection.open();
-      final result = await postgresConnection.query(
-          'SELECT full_name FROM users_sotrud WHERE user_id = \'$userId\'');
-      postgresConnection.close();
+      try {
+        await postgresConnection.open();
+        final result = await postgresConnection.query(
+            'SELECT full_name FROM users_sotrud WHERE user_id = \'$userId\'');
+        postgresConnection.close();
 
-      if (result.isNotEmpty) {
-        final fullName = result.first[0] as String;
-        return fullName;
-      } else {
-        return '';
+        if (result.isNotEmpty) {
+          final fullName = result.first[0] as String;
+          return fullName;
+        } else {
+          return '';
+        }
+      } catch (e) {
+        print('Error fetching user full name: $e');
+        throw e;
+      } finally {
+        await postgresConnection.close();
       }
-    } catch (e) {
-      print('Error fetching user full name: $e');
-      throw e;
-    } finally {
-      await postgresConnection.close();
+    } else {
+      final url = Uri.parse('http://37.140.241.144:8080/api/users/$userId/full_name');
+
+      try {
+        final response = await http.get(url);
+
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final fullName = data['full_name'] as String;
+          return fullName;
+        } else {
+          throw Exception('Ошибка при получении полного имени пользователя: ${response.statusCode}');
+        }
+      } catch (e) {
+        throw Exception('Ошибка при выполнении запроса: $e');
+      }
     }
   }
 
-  Future<void> sendJoinRequest(String restaurantName, String userFullName,
-      String userId) async {
-    final restaurantListProvider = Provider.of<RestaurantListProvider>(
-        context, listen: false);
+
+
+
+  Future<void> sendJoinRequest(String restaurantName, String userFullName, String userId) async {
+    final restaurantListProvider = Provider.of<RestaurantListProvider>(context, listen: false);
 
     if (restaurantListProvider.selectedRestaurant != null) {
       final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
       await cancelJoinRequest(previousRestaurantName, userId);
     }
 
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+      final postgresConnection = createDatabaseConnection();
 
-    final buttonStateValue = buttonState;
+      final buttonStateValue = buttonState;
 
-    try {
-      await postgresConnection.open();
-      await postgresConnection.execute(
-        "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
-      );
+      try {
+        await postgresConnection.open();
+        await postgresConnection.execute(
+          "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
+        );
 
+        print('Join request sent successfully');
 
-      print('Join request sent successfully');
-
-      // Обновление состояния запроса в провайдере
-      restaurantListProvider.selectedRestaurant = restaurantName;
-      if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
-        restaurantListProvider.joinRequests[restaurantName] = {};
+        // Обновление состояния запроса в провайдере
+        restaurantListProvider.selectedRestaurant = restaurantName;
+        if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
+          restaurantListProvider.joinRequests[restaurantName] = {};
+        }
+        restaurantListProvider.joinRequests[restaurantName]![userId] = 'pending';
+        restaurantListProvider.notifyListeners();
+      } catch (e) {
+        print('Error sending join request: $e');
+        throw e;
+      } finally {
+        await postgresConnection.close();
       }
-      restaurantListProvider.joinRequests[restaurantName]![userId] = 'pending';
-      restaurantListProvider.notifyListeners();
-    } catch (e) {
-      print('Error sending join request: $e');
-      throw e;
-    } finally {
-      await postgresConnection.close();
+    } else {
+
+      try {
+        final body = {
+          'restaurant_name': restaurantName,
+          'user_full_name': userFullName,
+          'user_id': userId,
+          'status': 'pending',
+          'button_state': buttonState
+        };
+
+        await executeServerRequest('join_requests', 'status', body: body);
+
+        print('Join request sent successfully');
+
+        // Обновление состояния запроса в провайдере
+        restaurantListProvider.selectedRestaurant = restaurantName;
+        if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
+          restaurantListProvider.joinRequests[restaurantName] = {};
+        }
+        restaurantListProvider.joinRequests[restaurantName]![userId] = 'pending';
+        restaurantListProvider.notifyListeners();
+      } catch (e) {
+        print('Error sending join request: $e');
+        throw e;
+      }
     }
   }
+
 
   Future<void> cancelJoinRequest(String restaurantName, String userId) async {
     final restaurantListProvider = Provider.of<RestaurantListProvider>(
@@ -123,13 +157,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       restaurantListProvider.selectedRestaurant = null;
     }
 
-    final postgresConnection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+    final postgresConnection = createDatabaseConnection();
 
     try {
       await postgresConnection.open();

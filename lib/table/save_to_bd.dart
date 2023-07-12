@@ -1,20 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 
+import '../connect_BD/connect.dart';
+
 Future<void> saveDataToPostgreSQL(BuildContext context, List<dynamic> _lists) async {
-  final connection = PostgreSQLConnection(
-    '37.140.241.144',
-    5432,
-    'postgres',
-    username: 'postgres',
-    password: '1',
-  );
+  final postgresConnection = createDatabaseConnection();
 
   try {
-    await connection.open();
+    await postgresConnection.open();
 
     // Очистить таблицу перед импортом (если нужно)
-    await connection.execute('DELETE FROM position');
+    await postgresConnection.execute('DELETE FROM position');
 
     // Создать список значений для вставки
     final values = _lists
@@ -25,14 +21,14 @@ Future<void> saveDataToPostgreSQL(BuildContext context, List<dynamic> _lists) as
     final stopwatch = Stopwatch()..start();
 
     // Вставить данные в таблицу
-    await connection.execute('INSERT INTO position (code, name, ml, itog) VALUES $values');
+    await postgresConnection.execute('INSERT INTO position (code, name, ml, itog) VALUES $values');
 
     // Остановить и вывести время сохранения в консоль
     stopwatch.stop();
     print('Время сохранения в PostgreSQL: ${stopwatch.elapsed.inMilliseconds} мс');
 
     // Закрыть соединение
-    await connection.close();
+    await postgresConnection.close();
 
     // Очистить списки после сохранения данных в БД
     _lists.clear();

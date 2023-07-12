@@ -11,6 +11,8 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final user = FirebaseAuth.instance.currentUser;
 
+
+
   void login() {
     if (user == null) {
       Navigator.pushNamed(context, '/login');
@@ -83,3 +85,5 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 }
+
+

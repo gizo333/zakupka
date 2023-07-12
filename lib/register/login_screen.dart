@@ -1,8 +1,14 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:postgres/postgres.dart';
+import '../connect_BD/connect.dart';
+import '../connect_BD/connect_web.dart';
 import '/services/snack_bar.dart';
+import 'package:http/http.dart' as http;
+
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -43,65 +49,100 @@ class _LoginScreenState extends State<LoginScreen> {
         password: passwordTextInputController.text.trim(),
       );
 
-      // Получение текущего пользователя
       final User? user = FirebaseAuth.instance.currentUser;
 
-      // Проверка таблицы, из которой произошел вход
       if (user != null) {
-        final connection = PostgreSQLConnection(
-          '37.140.241.144',
-          5432,
-          'postgres',
-          username: 'postgres',
-          password: '1',
-        );
+        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+          final postgresConnection = createDatabaseConnection();
 
-        try {
-          await connection.open();
+          try {
+            await postgresConnection.open();
 
-          final query = 'SELECT * FROM users_sotrud WHERE user_id = @userId';
-          final results = await connection.query(query, substitutionValues: {
-            'userId': user.uid,
-          });
+            final query = 'SELECT * FROM users_sotrud WHERE user_id = @userId';
+            final results = await postgresConnection.query(
+                query, substitutionValues: {
+              'userId': user.uid,
+            });
 
-          if (results.isNotEmpty) {
-            final nameRest = results.first[6] as String?;
+            if (results.isNotEmpty) {
+              final nameRest = results.first[6] as String?;
 
-            if (nameRest != null && nameRest.isNotEmpty && nameRest != 'null') {
-              // Поле name_rest имеет значение, отличное от пустой строки и 'null'
-              navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
-              return;
-            } else {
-              // Поле name_rest пустое, равно 'null' или равно null
-              navigator.pushNamedAndRemoveUntil('/lk-user', (Route<dynamic> route) => false);
+              if (nameRest != null && nameRest.isNotEmpty &&
+                  nameRest != 'null') {
+                navigator.pushNamedAndRemoveUntil(
+                    '/kabinet', (Route<dynamic> route) => false);
+                return;
+              } else {
+                navigator.pushNamedAndRemoveUntil(
+                    '/lk-user', (Route<dynamic> route) => false);
+                return;
+              }
+            }
+
+            final query2 = 'SELECT * FROM restaurant WHERE user_id = @userId';
+            final results2 = await postgresConnection.query(
+                query2, substitutionValues: {
+              'userId': user.uid,
+            });
+
+            if (results2.isNotEmpty) {
+              navigator.pushNamedAndRemoveUntil(
+                  '/kabinet', (Route<dynamic> route) => false);
               return;
             }
+
+            final query3 = 'SELECT * FROM companies WHERE user_id = @userId';
+            final results3 = await postgresConnection.query(
+                query3, substitutionValues: {
+              'userId': user.uid,
+            });
+
+            if (results3.isNotEmpty) {
+              navigator.pushNamedAndRemoveUntil(
+                  '/kabinet', (Route<dynamic> route) => false);
+              return;
+            }
+          } catch (e) {
+            print(e);
+          } finally {
+            await postgresConnection.close();
           }
+        } else {
+          final tableName = 'users_sotrud';
+          final fieldName = 'user_id';
 
-          final query2 = 'SELECT * FROM restaurant WHERE user_id = @userId';
-          final results2 = await connection.query(query2, substitutionValues: {
-            'userId': user.uid,
-          });
+          try {
+            final data = await getDataFromServer(tableName, fieldName);
+            final userId = user.uid;
 
-          if (results2.isNotEmpty) {
-            navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
-            return;
+            final isUserFoundInUsersSotrud = data.contains(userId);
+
+            if (isUserFoundInUsersSotrud) {
+              navigator.pushNamedAndRemoveUntil(
+                  '/lk-user', (Route<dynamic> route) => false);
+              return;
+            }
+
+            final restaurantTableName = 'restaurant';
+            final restaurantData = await getDataFromServer(
+                restaurantTableName, 'user_id');
+            final isUserFoundInRestaurant = restaurantData.contains(userId);
+
+            if (isUserFoundInRestaurant) {
+              navigator.pushNamedAndRemoveUntil(
+                  '/kabinet', (Route<dynamic> route) => false);
+              return;
+            }
+
+            // Handle case when no match is found
+          } catch (e) {
+            throw Exception('Ошибка при выполнении запроса: $e');
           }
-
-          final query3 = 'SELECT * FROM companies WHERE user_id = @userId';
-          final results3 = await connection.query(query3, substitutionValues: {
-            'userId': user.uid,
-          });
-
-          if (results3.isNotEmpty) {
-            navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
-            return;
-          }
-        } catch (e) {
-          print(e);
-        } finally {
-          await connection.close();
         }
+
+
+
+
       }
     } on FirebaseAuthException catch (e) {
       print(e.code);
@@ -227,3 +268,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+
