@@ -46,6 +46,7 @@ dependencies:
   email_validator:
   firebase_core_web:
   vibration:
+  http:
   flutter:
     sdk: flutter
 

@@ -11,7 +11,7 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   final user = FirebaseAuth.instance.currentUser;
-  final userData = FirebaseAuth.instance.currentUser;
+  //final userData = FirebaseAuth.instance.currentUser;
 
 
   Future<void> signOut() async {
@@ -49,7 +49,7 @@ class _AccountScreenState extends State<AccountScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text('Ваш Email: ${user?.uid}'),
-             Text("Name: ${userData}"),
+             //Text("Name: ${userData}"),
 
             TextButton(
               onPressed: () => signOut(),
