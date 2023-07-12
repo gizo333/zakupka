@@ -78,7 +78,7 @@ class _TableViewState extends State<TableView> {
         return name.contains(_searchQuery.toLowerCase());
       }).toList();
     });
-    saveDataToPostgreSQL(_lists, widget.tableName);
+    // saveDataToPostgreSQL(_lists, widget.tableName);
   }
 
   void _resetSearch() {
@@ -112,12 +112,6 @@ class _TableViewState extends State<TableView> {
   Widget build(BuildContext context) {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
     return Scaffold(
-      // floatingActionButton: FloatingActionButton(
-      //   onPressed: () {
-      //     addNewField();
-      //   },
-      //   child: const Icon(Icons.add),
-      // ),
       appBar: AppBar(
         title: const Text(
           'Table',
@@ -130,18 +124,18 @@ class _TableViewState extends State<TableView> {
         child: Column(
           // crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Поиск',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  _filterList();
-                });
-              },
-            ),
+            // TextField(
+            //   decoration: const InputDecoration(
+            //     labelText: 'Поиск',
+            //     prefixIcon: Icon(Icons.search),
+            //   ),
+            //   onChanged: (value) {
+            //     setState(() {
+            //       _searchQuery = value;
+            //       _filterList();
+            //     });
+            //   },
+            // ),
             // IconButton(
             //   icon: Icon(Icons.close),
             //   onPressed: _resetSearch,
@@ -154,7 +148,7 @@ class _TableViewState extends State<TableView> {
                   Expanded(
                     child: InkWell(
                       onTap: () {
-                        onSort(columnIndex, !_sortAsc);
+                        // onSort(columnIndex, !_sortAsc);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 1),
@@ -302,12 +296,12 @@ class _TableViewState extends State<TableView> {
                               },
                             ),
                           ),
-                          SizedBox(width: 15), // Промежуток шириной 10
+                          const SizedBox(width: 15), // Промежуток шириной 10
                           Expanded(
                             flex: 1,
                             child: TextFormField(
                               readOnly: true,
-                              decoration: InputDecoration(
+                              decoration: const InputDecoration(
                                 filled: true,
                                 fillColor: Color.fromARGB(255, 255, 255, 255),
                                 border: OutlineInputBorder(),
@@ -354,7 +348,7 @@ class _TableViewState extends State<TableView> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     Colors.black, // Цвет фона первой кнопки
-                                shape: RoundedRectangleBorder(
+                                shape: const RoundedRectangleBorder(
                                   borderRadius:
                                       BorderRadius.all(Radius.circular(10)),
                                 ),
@@ -377,7 +371,7 @@ class _TableViewState extends State<TableView> {
                               style: ElevatedButton.styleFrom(
                                 backgroundColor:
                                     Colors.black, // Цвет фона второй кнопки
-                                shape: RoundedRectangleBorder(
+                                shape: const RoundedRectangleBorder(
                                   borderRadius:
                                       BorderRadius.all(Radius.circular(10)),
                                 ),
@@ -403,17 +397,45 @@ class _TableViewState extends State<TableView> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor:
                               Colors.black, // Цвет фона третьей кнопки
-                          shape: RoundedRectangleBorder(
+                          shape: const RoundedRectangleBorder(
                             borderRadius: BorderRadius.all(Radius.circular(10)),
                           ),
                         ),
                         onPressed: () async {
                           await fetchAndSetItogFromDatabase(widget.tableName);
                           saveItog(_lists);
-                          await saveDataToPostgreSQL(_lists, widget.tableName);
+                          // await saveDataToPostgreSQL(_lists, widget.tableName);
+                          saveDataToPostgreSQLB(_lists, widget.tableName);
+                          setState(() {});
                         },
                         child: const Text(
                           'Save',
+                          style: TextStyle(color: Colors.white, fontSize: 14),
+                        ),
+                      ),
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
+                    child: SizedBox(
+                      width: 100,
+                      height: 40,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              Colors.black, // Цвет фона третьей кнопки
+                          shape: const RoundedRectangleBorder(
+                            borderRadius: BorderRadius.all(Radius.circular(10)),
+                          ),
+                        ),
+                        onPressed: () async {
+                          print('---------------------------------');
+                          for (var i = 0; i < _lists.length; i++) {
+                            print(_lists[i].name);
+                          }
+                        },
+                        child: const Text(
+                          'Debug',
                           style: TextStyle(color: Colors.white, fontSize: 14),
                         ),
                       ),
@@ -496,21 +518,15 @@ class _TableViewState extends State<TableView> {
     }
   }
 
-  void saveItog(List<PositionClass> list) {
-    // ignore: unused_local_variable
+void saveItog(List<PositionClass> list) {
     int itog = 0;
     for (int i = 0; i < list.length; i++) {
       itog += list[i].ml ?? 0;
       list[i].itog = (list[i].itog ?? 0) + (list[i].ml ?? 0);
-      print(list[i].itog);
-      Future.microtask(() {
-        setState(() {
-          _lists[i].itog = list[i].itog;
-          _lists[i].itogController.text = list[i].itog?.toString() ?? '';
-          list[i].ml = 0;
-          _lists[i].mlController.text = '';
-        });
-      });
+      list[i].ml = null;
+      _lists[i].itog = list[i].itog;
+      _lists[i].itogController.text = list[i].itog?.toString() ?? '';
+      _lists[i].mlController.text = '';
     }
     setState(() {
       _lists = list;
@@ -556,7 +572,7 @@ class _TableViewState extends State<TableView> {
         });
       }
     }
-    saveDataToPostgreSQL(_lists, widget.tableName);
+    saveDataToPostgreSQLB(_lists, widget.tableName);
   }
 
   List<DataColumn> getColumns(List<String> columns) =>
@@ -586,7 +602,7 @@ class _TableViewState extends State<TableView> {
       _sortColumnIndex = columnIndex;
       _sortAsc = ascending;
     });
-    saveDataToPostgreSQL(_lists, widget.tableName);
+    // saveDataToPostgreSQL(_lists, widget.tableName);
   }
 
   void addNewField() {
