@@ -142,10 +142,6 @@ class _TableViewState extends State<TableView> {
                 });
               },
             ),
-            IconButton(
-              icon: Icon(Icons.close),
-              onPressed: _resetSearch,
-            ),
             Row(
               children: [
                 for (int columnIndex = 0;
@@ -420,32 +416,6 @@ class _TableViewState extends State<TableView> {
                         },
                         child: const Text(
                           'Save',
-                          style: TextStyle(color: Colors.white, fontSize: 14),
-                        ),
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.fromLTRB(0, 0, 0, 40),
-                    child: SizedBox(
-                      width: 100,
-                      height: 40,
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor:
-                              Colors.black, // Цвет фона третьей кнопки
-                          shape: const RoundedRectangleBorder(
-                            borderRadius: BorderRadius.all(Radius.circular(10)),
-                          ),
-                        ),
-                        onPressed: () async {
-                          print('---------------------------------');
-                          for (var i = 0; i < _lists.length; i++) {
-                            print(_lists[i].name);
-                          }
-                        },
-                        child: const Text(
-                          'Debug',
                           style: TextStyle(color: Colors.white, fontSize: 14),
                         ),
                       ),
