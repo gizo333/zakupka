@@ -26,7 +26,6 @@ class _KabinetState extends State<Kabinet> {
     fetchRestaurantName();
   }
 
-
   void fetchRestaurantName() async {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       // Mobile device
@@ -59,8 +58,10 @@ class _KabinetState extends State<Kabinet> {
       }
     } else {
       // Browser
-      final userSotrudResults = await getDataFromServer('users_sotrud', 'user_id');
-      final restaurantResults = await getDataFromServer('restaurant', 'user_id');
+      final userSotrudResults =
+          await getDataFromServer('users_sotrud', 'user_id');
+      final restaurantResults =
+          await getDataFromServer('restaurant', 'user_id');
       final userId = user?.uid;
 
       if (userSotrudResults.isNotEmpty) {
@@ -92,18 +93,18 @@ class _KabinetState extends State<Kabinet> {
         //   print('Ошибка при получении данных: ${response.statusCode}');
         // }
 
-
         final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
         if (restaurantResponse.statusCode == 200) {
-          final restaurantData = jsonDecode(restaurantResponse.body) as List<dynamic>;
+          final restaurantData =
+              jsonDecode(restaurantResponse.body) as List<dynamic>;
 
           final matchingRestaurant = restaurantData.firstWhere(
-                (result) => result['user_id'] == userId,
+            (result) => result['user_id'] == userId,
             orElse: () => null,
           );
 
           if (matchingRestaurant != null) {
-             restaurantName = matchingRestaurant['restaurant'].toString();
+            restaurantName = matchingRestaurant['restaurant'].toString();
             setState(() {
               isInRestaurantTable = true;
             });
@@ -111,12 +112,11 @@ class _KabinetState extends State<Kabinet> {
             // Обработка случая, когда ресторан с указанным user_id не найден
           }
         } else {
-          throw Exception('Ошибка при получении данных: ${restaurantResponse.statusCode}');
+          throw Exception(
+              'Ошибка при получении данных: ${restaurantResponse.statusCode}');
         }
       }
-
     }
-
   }
 
   void goInvent() {
@@ -131,13 +131,13 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void goExcel(){
+  void goExcel() {
     if (user != null) {
       Navigator.pushNamed(context, '/excel');
     }
   }
 
-    void goListsNavigator(){
+  void goListsNavigator() {
     if (user != null) {
       Navigator.pushNamed(context, '/listsNavigator');
     }
@@ -156,7 +156,8 @@ class _KabinetState extends State<Kabinet> {
               if (user != null) {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const AccountScreen()),
+                  MaterialPageRoute(
+                      builder: (context) => const AccountScreen()),
                 );
               }
             },
@@ -168,56 +169,52 @@ class _KabinetState extends State<Kabinet> {
         ],
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                ElevatedButton(
-                  onPressed: goInvent,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    backgroundColor: Colors.white70,
-                    shadowColor: Colors.blueGrey,
+        child: Center(
+          child: Column(
+            children: [
+              ElevatedButton(
+                onPressed: goExcel,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black, // Цвет фона третьей кнопки
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
                   ),
-                  child: const Text("Инвентаризация"),
                 ),
-                ElevatedButton(
-                  onPressed: goExcel,
-                  style: ElevatedButton.styleFrom(
-                    foregroundColor: Colors.black,
-                    backgroundColor: Colors.white70,
-                    shadowColor: Colors.blueGrey,
-                  ),
-                  child: const Text("Excel"),
-                ),
-              ],
-            ),
-            if (isInRestaurantTable)
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  ElevatedButton(
-                    onPressed: goStop,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
-                      shadowColor: Colors.blueGrey,
-                    ),
-                    child: const Text("Запросы"),
-                  ),
-                  ElevatedButton(
-                    onPressed: goListsNavigator,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
-                      shadowColor: Colors.blueGrey,
-                    ),
-                    child: const Text("Хуйня!"),
-                  ),
-                ],
+                child:
+                    const Text("Excel", style: TextStyle(color: Colors.white)),
               ),
-          ],
+              if (isInRestaurantTable)
+                Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    ElevatedButton(
+                      onPressed: goStop,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.black, // Цвет фона третьей кнопки
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                        ),
+                      ),
+                      child: const Text("Запросы",
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Colors.black, // Цвет фона третьей кнопки
+                        shape: const RoundedRectangleBorder(
+                          borderRadius: BorderRadius.all(Radius.circular(10)),
+                        ),
+                      ),
+                      onPressed: goListsNavigator,
+                      child: const Text("Таблицы",
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+            ],
+          ),
         ),
       ),
     );
