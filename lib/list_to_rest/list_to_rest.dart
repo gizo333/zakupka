@@ -1,5 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
-
+import 'package:http/http.dart' as http;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -105,14 +106,34 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Future<void> sendJoinRequest(String restaurantName, String userFullName, String userId, RestaurantListProvider restaurantListProvider) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
-      await executeServerRequest('join_requests', '', body: {
-        "restaurant_name": restaurantName,
-        "user_full_name": userFullName,
-        "user_id": userId,
-        "status": "pending",
-        "button_state": buttonState,
-        "operation": "insert"
-      });
+      final response = await http.post(
+        Uri.parse('http://37.140.241.144:8080/api/join_requests'),
+        headers: <String, String>{
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(<String, String>{
+          'restaurant_name': restaurantName,
+          'user_full_name': userFullName,
+          'user_id': userId,
+          'status': 'pending',
+        }),
+
+      );
+
+      if (response.statusCode == 200) {
+        print('Join request sent successfully');
+        // Обновление состояния запроса в провайдере
+        restaurantListProvider.selectedRestaurant = restaurantName;
+        if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
+          restaurantListProvider.joinRequests[restaurantName] = {};
+        }
+        restaurantListProvider.joinRequests[restaurantName]![userId] = 'pending';
+        restaurantListProvider.notifyListeners();
+      } else {
+        print('Error sending join request: ${response.statusCode}');
+        throw Exception('Failed to send join request');
+      }
+
     } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       // Использовать Postgres для Android и IOS
       if (restaurantListProvider.selectedRestaurant != null) {
