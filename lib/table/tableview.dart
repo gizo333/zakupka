@@ -23,7 +23,7 @@ class _TableViewState extends State<TableView> {
   List<PositionClass> _originalList = []; // Copy of the original list
   List<PositionClass> _lists = [];
 
-  Future<void> fetchTableDataFromPostgreSQL() async {
+  Future<void> fetchTableDataFromPostgreSQL(String searchQuery) async {
     final connection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -35,9 +35,13 @@ class _TableViewState extends State<TableView> {
     try {
       await connection.open();
 
-      final result = await connection.query(
-        'SELECT code, name, ml, itog FROM ${widget.tableName}',
-      );
+      String query = 'SELECT code, name, ml, itog FROM ${widget.tableName}';
+      if (searchQuery.isNotEmpty) {
+        // Add a WHERE clause to the query to filter based on the search query
+        query += " WHERE LOWER(name) LIKE '%${searchQuery.toLowerCase()}%'";
+      }
+
+      final result = await connection.query(query);
 
       _lists = result.map((row) {
         int code = int.tryParse(row[0].toString()) ?? 0;
@@ -92,7 +96,7 @@ class _TableViewState extends State<TableView> {
   void initState() {
     super.initState();
     initializeFirebase();
-    fetchTableDataFromPostgreSQL();
+    fetchTableDataFromPostgreSQL(_searchQuery);
     _originalList = [];
     _lists = [];
   }
@@ -124,22 +128,23 @@ class _TableViewState extends State<TableView> {
         child: Column(
           // crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // TextField(
-            //   decoration: const InputDecoration(
-            //     labelText: 'Поиск',
-            //     prefixIcon: Icon(Icons.search),
-            //   ),
-            //   onChanged: (value) {
-            //     setState(() {
-            //       _searchQuery = value;
-            //       _filterList();
-            //     });
-            //   },
-            // ),
-            // IconButton(
-            //   icon: Icon(Icons.close),
-            //   onPressed: _resetSearch,
-            // ),
+            TextField(
+              decoration: const InputDecoration(
+                labelText: 'Поиск',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _searchQuery = value;
+                  fetchTableDataFromPostgreSQL(_searchQuery);
+                  // _filterList();
+                });
+              },
+            ),
+            IconButton(
+              icon: Icon(Icons.close),
+              onPressed: _resetSearch,
+            ),
             Row(
               children: [
                 for (int columnIndex = 0;
@@ -518,7 +523,7 @@ class _TableViewState extends State<TableView> {
     }
   }
 
-void saveItog(List<PositionClass> list) {
+  void saveItog(List<PositionClass> list) {
     int itog = 0;
     for (int i = 0; i < list.length; i++) {
       itog += list[i].ml ?? 0;
