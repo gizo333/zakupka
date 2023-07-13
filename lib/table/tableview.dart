@@ -7,6 +7,7 @@ import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
+import '../lk_restaurant/lists_navigator.dart';
 
 class TableView extends StatefulWidget {
   final String tableName;
@@ -407,11 +408,15 @@ class _TableViewState extends State<TableView> {
                           ),
                         ),
                         onPressed: () async {
-                          await fetchAndSetItogFromDatabase(widget.tableName);
-                          saveItog(_lists);
+                          // await fetchAndSetItogFromDatabase(widget.tableName);
                           // await saveDataToPostgreSQL(_lists, widget.tableName);
-                          saveDataToPostgreSQLB(_lists, widget.tableName);
+                          await saveDataToPostgreSQLB(_lists, widget.tableName);
+                          await saveItog(_lists);
+                          for (var i = 0; i < _lists.length; i++) {
+                            print(_lists[0].name);
+                          }
                           setState(() {});
+                          // await fetchAndSetItogFromDatabase(widget.tableName);
                         },
                         child: const Text(
                           'Save',
@@ -523,19 +528,18 @@ class _TableViewState extends State<TableView> {
     }
   }
 
-  void saveItog(List<PositionClass> list) {
-    int itog = 0;
-    for (int i = 0; i < list.length; i++) {
-      itog += list[i].ml ?? 0;
-      list[i].itog = (list[i].itog ?? 0) + (list[i].ml ?? 0);
-      list[i].ml = null;
-      _lists[i].itog = list[i].itog;
-      _lists[i].itogController.text = list[i].itog?.toString() ?? '';
-      _lists[i].mlController.text = '';
+  Future<void> saveItog(List<PositionClass> list) async {
+    for (final position in list) {
+      final itog = (position.itog ?? 0) + (position.ml ?? 0);
+
+      position.itog = itog;
+      position.ml = null;
+      position.itogController.text = itog.toString();
+      position.mlController.text = '';
     }
-    setState(() {
-      _lists = list;
-    });
+
+    await saveDataToPostgreSQLB(list, widget.tableName);
+    setState(() {});
   }
 
   late String _filePath;
@@ -566,7 +570,7 @@ class _TableViewState extends State<TableView> {
         resultArray[i].removeAt(2); // remove 3rd index
         setState(() {
           _lists.add(PositionClass(
-              int.tryParse(resultArray[i][0]), resultArray[i][1], null, null));
+              int.tryParse(resultArray[i][0]), resultArray[i][1], 0, 0));
           _originalList = List.from(_lists);
         });
       }
