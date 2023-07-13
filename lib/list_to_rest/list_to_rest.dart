@@ -171,8 +171,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
   }
 
-
-
   Future<void> cancelJoinRequest(String restaurantName, String userId, RestaurantListProvider restaurantListProvider) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
