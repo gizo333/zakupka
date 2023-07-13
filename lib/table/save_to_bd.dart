@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 
-
-Future<void> saveDataToPostgreSQLB(List<dynamic> _lists, String tablename) async {
+Future<void> saveDataToPostgreSQLB(
+    List<dynamic> _lists, String tablename) async {
   final connection = PostgreSQLConnection(
     '37.140.241.144',
     5432,
@@ -14,42 +13,38 @@ Future<void> saveDataToPostgreSQLB(List<dynamic> _lists, String tablename) async
   try {
     await connection.open();
 
-    // Очистить таблицу перед импортом (если нужно)
+    // Clear the table before importing (if needed)
     await connection.execute('DELETE FROM $tablename');
 
-    // Создать список значений для вставки
-    final values = _lists
-        .asMap()
-        .entries
-        .map((entry) =>
-            '(${entry.key + 1}, ${entry.value.code}, \'${_escapeString(entry.value.name)}\', ${entry.value.ml}, ${entry.value.itog})')
-        .join(', ');
+    const batchSize = 1000; // Set the batch size as per your requirement
+    final batches = (_lists.length / batchSize).ceil();
+    final stopwatch = Stopwatch()..start(); // Start the stopwatch
 
-    // Замерить время сохранения данных
-    final stopwatch = Stopwatch()..start();
+    for (int batch = 0; batch < batches; batch++) {
+      final start = batch * batchSize;
+      final end = (start + batchSize).clamp(0, _lists.length);
+      final batchLists = _lists.sublist(start, end);
 
-    // Вставить данные в таблицу
+      final values = batchLists
+          .map((position) =>
+              '(${position.code ?? 0}, \'${_escapeString(position.name ?? '')}\', ${position.ml ?? 0}, ${(position.itog ?? 0) + (position.ml ?? 0)})')
+          .join(', ');
 
-    await connection.execute(
-        'INSERT INTO $tablename (id, code, name, ml, itog) VALUES $values');
+      await connection.execute(
+        'INSERT INTO $tablename (code, name, ml, itog) VALUES $values',
+      );
+    }
 
-    // Остановить и вывести время сохранения в консоль
-    stopwatch.stop();
-    print('Время сохранения в PostgreSQL: ${stopwatch.elapsed.inMilliseconds} мс');
+    stopwatch.stop(); // Stop the stopwatch
 
-    // Закрыть соединение
+    print('Time taken to save data to PostgreSQL: ${stopwatch.elapsed}'); // Print the elapsed time
+
     await connection.close();
-
-    // Очистить списки после сохранения данных в БД
-    // _lists.clear();
   } catch (e) {
-    print('Ошибка при сохранении данных в PostgreSQL: $e');
+    print('Error saving data to PostgreSQL: $e');
   }
 }
 
-// _escapeString используется для экранирования специальных символов в строке.
-// Экранирование символов осуществляется путем замены одинарных кавычек (') на двойные кавычки (''),
-// чтобы предотвратить ошибки при выполнении SQL-запросов.
 String _escapeString(String value) {
   return value.replaceAll("'", "''");
 }
