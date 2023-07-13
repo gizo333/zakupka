@@ -67,12 +67,12 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
       Map<String, dynamic> data = await getUserData('users_sotrud', userId);
-      if (data.containsKey(userId)) {
-        // userId найден в данных, делаем что-то дальше
+      if (data.isNotEmpty) {
+        return data['full_name'] ?? '';
       } else {
-        // userId не найден в данных
+        print('No such user');
+        return '';
       }
-      return data.isNotEmpty ? (data[userId] as String?) ?? '' : '';
     } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       // Использовать Postgres для Android и IOS
       final postgresConnection = createDatabaseConnection();
@@ -104,6 +104,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
 
   Future<void> sendJoinRequest(String restaurantName, String userFullName, String userId, RestaurantListProvider restaurantListProvider) async {
+
+    print('User Full Name: $userFullName');
+
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
       final response = await http.post(
@@ -174,11 +177,21 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Future<void> cancelJoinRequest(String restaurantName, String userId, RestaurantListProvider restaurantListProvider) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
-      await executeServerRequest('join_requests', '', body: {
+      final response = await executeServerRequest('join_requests', '', body: {
         "restaurant_name": restaurantName,
         "user_id": userId,
         "operation": "delete"
       });
+
+      if (response.containsKey('error')) {
+        // Обработка ошибки при удалении записи
+        print('Error canceling join request: ${response['error']}');
+        throw Exception('Error canceling join request');
+      } else {
+        // Успешное удаление записи
+        print('Join request canceled successfully');
+        // Дополнительные действия после успешного удаления записи
+      }
     } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
       // Использовать Postgres для Android и IOS
       if (restaurantListProvider.selectedRestaurant == restaurantName) {
