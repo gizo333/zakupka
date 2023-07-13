@@ -11,7 +11,13 @@ Future<Map<String, dynamic>> getUserData(String tableName, String userId) async 
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      return data as Map<String, dynamic>;
+      if (data is List && data.isNotEmpty) {
+        return data.first.cast<String, dynamic>();
+      } else if (data is Map) {
+        return data.cast<String, dynamic>();
+      } else {
+        return {};  // Возвращаем пустую карту, если данные отсутствуют или не в ожидаемом формате
+      }
     } else if (response.statusCode == 404) {
       print('Пользователь не найден');
       return {}; // Возвращаем пустую карту вместо null
@@ -22,6 +28,8 @@ Future<Map<String, dynamic>> getUserData(String tableName, String userId) async 
     throw Exception('Ошибка при выполнении запроса: $e');
   }
 }
+
+
 
 
 
@@ -54,8 +62,10 @@ Future<dynamic> executeServerRequest(String tableName, String fieldName, {dynami
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       return data;
+    } else if (response.statusCode == 404) {
+      throw Exception('Resource not found: $tableName/$fieldName');
     } else {
-      throw Exception('Ошибка при получении данных: ${response.statusCode}');
+      throw Exception('Server error: ${response.statusCode}');
     }
   } catch (e) {
     throw Exception('Ошибка при выполнении запроса: $e');
