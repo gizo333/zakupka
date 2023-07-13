@@ -3,7 +3,6 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
-import 'package:new_flut_proj/table/tableview.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
 import 'package:provider/provider.dart';
 import '/pages/account_screen.dart';
