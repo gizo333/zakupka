@@ -1,6 +1,4 @@
-import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
-
 
 Future<void> saveDataToPostgreSQLB(List<dynamic> _lists, String tablename) async {
   final connection = PostgreSQLConnection(
@@ -12,7 +10,7 @@ Future<void> saveDataToPostgreSQLB(List<dynamic> _lists, String tablename) async
   );
 
   try {
-    await postgresConnection.open();
+    await connection.open();
 
     // Очистить таблицу перед импортом (если нужно)
     await connection.execute('DELETE FROM $tablename');
@@ -22,14 +20,13 @@ Future<void> saveDataToPostgreSQLB(List<dynamic> _lists, String tablename) async
         .asMap()
         .entries
         .map((entry) =>
-            '(${entry.key + 1}, ${entry.value.code}, \'${_escapeString(entry.value.name)}\', ${entry.value.ml}, ${entry.value.itog})')
+    '(${entry.key + 1}, ${entry.value.code}, \'${_escapeString(entry.value.name)}\', ${entry.value.ml}, ${entry.value.itog})')
         .join(', ');
 
     // Замерить время сохранения данных
     final stopwatch = Stopwatch()..start();
 
     // Вставить данные в таблицу
-
     await connection.execute(
         'INSERT INTO $tablename (id, code, name, ml, itog) VALUES $values');
 
@@ -38,12 +35,14 @@ Future<void> saveDataToPostgreSQLB(List<dynamic> _lists, String tablename) async
     print('Время сохранения в PostgreSQL: ${stopwatch.elapsed.inMilliseconds} мс');
 
     // Закрыть соединение
-    await postgresConnection.close();
+    await connection.close();
 
     // Очистить списки после сохранения данных в БД
     // _lists.clear();
   } catch (e) {
     print('Ошибка при сохранении данных в PostgreSQL: $e');
+    // Закрыть соединение, даже если произошла ошибка
+    await connection.close();
   }
 }
 
