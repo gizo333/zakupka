@@ -165,12 +165,20 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
             "UPDATE join_requests SET status = 'accepted' WHERE user_id = '$userId' AND restaurant_name = '$restaurantName' AND status = 'pending'",
           );
 
+          // Обновление поля name_rest в таблице users_sotrud
+          await postgresConnection.execute(
+            "UPDATE users_sotrud SET name_rest = '$restaurantName' WHERE user_id = '$userId'",
+          );
+
           print('Join request accepted');
 
           Navigator.pushNamed(context, '/kabinet');
         } else {
           print('Join request not found');
           // Обработка случая, когда запрос на присоединение не найден
+          // Добавить вывод значений restaurantName и userId для отладки
+          print('restaurantName: $restaurantName');
+          print('userId: $userId');
         }
       } catch (e) {
         print('Error accepting join request: $e');
@@ -187,16 +195,34 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
           'status': 'accepted',
         };
 
-        print(body);
         await executeServerRequest('join_requests', 'status', body: body);
-        print('Join request accepted');
-        Navigator.pushNamed(context, '/kabinet');
+
+        // Обновление поля name_rest в таблице users_sotrud
+        final url = Uri.parse('http://37.140.241.144:8080/api/users_sotrud/$userId');
+        final response = await http.put(
+          url,
+          headers: <String, String>{
+            'Content-Type': 'application/json; charset=UTF-8',
+          },
+          body: jsonEncode(<String, String>{
+            'name_rest': restaurantName,
+          }),
+        );
+
+        if (response.statusCode == 200) {
+          print('Join request accepted');
+          Navigator.pushNamed(context, '/kabinet');
+        } else {
+          throw Exception('Ошибка при обновлении данных: ${response.statusCode}');
+        }
       } catch (e) {
         print('Error accepting join request: $e');
         throw e;
       }
     }
+
   }
+
 
 
 
