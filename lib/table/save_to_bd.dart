@@ -43,6 +43,7 @@ Future<void> saveDataToPostgreSQLB(
   } catch (e) {
     print('Error saving data to PostgreSQL: $e');
   }
+  
 }
 
 String _escapeString(String value) {
