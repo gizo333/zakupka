@@ -55,7 +55,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
 
       setState(() {
         _tableList = restaurantTables
-            .map((tableName) => tableName.split('_').last)
+            // .map((tableName) => tableName.split('_').last)
             .toList();
       });
 
@@ -176,7 +176,6 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
               itemCount: _tableList.length,
               itemBuilder: (context, index) {
                 final tableName = _tableList[index];
-                print(tableName.split('_').last);
                 return ListTile(
                   title: Text(tableName.split('_').last),
                   trailing: IconButton(

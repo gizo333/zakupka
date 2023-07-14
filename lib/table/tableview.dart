@@ -140,7 +140,7 @@ class _TableViewState extends State<TableView> {
                   Expanded(
                     child: InkWell(
                       onTap: () {
-                        // onSort(columnIndex, !_sortAsc);
+                        onSort(columnIndex, !_sortAsc);
                       },
                       child: Container(
                         padding: const EdgeInsets.symmetric(vertical: 1),
@@ -546,16 +546,16 @@ class _TableViewState extends State<TableView> {
 
   void onSort(int? columnIndex, bool ascending) {
     if (columnIndex == 0) {
-      _lists.sort((user1, user2) =>
+      _searchResults.sort((user1, user2) =>
           compareNumeric(ascending, user1.code ?? 0, user2.code ?? 0));
     } else if (columnIndex == 1) {
-      _lists.sort(
+      _searchResults.sort(
           (user1, user2) => compareString(ascending, user1.name, user2.name));
     } else if (columnIndex == 2) {
-      _lists.sort((user1, user2) =>
+      _searchResults.sort((user1, user2) =>
           compareNumeric(ascending, user1.ml ?? 0, user2.ml ?? 0));
     } else if (columnIndex == 3) {
-      _lists.sort((user1, user2) =>
+      _searchResults.sort((user1, user2) =>
           compareNumeric(ascending, user1.itog ?? 0, user2.itog ?? 0));
     }
 
