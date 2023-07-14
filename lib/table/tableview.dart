@@ -407,10 +407,11 @@ class _TableViewState extends State<TableView> {
                           // await fetchAndSetItogFromDatabase(widget.tableName);
                           // await saveDataToPostgreSQL(_lists, widget.tableName);
                           await saveDataToPostgreSQLB(_lists, widget.tableName);
+                          FocusScope.of(context).unfocus();
                           await saveItog(_lists);
-                          for (var i = 0; i < _lists.length; i++) {
-                            print(_lists[0].name);
-                          }
+                          // for (var i = 0; i < _lists.length; i++) {
+                          //   print(_lists[0].name);
+                          // }
                           setState(() {});
                           // await fetchAndSetItogFromDatabase(widget.tableName);
                         },
