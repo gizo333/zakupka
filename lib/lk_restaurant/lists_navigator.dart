@@ -1,6 +1,10 @@
+import 'dart:convert';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
+import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
 import '../table/tableview.dart';
 
 class ListsNavigatorPage extends StatefulWidget {
@@ -41,18 +45,6 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       final restaurantTables =
           restaurantTablesResult.map((row) => row[0] as String).toList();
 
-      final allLinksResult = await connection.query('SELECT * FROM links');
-
-      final restaurantLinksResult = await connection.query(
-        "SELECT linked_table_name FROM links "
-        "WHERE restaurant_table_name IN (${restaurantTables.map((_) => '\'$_\'').join(',')})",
-      );
-
-      final restaurantLinks =
-          restaurantLinksResult.map((row) => row[0] as String).toList();
-
-      final filteredLinks = allLinksResult.toList();
-
       setState(() {
         _tableList = restaurantTables
             // .map((tableName) => tableName.split('_').last)
@@ -64,6 +56,26 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       print('Error fetching table list from PostgreSQL: $e');
     }
   }
+
+  Future<void> fetchTableListFromPostgreSQLWeb() async {
+  final url = Uri.parse('http://37.140.241.144:8080/api/tables/alltables');
+
+  try {
+    final response = await http.get(url);
+
+    if (response.statusCode == 200) {
+      final tables = json.decode(response.body) as List<dynamic>;
+
+      setState(() {
+        _tableList = tables.cast<String>();
+      });
+    } else {
+      print('Error fetching table list from API: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching table list from API: $e');
+  }
+}
 
   Future<void> createRestaurantTable() async {
     final connection = PostgreSQLConnection(
@@ -151,7 +163,11 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   @override
   void initState() {
     super.initState();
-    fetchTableListFromPostgreSQL();
+     if(kIsWeb){
+      fetchTableListFromPostgreSQLWeb();
+     }else{
+      fetchTableListFromPostgreSQL();
+     }
   }
 
   @override
