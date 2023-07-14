@@ -7,7 +7,6 @@ import 'classes.dart';
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
-import '../lk_restaurant/lists_navigator.dart';
 
 class TableView extends StatefulWidget {
   final String tableName;

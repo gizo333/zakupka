@@ -20,16 +20,12 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
   FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
   Map<String, bool> joinRequests = {};
-
-
   Future<void> fetchAndPrintRestaurants() async {
     List<String> restaurants = await fetchRestaurants(searchQuery);
     for (var restaurant in restaurants) {
       //print('Restaurant: $restaurant');
     }
   }
-
-
   Future<List<String>> fetchRestaurants(String searchQuery) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
@@ -59,10 +55,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       throw UnsupportedError('This platform is not supported');
     }
   }
-
-
-
-
   Future<String> getUserFullName(String userId) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
@@ -99,14 +91,8 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       throw UnsupportedError('This platform is not supported');
     }
   }
-
-
-
-
   Future<void> sendJoinRequest(String restaurantName, String userFullName, String userId, RestaurantListProvider restaurantListProvider) async {
-
     print('User Full Name: $userFullName');
-
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
       final response = await http.post(
@@ -153,9 +139,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         await postgresConnection.execute(
           "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
         );
-
         print('Join request sent successfully');
-
         // Обновление состояния запроса в провайдере
         restaurantListProvider.selectedRestaurant = restaurantName;
         if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
@@ -173,7 +157,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       throw UnsupportedError('This platform is not supported');
     }
   }
-
   Future<void> cancelJoinRequest(String restaurantName, String userId, RestaurantListProvider restaurantListProvider) async {
     if (kIsWeb) {
       // Использовать HTTP для веб-версии
@@ -182,7 +165,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         "user_id": userId,
         "operation": "delete"
       });
-
       if (response.containsKey('error')) {
         // Обработка ошибки при удалении записи
         print('Error canceling join request: ${response['error']}');
@@ -197,16 +179,13 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       if (restaurantListProvider.selectedRestaurant == restaurantName) {
         restaurantListProvider.selectedRestaurant = null;
       }
-
       final postgresConnection = createDatabaseConnection();
-
       try {
         await postgresConnection.open();
         await postgresConnection.execute(
           "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName' AND user_id = '$userId'",
         );
         print('Join request canceled successfully');
-
         // Обновление состояния запроса в провайдере
         restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
         restaurantListProvider.notifyListeners();
@@ -226,7 +205,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Widget build(BuildContext context) {
     final _restaurantListProvider = Provider.of<RestaurantListProvider>(
         context);
-
     return Scaffold(
       appBar: AppBar(
         title: Text('Список ресторанов'),
@@ -275,9 +253,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                         );
                       } else if (userSnapshot.hasData) {
                         final userId = userSnapshot.data!.uid;
-
-
-
                         return FutureBuilder<String>(
                           future: getUserFullName(userId),
                           builder: (context, fullNameSnapshot) {
@@ -304,7 +279,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                       final isRequestSent =
                                           _restaurantListProvider.getRequestStatus(name, userId) ==
                                               'pending';
-
                                       return Column(
                                         children: [
                                           ListTile(
@@ -349,25 +323,21 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                             }
                           },
                         );
-
                       } else if (userSnapshot.hasError) {
                         return Center(
                           child: Text('Error: ${userSnapshot.error}'),
                         );
                       }
-
                       return Center(
                         child: Text('1'),
                       );
                     },
                   );
-
                 } else if (snapshot.hasError) {
                   return Center(
                     child: Text('Error: ${snapshot.error}'),
                   );
                 }
-
                 return Center(
                   child: Text('2'),
                 );
