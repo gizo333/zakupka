@@ -350,9 +350,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                           },
                         );
 
-
-
-
                       } else if (userSnapshot.hasError) {
                         return Center(
                           child: Text('Error: ${userSnapshot.error}'),
@@ -364,8 +361,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                       );
                     },
                   );
-
-
 
                 } else if (snapshot.hasError) {
                   return Center(
