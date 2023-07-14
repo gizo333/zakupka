@@ -20,8 +20,6 @@ class TableView extends StatefulWidget {
 }
 
 class _TableViewState extends State<TableView> {
-  // List<Map<String, dynamic>> _tableData = [];
-  List<PositionClass> _originalList = []; // Copy of the original list
   List<PositionClass> _lists = [];
 
   Future<void> fetchTableDataFromPostgreSQL(String searchQuery) async {
@@ -75,21 +73,9 @@ class _TableViewState extends State<TableView> {
     });
   }
 
-  void _filterList() {
-    setState(() {
-      // меняет массив _lists
-      _lists = _originalList.where((position) {
-        final name = position.name.toLowerCase();
-        return name.contains(_searchQuery.toLowerCase());
-      }).toList();
-    });
-    // saveDataToPostgreSQL(_lists, widget.tableName);
-  }
-
   void _resetSearch() {
     setState(() {
       _searchQuery = '';
-      _lists = List.from(_originalList);
     });
   }
 
@@ -98,7 +84,6 @@ class _TableViewState extends State<TableView> {
     super.initState();
     initializeFirebase();
     fetchTableDataFromPostgreSQL(_searchQuery);
-    _originalList = [];
     _lists = [];
   }
 
@@ -118,8 +103,8 @@ class _TableViewState extends State<TableView> {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
     return Scaffold(
       appBar: AppBar(
-        title: const Text(
-          'Table',
+        title: Text(
+          widget.tableName.split('_').last,
           style: TextStyle(color: Colors.white),
         ),
         backgroundColor: const Color.fromARGB(186, 0, 0, 0),
@@ -213,7 +198,6 @@ class _TableViewState extends State<TableView> {
                         children: [
                           Expanded(
                             child: TextFormField(
-                              // readOnly: true,
                               maxLines: 4,
                               controller: position.codeController,
                               keyboardType: TextInputType.number,
@@ -404,16 +388,11 @@ class _TableViewState extends State<TableView> {
                           ),
                         ),
                         onPressed: () async {
-                          // await fetchAndSetItogFromDatabase(widget.tableName);
-                          // await saveDataToPostgreSQL(_lists, widget.tableName);
-                          await saveDataToPostgreSQLB(_lists, widget.tableName);
+                          _searchQuery = '';
+                          setState(() {});
                           FocusScope.of(context).unfocus();
                           await saveItog(_lists);
-                          // for (var i = 0; i < _lists.length; i++) {
-                          //   print(_lists[0].name);
-                          // }
                           setState(() {});
-                          // await fetchAndSetItogFromDatabase(widget.tableName);
                         },
                         child: const Text(
                           'Save',
@@ -542,7 +521,6 @@ class _TableViewState extends State<TableView> {
         setState(() {
           _lists.add(PositionClass(
               int.tryParse(resultArray[i][0]), resultArray[i][1], 0, 0));
-          _originalList = List.from(_lists);
         });
       }
 
@@ -582,14 +560,11 @@ class _TableViewState extends State<TableView> {
       _sortColumnIndex = columnIndex;
       _sortAsc = ascending;
     });
-    // saveDataToPostgreSQL(_lists, widget.tableName);
   }
 
   void addNewField() {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
-      // _originalList.add(PositionClass(null, '', null, null));
-      _originalList = List.from(_lists);
     });
     saveDataToPostgreSQL(_lists, widget.tableName);
   }
