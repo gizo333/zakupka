@@ -21,6 +21,7 @@ class TableView extends StatefulWidget {
 
 class _TableViewState extends State<TableView> {
   List<PositionClass> _lists = [];
+  List<PositionClass> _searchResults = [];
 
   Future<void> fetchTableDataFromPostgreSQL(String searchQuery) async {
     final connection = PostgreSQLConnection(
@@ -50,6 +51,8 @@ class _TableViewState extends State<TableView> {
 
         return PositionClass(code, name, ml, itog);
       }).toList();
+
+      _searchResults = _lists; // обновить результаты поиска
       setState(() {});
 
       await connection.close();
@@ -120,11 +123,13 @@ class _TableViewState extends State<TableView> {
                 prefixIcon: Icon(Icons.search),
               ),
               onChanged: (value) {
-                setState(() {
-                  _searchQuery = value;
-                  fetchTableDataFromPostgreSQL(_searchQuery);
-                  // _filterList();
-                });
+                _searchQuery = value;
+                _searchResults = _lists
+                    .where((item) => item.name
+                        .toLowerCase()
+                        .contains(_searchQuery.toLowerCase()))
+                    .toList();
+                setState(() {});
               },
             ),
             Row(
@@ -158,9 +163,9 @@ class _TableViewState extends State<TableView> {
               child: ListView.builder(
                 scrollDirection: Axis.vertical,
                 shrinkWrap: true,
-                itemCount: _lists.length,
+                itemCount: _searchResults.length,
                 itemBuilder: (context, index) {
-                  final position = _lists[index];
+                  final position = _searchResults[index];
                   return Dismissible(
                     key: Key(position.hashCode.toString()),
                     direction: DismissDirection.endToStart,
@@ -202,22 +207,20 @@ class _TableViewState extends State<TableView> {
                               controller: position.codeController,
                               keyboardType: TextInputType.number,
                               onChanged: (val) {
-                                setState(() {
-                                  if (val.isEmpty) {
-                                    position.code = null; // Сброс значения
-                                    errorColor = null; // Сброс цвета ошибки
-                                  } else {
-                                    // Проверка и конвертация введенного значения
-                                    final parsedValue = int.tryParse(val);
-                                    if (parsedValue != null) {
-                                      position.code = parsedValue;
-                                      errorColor = null; // Сброс цвета ошибки
-                                    } else {
-                                      position.code = null;
-                                      errorColor = Colors.red;
-                                    }
-                                  }
-                                });
+                                position.name = val;
+
+                                _updateDB(
+                                    position); // обновление записи в базе данных
+
+                                // обновление _searchResults и _lists
+                                _lists[_lists.indexOf(position)] = position;
+                                _searchResults = _lists
+                                    .where((item) => item.name
+                                        .toLowerCase()
+                                        .contains(_searchQuery.toLowerCase()))
+                                    .toList();
+
+                                setState(() {});
                               },
                               onFieldSubmitted: (_) {
                                 if (index == _lists.length - 1) {
@@ -560,6 +563,34 @@ class _TableViewState extends State<TableView> {
       _sortColumnIndex = columnIndex;
       _sortAsc = ascending;
     });
+  }
+
+  Future<void> _updateDB(PositionClass position) async {
+    final connection = PostgreSQLConnection(
+      '37.140.241.144',
+      5432,
+      'postgres',
+      username: 'postgres',
+      password: '1',
+    );
+
+    try {
+      await connection.open();
+
+      String query =
+          "UPDATE ${widget.tableName} SET name = @name, ml = @ml, itog = @itog WHERE code = @code";
+
+      await connection.query(query, substitutionValues: {
+        'name': position.name,
+        'ml': position.ml,
+        'itog': position.itog,
+        'code': position.code,
+      });
+
+      await connection.close();
+    } catch (e) {
+      print('Error updating table data in PostgreSQL: $e');
+    }
   }
 
   void addNewField() {

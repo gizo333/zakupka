@@ -31,8 +31,12 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
 
       final restaurantTablesResult = await connection.query(
         "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema = 'public' AND table_name LIKE 'restaurant\_${user?.uid?.toLowerCase()}\_%'",
+        "WHERE table_schema = 'public' AND table_name LIKE @tableName",
+        substitutionValues: {
+          'tableName': 'restaurant_${user?.uid?.toLowerCase()}_%'
+        },
       );
+      print(user?.uid);
 
       final restaurantTables =
           restaurantTablesResult.map((row) => row[0] as String).toList();
@@ -50,7 +54,9 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       final filteredLinks = allLinksResult.toList();
 
       setState(() {
-        _tableList = filteredLinks.map((row) => row[1] as String).toList();
+        _tableList = restaurantTables
+            .map((tableName) => tableName.split('_').last)
+            .toList();
       });
 
       await connection.close();
