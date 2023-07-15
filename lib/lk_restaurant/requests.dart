@@ -169,85 +169,65 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
 
   Future<void> acceptJoinRequest(String restaurantName, String userId) async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Код для мобильных устройств
-      final postgresConnection = PostgreSQLConnection(
-        '37.140.241.144',
-        5432,
-        'postgres',
-        username: 'postgres',
-        password: '1',
-      );
+    print('Value of restaurantName: $restaurantName');
+    print('Value of userId: $userId');
 
-      try {
-        await postgresConnection.open();
-        final userIdResult = await postgresConnection.query(
-          "SELECT user_id FROM join_requests WHERE restaurant_name = '$restaurantName' AND status = 'pending'",
-        );
+    final userListUrl = Uri.parse('http://37.140.241.144:8080/api/users_sotrud');
+    final headers = {"Content-Type": "application/json"};
 
-        if (userIdResult.isNotEmpty) {
-          final userId = userIdResult.first[0] as String;
-          await postgresConnection.execute(
-            "UPDATE join_requests SET status = 'accepted' WHERE user_id = '$userId' AND restaurant_name = '$restaurantName' AND status = 'pending'",
-          );
+    try {
+      final response = await http.get(userListUrl, headers: headers);
 
-          // Обновление поля name_rest в таблице users_sotrud
-          await postgresConnection.execute(
-            "UPDATE users_sotrud SET name_rest = '$restaurantName' WHERE user_id = '$userId'",
-          );
+      if (response.statusCode == 200) {
+        final userList = jsonDecode(response.body) as List<dynamic>;
 
-          print('Join request accepted');
-
-          Navigator.pushNamed(context, '/kabinet');
-        } else {
-          print('Join request not found');
-          // Обработка случая, когда запрос на присоединение не найден
-          // Добавить вывод значений restaurantName и userId для отладки
-          print('restaurantName: $restaurantName');
-          print('userId: $userId');
-        }
-      } catch (e) {
-        print('Error accepting join request: $e');
-        throw e;
-      } finally {
-        await postgresConnection.close();
-      }
-    } else {
-      // Код для веб-браузера
-      try {
-        final body = {
-          'restaurant_name': restaurantName,
-          'user_id': userId,
-          'status': 'accepted',
-        };
-
-        await executeServerRequest('join_requests', 'status', body: body);
-
-        // Обновление поля name_rest в таблице users_sotrud
-        final url = Uri.parse('http://37.140.241.144:8080/api/users_sotrud/$userId');
-        final response = await http.put(
-          url,
-          headers: <String, String>{
-            'Content-Type': 'application/json; charset=UTF-8',
-          },
-          body: jsonEncode(<String, String>{
+        final user = userList.firstWhere((user) => user['user_id'] == userId, orElse: () => null);
+        if (user != null) {
+          final updateUser = {
             'name_rest': restaurantName,
-          }),
-        );
+          };
+          final updateUserJson = jsonEncode(updateUser);
 
-        if (response.statusCode == 200) {
-          print('Join request accepted');
-          Navigator.pushNamed(context, '/kabinet');
+          final updateUserUrl = Uri.parse('http://37.140.241.144:8080/api/users_sotrud/user_id/${user['user_id']}');
+
+          final updateResponse = await http.patch(updateUserUrl, headers: headers, body: updateUserJson);
+
+          if (updateResponse.statusCode == 200) {
+            print('Join request accepted');
+            Navigator.pushNamed(context, '/kabinet');
+          } else if (updateResponse.statusCode == 404) {
+            throw Exception('User not found: $userId');
+          } else {
+            throw Exception('Ошибка при обновлении данных: ${updateResponse.statusCode}');
+          }
         } else {
-          throw Exception('Ошибка при обновлении данных: ${response.statusCode}');
+          print('Пользователь с user_id "$userId" не найден');
+          // Добавьте здесь обработку, если пользователь не найден
         }
-      } catch (e) {
-        print('Error accepting join request: $e');
-        throw e;
+      } else {
+        throw Exception('Ошибка при получении списка пользователей: ${response.statusCode}');
       }
+    } catch (e) {
+      print('Error accepting join request: $e');
+      throw e;
     }
-
   }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
