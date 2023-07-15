@@ -46,10 +46,10 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         await postgresConnection.open();
         final userRestaurant = await _fetchUserRestaurant(postgresConnection, currentUserId);
         final results = await postgresConnection.query('''
-          SELECT jr.restaurant_name, jr.user_full_name
-          FROM join_requests jr
-          WHERE jr.restaurant_name = '$userRestaurant'
-        ''');
+        SELECT jr.restaurant_name, jr.user_full_name
+        FROM join_requests jr
+        WHERE jr.restaurant_name = '$userRestaurant'
+      ''');
 
         final list = results.map((row) => JoinRequest(
           restaurantName: row[0] as String,
@@ -65,34 +65,59 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         await postgresConnection.close();
       }
     } else {
-      // Your web API call
-      final url = Uri.parse('http://37.140.241.144:8080/api/join_requests');
-
       try {
-        final response = await http.get(url);
+        final usersUrl = Uri.parse('http://37.140.241.144:8080/api/restaurant');
+        final usersResponse = await http.get(usersUrl);
+        String? userRestaurant;
 
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final list = data.map((item) => JoinRequest(
+        if (usersResponse.statusCode == 200) {
+          final usersData = jsonDecode(usersResponse.body);
+          final currentUser = usersData.firstWhere((user) => user['user_id'] == currentUserId, orElse: () => null);
+
+          if (currentUser == null) {
+            throw Exception('Пользователь с ID $currentUserId не найден');
+          }
+
+          userRestaurant = currentUser['restaurant'];
+
+          if (userRestaurant == null) {
+            throw Exception('Авторизованный ресторан для пользователя с ID $currentUserId не найден');
+          }
+        } else {
+          throw Exception('Ошибка при получении данных о пользователях: ${usersResponse.statusCode}');
+        }
+
+        final joinRequestsUrl = Uri.parse('http://37.140.241.144:8080/api/join_requests');
+        final joinRequestsResponse = await http.get(joinRequestsUrl);
+
+
+        if (joinRequestsResponse.statusCode == 200) {
+          final joinRequestsData = jsonDecode(joinRequestsResponse.body);
+          final filteredJoinRequestsList = joinRequestsData
+              .where((item) => item['restaurant_name'] == userRestaurant)
+              .map((item) => JoinRequest(
             restaurantName: item['restaurant_name'],
             userFullName: item['user_full_name'],
             userId: item['user_id'],
-          )).toList();
+          ))
+              .toList();
 
-          return list;
+          return filteredJoinRequestsList;
         } else {
-          throw Exception('Ошибка при получении данных: ${response.statusCode}');
+          throw Exception('Ошибка при получении данных о запросах на присоединение: ${joinRequestsResponse.statusCode}');
         }
       } catch (e) {
         throw Exception('Ошибка при выполнении запроса: $e');
       }
     }
+
   }
 
 
-  Future<String> _fetchUserRestaurant(PostgreSQLConnection connection,String userId) async {
+
+  Future<String> _fetchUserRestaurant(PostgreSQLConnection? connection,String userId) async {
     if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final postgresConnection = PostgreSQLConnection(
+      final postgresConnection = connection ?? PostgreSQLConnection(
         '37.140.241.144',
         5432,
         'postgres',
@@ -134,6 +159,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       }
     }
   }
+
 
 
 
