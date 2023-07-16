@@ -188,6 +188,25 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
+  Future<void> deleteTableWeb(String tableName) async {
+    final apiUrl =
+        'http://37.140.241.144:8080/api/tables/deletetable/' '$tableName';
+
+    try {
+      final response = await http.delete(Uri.parse(apiUrl));
+
+      await fetchTableListFromPostgreSQLWeb();
+
+      if (response.statusCode == 200) {
+        print('Table $tableName deleted');
+      } else {
+        print('Error deleting table: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error deleting table: $e');
+    }
+  }
+
   void navigateToTableView(String tableName) {
     Navigator.push(
       context,
@@ -220,6 +239,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
+              maxLength: 11,
               controller: _tableNameController,
               decoration: InputDecoration(
                 labelText: 'Table Name',
@@ -234,9 +254,14 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
                 return ListTile(
                   title: Text(tableName.split('_').last),
                   trailing: IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () => deleteTable(tableName),
-                  ),
+                      icon: Icon(Icons.delete),
+                      onPressed: () async {
+                        if (kIsWeb) {
+                          await deleteTableWeb(tableName);
+                        } else {
+                          deleteTable(tableName);
+                        }
+                      }),
                   onTap: () => navigateToTableView(tableName),
                 );
               },
@@ -245,9 +270,9 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
+        onPressed: () async {
           if (kIsWeb) {
-            createRestaurantTableWeb();
+            await createRestaurantTableWeb();
           } else {
             createRestaurantTable();
           }
