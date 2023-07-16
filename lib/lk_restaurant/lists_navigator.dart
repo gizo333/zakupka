@@ -131,6 +131,37 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
+  Future<void> createRestaurantTableWeb() async {
+    final user = FirebaseAuth.instance.currentUser?.uid;
+    final url = Uri.parse('http://37.140.241.144:8080/api/tables/create');
+    final tableName = _tableNameController.text.isNotEmpty
+        ? _tableNameController.text
+        : DateTime.now().microsecondsSinceEpoch.toString();
+
+    final body = json.encode({
+      'tableName': tableName,
+      'user': user,
+    });
+
+    try {
+      final response = await http.post(url,
+          headers: {
+            'Content-Type': 'application/json',
+            // 'user': user.toString(),
+          },
+          body: body);
+
+      if (response.statusCode == 200) {
+        // Таблица успешно создана, выполните действия, необходимые после создания
+        await fetchTableListFromPostgreSQLWeb();
+      } else {
+        print('Ошибка создания таблицы: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка создания таблицы: $e');
+    }
+  }
+
   Future<void> deleteTable(String tableName) async {
     final connection = PostgreSQLConnection(
       '37.140.241.144',
@@ -214,7 +245,13 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: createRestaurantTable,
+        onPressed: () {
+          if (kIsWeb) {
+            createRestaurantTableWeb();
+          } else {
+            createRestaurantTable();
+          }
+        },
         child: Icon(Icons.add),
       ),
     );
