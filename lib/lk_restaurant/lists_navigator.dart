@@ -58,24 +58,32 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   }
 
   Future<void> fetchTableListFromPostgreSQLWeb() async {
-  final url = Uri.parse('http://37.140.241.144:8080/api/tables/alltables');
+    final user = FirebaseAuth.instance.currentUser;
 
-  try {
-    final response = await http.get(url);
+    final url = Uri.parse('http://37.140.241.144:8080/api/tables/alltables');
 
-    if (response.statusCode == 200) {
-      final tables = json.decode(response.body) as List<dynamic>;
+    try {
+      final response = await http.get(url);
 
-      setState(() {
-        _tableList = tables.cast<String>();
-      });
-    } else {
-      print('Error fetching table list from API: ${response.statusCode}');
+      if (response.statusCode == 200) {
+        final tables = json.decode(response.body) as List<dynamic>;
+
+        final filteredTables = tables
+            .cast<String>()
+            .where((tableName) =>
+                tableName.startsWith('restaurant_${user?.uid?.toLowerCase()}_'))
+            .toList();
+
+        setState(() {
+          _tableList = filteredTables;
+        });
+      } else {
+        print('Error fetching table list from API: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error fetching table list from API: $e');
     }
-  } catch (e) {
-    print('Error fetching table list from API: $e');
   }
-}
 
   Future<void> createRestaurantTable() async {
     final connection = PostgreSQLConnection(
@@ -123,6 +131,37 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
+  Future<void> createRestaurantTableWeb() async {
+    final user = FirebaseAuth.instance.currentUser?.uid;
+    final url = Uri.parse('http://37.140.241.144:8080/api/tables/create');
+    final tableName = _tableNameController.text.isNotEmpty
+        ? _tableNameController.text
+        : DateTime.now().microsecondsSinceEpoch.toString();
+
+    final body = json.encode({
+      'tableName': tableName,
+      'user': user,
+    });
+
+    try {
+      final response = await http.post(url,
+          headers: {
+            'Content-Type': 'application/json',
+            // 'user': user.toString(),
+          },
+          body: body);
+
+      if (response.statusCode == 200) {
+        // Таблица успешно создана, выполните действия, необходимые после создания
+        await fetchTableListFromPostgreSQLWeb();
+      } else {
+        print('Ошибка создания таблицы: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Ошибка создания таблицы: $e');
+    }
+  }
+
   Future<void> deleteTable(String tableName) async {
     final connection = PostgreSQLConnection(
       '37.140.241.144',
@@ -163,11 +202,11 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   @override
   void initState() {
     super.initState();
-     if(kIsWeb){
+    if (kIsWeb) {
       fetchTableListFromPostgreSQLWeb();
-     }else{
+    } else {
       fetchTableListFromPostgreSQL();
-     }
+    }
   }
 
   @override
@@ -206,7 +245,13 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: createRestaurantTable,
+        onPressed: () {
+          if (kIsWeb) {
+            createRestaurantTableWeb();
+          } else {
+            createRestaurantTable();
+          }
+        },
         child: Icon(Icons.add),
       ),
     );
