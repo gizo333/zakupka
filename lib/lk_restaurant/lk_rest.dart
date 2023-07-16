@@ -59,9 +59,9 @@ class _KabinetState extends State<Kabinet> {
     } else {
       // Browser
       final userSotrudResults =
-      await getDataFromServer('users_sotrud', 'user_id');
+          await getDataFromServer('users_sotrud', 'user_id');
       final restaurantResults =
-      await getDataFromServer('restaurant', 'user_id');
+          await getDataFromServer('restaurant', 'user_id');
       final userId = user?.uid;
 
       if (userSotrudResults.isNotEmpty) {
@@ -96,10 +96,10 @@ class _KabinetState extends State<Kabinet> {
         final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
         if (restaurantResponse.statusCode == 200) {
           final restaurantData =
-          jsonDecode(restaurantResponse.body) as List<dynamic>;
+              jsonDecode(restaurantResponse.body) as List<dynamic>;
 
           final matchingRestaurant = restaurantData.firstWhere(
-                (result) => result['user_id'] == userId,
+            (result) => result['user_id'] == userId,
             orElse: () => null,
           );
 
@@ -172,6 +172,7 @@ class _KabinetState extends State<Kabinet> {
         child: Center(
           child: Column(
             children: [
+              Padding(padding: EdgeInsets.all(8)),
               ElevatedButton(
                 onPressed: goExcel,
                 style: ElevatedButton.styleFrom(
@@ -181,17 +182,18 @@ class _KabinetState extends State<Kabinet> {
                   ),
                 ),
                 child:
-                const Text("Excel", style: TextStyle(color: Colors.white)),
+                    const Text("Excel", style: TextStyle(color: Colors.white)),
               ),
               if (isInRestaurantTable)
                 Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
+                    Padding(padding: EdgeInsets.all(8)),
                     ElevatedButton(
                       onPressed: goStop,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                        Colors.black, // Цвет фона третьей кнопки
+                            Colors.black, // Цвет фона третьей кнопки
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
                         ),
@@ -199,10 +201,11 @@ class _KabinetState extends State<Kabinet> {
                       child: const Text("Запросы",
                           style: TextStyle(color: Colors.white)),
                     ),
+                    Padding(padding: EdgeInsets.all(8)),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                        Colors.black, // Цвет фона третьей кнопки
+                            Colors.black, // Цвет фона третьей кнопки
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
                         ),
