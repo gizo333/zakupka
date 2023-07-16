@@ -105,32 +105,53 @@ class _TableViewState extends State<TableView> {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          widget.tableName.split('_').last,
-          style: TextStyle(color: Colors.white),
+        // title: Text(
+        //   widget.tableName.split('_').last,
+        //   style: TextStyle(color: Colors.white),
+        // ),
+        // backgroundColor: const Color.fromARGB(186, 0, 0, 0),
+        title: Container(
+          width: 200,
+          height: 50,
+          decoration: BoxDecoration(
+              color: Colors.white,
+              border: Border.all(
+                color: Colors.white,
+                width: 4,
+              ),
+              borderRadius: BorderRadius.circular(20)),
+          child: TextField(
+            textAlign: TextAlign.start,
+            textAlignVertical: TextAlignVertical.top,
+            decoration: const InputDecoration(
+              enabledBorder: InputBorder.none,
+              focusedBorder: InputBorder.none,
+              focusColor: Colors.white,
+              labelText: 'Поиск',
+              floatingLabelStyle: TextStyle(color: Colors.white),
+              labelStyle: TextStyle(color: Colors.black),
+              prefixIcon: Icon(Icons.search),
+            ),
+            // onSubmitted: (value) {
+            //   FocusScope.of(context).unfocus();
+            // },
+            onChanged: (value) {
+              _searchQuery = value;
+              _searchResults = _lists
+                  .where((item) => item.name
+                      .toLowerCase()
+                      .contains(_searchQuery.toLowerCase()))
+                  .toList();
+              setState(() {});
+            },
+          ),
         ),
-        backgroundColor: const Color.fromARGB(186, 0, 0, 0),
       ),
       body: Container(
         color: const Color.fromARGB(255, 246, 246, 246),
         child: Column(
           // crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            TextField(
-              decoration: const InputDecoration(
-                labelText: 'Поиск',
-                prefixIcon: Icon(Icons.search),
-              ),
-              onChanged: (value) {
-                _searchQuery = value;
-                _searchResults = _lists
-                    .where((item) => item.name
-                        .toLowerCase()
-                        .contains(_searchQuery.toLowerCase()))
-                    .toList();
-                setState(() {});
-              },
-            ),
             Row(
               children: [
                 for (int columnIndex = 0;
