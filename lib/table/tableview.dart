@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:postgres/postgres.dart';
 import 'classes.dart';
+import 'package:http/http.dart' as http;
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
@@ -60,6 +62,31 @@ class _TableViewState extends State<TableView> {
     }
   }
 
+  Future<void> fetchTableDataFromPostgreSQLWeb(String searchQuery) async {
+    final url = Uri.parse(
+        'http://37.140.241.144:8080/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+
+        final data = List<PositionClass>.from(result.map((row) {
+          final code = int.tryParse(row['code'].toString()) ?? 0;
+          final name = row['name'].toString();
+          final ml = int.tryParse(row['ml'].toString()) ?? 0;
+          final itog = int.tryParse(row['itog'].toString()) ?? 0;
+
+          return PositionClass(code, name, ml, itog);
+        }));
+        _searchResults = data; // обновить результаты поиска
+        setState(() {});
+      }
+    } catch (e) {
+      print('Вы пидор потому что $e');
+    }
+  }
+
   bool _sortAsc = true;
   // ignore: unused_field
   int? _sortColumnIndex;
@@ -85,7 +112,11 @@ class _TableViewState extends State<TableView> {
   void initState() {
     super.initState();
     initializeFirebase();
-    fetchTableDataFromPostgreSQL(_searchQuery);
+    if (kIsWeb) {
+      fetchTableDataFromPostgreSQLWeb(_searchQuery);
+    } else {
+      fetchTableDataFromPostgreSQL(_searchQuery);
+    }
     _lists = [];
   }
 
@@ -110,41 +141,50 @@ class _TableViewState extends State<TableView> {
         //   style: TextStyle(color: Colors.white),
         // ),
         // backgroundColor: const Color.fromARGB(186, 0, 0, 0),
-        title: Container(
-          width: 200,
-          height: 50,
-          decoration: BoxDecoration(
-              color: Colors.white,
-              border: Border.all(
-                color: Colors.white,
-                width: 4,
+        title: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(widget.tableName.split('_').last),
+            Container(
+              width: 200,
+              height: 50,
+              decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(
+                    // color: Colors.white,
+                    width: 4,
+                  ),
+                  borderRadius: BorderRadius.circular(20)),
+              child: TextField(
+                textAlign: TextAlign.start,
+                textAlignVertical: TextAlignVertical.top,
+                decoration: const InputDecoration(
+                  enabledBorder: InputBorder.none,
+                  focusedBorder: InputBorder.none,
+                  // focusColor: Colors.white,
+                  // labelText: 'Поиск',
+                  alignLabelWithHint: true,
+                  hintText: 'Поиск',
+                  floatingLabelStyle: TextStyle(color: Colors.white),
+                  labelStyle: TextStyle(color: Colors.black),
+                  floatingLabelAlignment: FloatingLabelAlignment.center,
+                  prefixIcon: Icon(Icons.search),
+                ),
+                // onSubmitted: (value) {
+                //   FocusScope.of(context).unfocus();
+                // },
+                onChanged: (value) {
+                  _searchQuery = value;
+                  _searchResults = _lists
+                      .where((item) => item.name
+                          .toLowerCase()
+                          .contains(_searchQuery.toLowerCase()))
+                      .toList();
+                  setState(() {});
+                },
               ),
-              borderRadius: BorderRadius.circular(20)),
-          child: TextField(
-            textAlign: TextAlign.start,
-            textAlignVertical: TextAlignVertical.top,
-            decoration: const InputDecoration(
-              enabledBorder: InputBorder.none,
-              focusedBorder: InputBorder.none,
-              focusColor: Colors.white,
-              labelText: 'Поиск',
-              floatingLabelStyle: TextStyle(color: Colors.white),
-              labelStyle: TextStyle(color: Colors.black),
-              prefixIcon: Icon(Icons.search),
             ),
-            // onSubmitted: (value) {
-            //   FocusScope.of(context).unfocus();
-            // },
-            onChanged: (value) {
-              _searchQuery = value;
-              _searchResults = _lists
-                  .where((item) => item.name
-                      .toLowerCase()
-                      .contains(_searchQuery.toLowerCase()))
-                  .toList();
-              setState(() {});
-            },
-          ),
+          ],
         ),
       ),
       body: Container(

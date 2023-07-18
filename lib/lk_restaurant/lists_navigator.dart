@@ -33,20 +33,18 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     try {
       await connection.open();
 
-      final restaurantTablesResult = await connection.query(
+      final rTablesResult = await connection.query(
         "SELECT table_name FROM information_schema.tables "
         "WHERE table_schema = 'public' AND table_name LIKE @tableName",
-        substitutionValues: {
-          'tableName': 'restaurant_${user?.uid?.toLowerCase()}_%'
-        },
+        substitutionValues: {'tableName': 'r_${user?.uid?.toLowerCase()}_%'},
       );
       print(user?.uid);
 
-      final restaurantTables =
-          restaurantTablesResult.map((row) => row[0] as String).toList();
+      final rTables =
+          rTablesResult.map((row) => row[0] as String).toList();
 
       setState(() {
-        _tableList = restaurantTables
+        _tableList = rTables
             // .map((tableName) => tableName.split('_').last)
             .toList();
       });
@@ -71,7 +69,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
         final filteredTables = tables
             .cast<String>()
             .where((tableName) =>
-                tableName.startsWith('restaurant_${user?.uid?.toLowerCase()}_'))
+                tableName.startsWith('r_${user?.uid?.toLowerCase()}_'))
             .toList();
 
         setState(() {
@@ -85,7 +83,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
-  Future<void> createRestaurantTable() async {
+  Future<void> createrTable() async {
     final connection = PostgreSQLConnection(
       '37.140.241.144',
       5432,
@@ -102,10 +100,10 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       String tableName;
       if (_tableNameController.text.isNotEmpty) {
         tableName =
-            'restaurant_${user?.uid?.toLowerCase()}_${_tableNameController.text}';
+            'r_${user?.uid?.toLowerCase()}_${_tableNameController.text}';
       } else {
         tableName =
-            'restaurant_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
+            'r_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
       }
 
       await connection.execute(
@@ -119,19 +117,19 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       );
 
       await connection.execute(
-        'INSERT INTO links (restaurant_table_name, linked_table_name) '
-        "VALUES ('restaurant_${user?.uid?.toLowerCase()}', '$tableName')",
+        'INSERT INTO links (r_table_name, linked_table_name) '
+        "VALUES ('r_${user?.uid?.toLowerCase()}', '$tableName')",
       );
 
       await fetchTableListFromPostgreSQL(); // Refresh the table list
 
       await connection.close();
     } catch (e) {
-      print('Error creating restaurant table: $e');
+      print('Error creating r table: $e');
     }
   }
 
-  Future<void> createRestaurantTableWeb() async {
+  Future<void> createrTableWeb() async {
     final user = FirebaseAuth.instance.currentUser?.uid;
     final url = Uri.parse('http://37.140.241.144:8080/api/tables/create');
     final tableName = _tableNameController.text.isNotEmpty
@@ -239,7 +237,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
-              maxLength: 11,
+              maxLength: 16,
               controller: _tableNameController,
               decoration: InputDecoration(
                 labelText: 'Table Name',
@@ -272,9 +270,9 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           if (kIsWeb) {
-            await createRestaurantTableWeb();
+            await createrTableWeb();
           } else {
-            createRestaurantTable();
+            createrTable();
           }
         },
         child: Icon(Icons.add),
