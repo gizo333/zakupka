@@ -175,8 +175,12 @@ class _SignUpFormState extends State<SignUpForm> {
 
 
         } else if (checkBoxValue1) {
-          // Регистрация пользователя-ресторана
-          await widget.firestore.collection('restaurant').doc(user.uid).set({
+          // Регистрация ресторана
+          final currentUser = FirebaseAuth.instance.currentUser;
+          await FirebaseFirestore.instance
+              .collection('restaurant')
+              .doc(currentUser?.uid)
+              .set({
             'email': email,
             'password': password,
             'restaurant': restaurant,
@@ -184,37 +188,43 @@ class _SignUpFormState extends State<SignUpForm> {
             'position': position,
           });
 
+
           // Сохранение данных в PostgreSQL
-          final postgresConnection = createDatabaseConnection();
+          var url = Uri.parse('http://37.140.241.144:5000/register_restaurant');
+
+
+          // Параметры, которые вы хотите отправить на сервер
+          var body = jsonEncode({
+            'userId': currentUser?.uid,
+            'email': email,
+            'password': password,
+            'restaurant': restaurant,
+            'fullName': fullName,
+            'position': position,
+          });
 
           try {
-            await postgresConnection.open();
-
-            final query = '''
-            INSERT INTO restaurant (user_id, email, password, restaurant, full_name, position)
-            VALUES (@userId, @email, @password, @restaurant, @fullName, @position)
-          ''';
-
-            await postgresConnection.query(
-              query,
-              substitutionValues: {
-                'userId': user.uid,
-                'email': email,
-                'password': password,
-                'restaurant': restaurant,
-                'fullName': fullName,
-                'position': position,
-              },
+            var response = await http.post(url,
+              headers: {"Content-Type": "application/json"},
+              body: body,
             );
 
-            print('Соединение закрыто');
+            if (response.statusCode == 201) {
+              print('User registered successfully.');
+            } else {
+              print('Failed to register user.');
+              print('Status code: ${response.statusCode}');
+              print('Response body: ${response.body}');
+            }
           } catch (e) {
-            print(e);
-          } finally {
-            await postgresConnection.close();
+            print('Error: $e');
           }
+
+
+
+
         } else if (checkBoxValue3) {
-          // Регистрация пользователя-ресторана
+          // Регистрация пользователя-сотрудника
           final currentUser = FirebaseAuth.instance.currentUser;
           await FirebaseFirestore.instance
               .collection('users_sotrud')
@@ -227,7 +237,7 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL через Node.js API
-          var url = Uri.parse('http://37.140.241.144:5000/register'); // замените на URL вашего сервера
+          var url = Uri.parse('http://37.140.241.144:5000/register_user'); // замените на URL вашего сервера
 
           // Параметры, которые вы хотите отправить на сервер
           var body = jsonEncode({
