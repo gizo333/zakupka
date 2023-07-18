@@ -12,11 +12,6 @@ class LkUser extends StatefulWidget {
 class _LkUserState extends State<LkUser> {
   final user = FirebaseAuth.instance.currentUser;
 
-  // void goInvent() {
-  //   if (user != null) {
-  //     Navigator.pushNamed(context, '/table');
-  //   }
-  // }
 
   void goList() {
     if (user != null) {

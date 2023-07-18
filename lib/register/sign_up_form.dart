@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
-import 'package:postgres/postgres.dart';
 import '../connect_BD/connect.dart';
 import 'validation.dart';
-import '../lk_user/new_teble.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class SignUpForm extends StatefulWidget {
   final FirebaseAuth auth;
@@ -171,6 +171,9 @@ class _SignUpFormState extends State<SignUpForm> {
           } finally {
             await postgresConnection.close();
           }
+
+
+
         } else if (checkBoxValue1) {
           // Регистрация пользователя-ресторана
           await widget.firestore.collection('restaurant').doc(user.uid).set({
@@ -213,7 +216,7 @@ class _SignUpFormState extends State<SignUpForm> {
         } else if (checkBoxValue3) {
           // Регистрация пользователя-ресторана
           final currentUser = FirebaseAuth.instance.currentUser;
-          await widget.firestore
+          await FirebaseFirestore.instance
               .collection('users_sotrud')
               .doc(currentUser?.uid)
               .set({
@@ -223,34 +226,35 @@ class _SignUpFormState extends State<SignUpForm> {
             'position': position,
           });
 
-          // Сохранение данных в PostgreSQL
-          final postgresConnection = createDatabaseConnection();
+          // Сохранение данных в PostgreSQL через Node.js API
+          var url = Uri.parse('http://37.140.241.144:5000/register'); // замените на URL вашего сервера
+
+          // Параметры, которые вы хотите отправить на сервер
+          var body = jsonEncode({
+            'userId': currentUser?.uid,
+            'email': email,
+            'password': password,
+            'fullName': fullName,
+            'position': position,
+          });
 
           try {
-            await postgresConnection.open();
-
-            final query = '''
-      INSERT INTO users_sotrud (user_id, email, password, full_name, position)
-      VALUES (@userId, @email, @password, @fullName, @position)
-    ''';
-
-            await postgresConnection.query(
-              query,
-              substitutionValues: {
-                'userId': currentUser?.uid,
-                'email': email,
-                'password': password,
-                'fullName': fullName,
-                'position': position,
-              },
+            var response = await http.post(url,
+              headers: {"Content-Type": "application/json"},
+              body: body,
             );
 
-            print('Соединение закрыто');
+            if (response.statusCode == 201) {
+              print('User registered successfully.');
+            } else {
+              print('Failed to register user.');
+              print('Status code: ${response.statusCode}');
+              print('Response body: ${response.body}');
+            }
           } catch (e) {
-            print(e);
-          } finally {
-            await postgresConnection.close();
+            print('Error: $e');
           }
+
         }
       }
     } catch (e) {

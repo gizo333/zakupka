@@ -201,7 +201,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
           print('Join request accepted');
 
-          Navigator.pushNamed(context, '/kabinet');
+          // Navigator.pushNamed(context, '/kabinet');
         }
       }
       catch (e) {
@@ -234,8 +234,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                     updateUserUrl, headers: headers, body: updateUserJson);
 
                 if (updateResponse.statusCode == 200) {
-                  print('Join request accepted');
-                  Navigator.pushNamed(context, '/kabinet');
+                  // print('Join request accepted');
+                  // Navigator.pushNamed(context, '/kabinet');
                 } else if (updateResponse.statusCode == 404) {
                   throw Exception('User not found: $userId');
                 } else {
