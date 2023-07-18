@@ -57,7 +57,7 @@ Future<void> saveDataToPostgreSQLBWeb(
     'tableName': tablename,
     'data': _lists.map((position) {
       final code = position.code ?? 0;
-      final name = position.name ?? '';
+      final name = position.name;
       final ml = position.ml ?? 0;
       final itog = (position.itog ?? 0) + (position.ml ?? 0);
       return {
