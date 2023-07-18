@@ -63,23 +63,36 @@ class _TableViewState extends State<TableView> {
   }
 
   Future<void> fetchTableDataFromPostgreSQLWeb(String searchQuery) async {
+    // if (searchQuery.isEmpty) {
+    //   searchQuery = "";
+    // }
     final url = Uri.parse(
-        'http://37.140.241.144:8080/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
+        'http://37.140.241.144:8085/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
+
     try {
       final response = await http.get(url);
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
 
-        final data = List<PositionClass>.from(result.map((row) {
-          final code = int.tryParse(row['code'].toString()) ?? 0;
-          final name = row['name'].toString();
-          final ml = int.tryParse(row['ml'].toString()) ?? 0;
-          final itog = int.tryParse(row['itog'].toString()) ?? 0;
+        // final data = List<PositionClass>.from(result.map((row) {
+        //   final code = int.tryParse(row[0].toString()) ?? 0;
+        //   final name = row[1].toString();
+        //   final ml = int.tryParse(row[2].toString()) ?? 0;
+        //   final itog = int.tryParse(row[3].toString()) ?? 0;
+
+        //   return PositionClass(code, name, ml, itog);
+        // }));
+        _lists = (result as List<dynamic>).map((row) {
+          int code = int.tryParse(row['code'].toString()) ?? 0;
+          String name = row['name'].toString();
+          int ml = int.tryParse(row['ml'].toString()) ?? 0;
+          int itog = int.tryParse(row['itog'].toString()) ?? 0;
 
           return PositionClass(code, name, ml, itog);
-        }));
-        _searchResults = data; // обновить результаты поиска
+        }).toList();
+        _searchResults = _lists; // обновить результаты поиска
+        print(_lists);
         setState(() {});
       }
     } catch (e) {
@@ -175,6 +188,7 @@ class _TableViewState extends State<TableView> {
                 // },
                 onChanged: (value) {
                   _searchQuery = value;
+                  print(value);
                   _searchResults = _lists
                       .where((item) => item.name
                           .toLowerCase()
@@ -269,8 +283,10 @@ class _TableViewState extends State<TableView> {
                               onChanged: (val) {
                                 position.name = val;
 
-                                _updateDB(
-                                    position); // обновление записи в базе данных
+                                if (!kIsWeb) {
+                                  _updateDB(
+                                      position); // обновление записи в базе данных
+                                }
 
                                 // обновление _searchResults и _lists
                                 _lists[_lists.indexOf(position)] = position;
@@ -546,12 +562,16 @@ class _TableViewState extends State<TableView> {
       final itog = (position.itog ?? 0) + (position.ml ?? 0);
 
       position.itog = itog;
-      position.ml = null;
+      position.ml = 0;
       position.itogController.text = itog.toString();
       position.mlController.text = '';
     }
 
-    await saveDataToPostgreSQLB(list, widget.tableName);
+    if (kIsWeb) {
+      await saveDataToPostgreSQLBWeb(list, widget.tableName);
+    } else {
+      await saveDataToPostgreSQLB(list, widget.tableName);
+    }
     setState(() {});
   }
 
@@ -657,6 +677,11 @@ class _TableViewState extends State<TableView> {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
     });
-    saveDataToPostgreSQL(_lists, widget.tableName);
+    if (kIsWeb) {
+      saveDataToPostgreSQLBWeb(_lists, widget.tableName);
+      // fetchTableDataFromPostgreSQLWeb(_searchQuery);
+    } else {
+      saveDataToPostgreSQL(_lists, widget.tableName);
+    }
   }
 }

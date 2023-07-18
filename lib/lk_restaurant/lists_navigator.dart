@@ -58,7 +58,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   Future<void> fetchTableListFromPostgreSQLWeb() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    final url = Uri.parse('http://37.140.241.144:8080/api/tables/alltables');
+    final url = Uri.parse('http://37.140.241.144:8085/api/tables/alltables');
 
     try {
       final response = await http.get(url);
@@ -131,7 +131,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
 
   Future<void> createrTableWeb() async {
     final user = FirebaseAuth.instance.currentUser?.uid;
-    final url = Uri.parse('http://37.140.241.144:8080/api/tables/create');
+    final url = Uri.parse('http://37.140.241.144:8085/api/tables/create');
     final tableName = _tableNameController.text.isNotEmpty
         ? _tableNameController.text
         : DateTime.now().microsecondsSinceEpoch.toString();
@@ -188,7 +188,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
 
   Future<void> deleteTableWeb(String tableName) async {
     final apiUrl =
-        'http://37.140.241.144:8080/api/tables/deletetable/' '$tableName';
+        'http://37.140.241.144:8085/api/tables/deletetable/' '$tableName';
 
     try {
       final response = await http.delete(Uri.parse(apiUrl));
