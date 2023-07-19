@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
-import 'package:postgres/postgres.dart';
 import '../connect_BD/connect.dart';
 import 'validation.dart';
-import '../lk_user/new_teble.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class SignUpForm extends StatefulWidget {
   final FirebaseAuth auth;
@@ -22,7 +22,7 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController companyController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController innController = TextEditingController();
@@ -33,6 +33,7 @@ class _SignUpFormState extends State<SignUpForm> {
   static bool checkBoxValue1 = true;
   static bool checkBoxValue2 = false;
   static bool checkBoxValue3 = false;
+
 
   String? emailError;
   String? passwordError;
@@ -58,9 +59,9 @@ class _SignUpFormState extends State<SignUpForm> {
             checkBoxValue2 ||
             checkBoxValue3) &&
         ((checkBoxValue1 &&
-                restaurant.isNotEmpty &&
-                fullName.isNotEmpty &&
-                position.isNotEmpty) ||
+            restaurant.isNotEmpty &&
+            fullName.isNotEmpty &&
+            position.isNotEmpty) ||
             (checkBoxValue2 &&
                 company.isNotEmpty &&
                 phone.isNotEmpty &&
@@ -68,8 +69,56 @@ class _SignUpFormState extends State<SignUpForm> {
             (checkBoxValue3 && fullName.isNotEmpty && position.isNotEmpty));
   }
 
+  // Future<bool> checkEmailExists(String email) async {
+  //   final QuerySnapshot snapshot = await FirebaseFirestore.instance
+  //       .collection('users_sotrud')
+  //       .where('email', isEqualTo: email)
+  //       .limit(1)
+  //       .get();
+  //
+  //   return snapshot.docs.isNotEmpty;
+  // }
+
+  Future<bool> checkEmailExists(String email) async {
+    final FirebaseFirestore firestore = FirebaseFirestore.instance;
+
+    final Future<QuerySnapshot> snapshotUsers = firestore
+        .collection('users_sotrud')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    final Future<QuerySnapshot> snapshotRestaurant = firestore
+        .collection('restaurant')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    final Future<QuerySnapshot> snapshotCompanies = firestore
+        .collection('companies')
+        .where('email', isEqualTo: email)
+        .limit(1)
+        .get();
+
+    final results = await Future.wait([snapshotUsers, snapshotRestaurant, snapshotCompanies]);
+
+    for (QuerySnapshot result in results) {
+      if (result.docs.isNotEmpty) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+
+
+
+
   Future<void> _registerUser(BuildContext context) async {
     // Проверка состояния обоих чекбоксов
+
+
     if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
       showDialog(
         context: context,
@@ -124,8 +173,24 @@ class _SignUpFormState extends State<SignUpForm> {
         return;
       }
 
+      setState(() {
+        emailError = null;
+        passwordError = null;
+        confirmPasswordError = null;
+      });
+
+      final bool emailExists = await checkEmailExists(email);
+
+      if (emailExists) {
+        setState(() {
+          emailError = 'Указанный email уже существует';
+        });
+        return;
+      }
+
+
       UserCredential userCredential =
-          await widget.auth.createUserWithEmailAndPassword(
+      await widget.auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
@@ -172,8 +237,12 @@ class _SignUpFormState extends State<SignUpForm> {
             await postgresConnection.close();
           }
         } else if (checkBoxValue1) {
-          // Регистрация пользователя-ресторана
-          await widget.firestore.collection('restaurant').doc(user.uid).set({
+          // Регистрация ресторана
+          final currentUser = FirebaseAuth.instance.currentUser;
+          await FirebaseFirestore.instance
+              .collection('restaurant')
+              .doc(currentUser?.uid)
+              .set({
             'email': email,
             'password': password,
             'restaurant': restaurant,
@@ -182,38 +251,39 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL
-          final postgresConnection = createDatabaseConnection();
+          var url = Uri.parse('http://37.140.241.144:5000/register_restaurant');
+
+          // Параметры, которые вы хотите отправить на сервер
+          var body = jsonEncode({
+            'userId': currentUser?.uid,
+            'email': email,
+            'password': password,
+            'restaurant': restaurant,
+            'fullName': fullName,
+            'position': position,
+          });
 
           try {
-            await postgresConnection.open();
-
-            final query = '''
-            INSERT INTO restaurant (user_id, email, password, restaurant, full_name, position)
-            VALUES (@userId, @email, @password, @restaurant, @fullName, @position)
-          ''';
-
-            await postgresConnection.query(
-              query,
-              substitutionValues: {
-                'userId': user.uid,
-                'email': email,
-                'password': password,
-                'restaurant': restaurant,
-                'fullName': fullName,
-                'position': position,
-              },
+            var response = await http.post(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: body,
             );
 
-            print('Соединение закрыто');
+            if (response.statusCode == 201) {
+              print('User registered successfully.');
+            } else {
+              print('Failed to register user.');
+              print('Status code: ${response.statusCode}');
+              print('Response body: ${response.body}');
+            }
           } catch (e) {
-            print(e);
-          } finally {
-            await postgresConnection.close();
+            print('Error: $e');
           }
         } else if (checkBoxValue3) {
-          // Регистрация пользователя-ресторана
+          // Регистрация пользователя-сотрудника
           final currentUser = FirebaseAuth.instance.currentUser;
-          await widget.firestore
+          await FirebaseFirestore.instance
               .collection('users_sotrud')
               .doc(currentUser?.uid)
               .set({
@@ -223,33 +293,34 @@ class _SignUpFormState extends State<SignUpForm> {
             'position': position,
           });
 
-          // Сохранение данных в PostgreSQL
-          final postgresConnection = createDatabaseConnection();
+          // Сохранение данных в PostgreSQL через Node.js API
+          var url = Uri.parse('http://37.140.241.144:5000/register_user');
+
+          // Параметры, которые вы хотите отправить на сервер
+          var body = jsonEncode({
+            'userId': currentUser?.uid,
+            'email': email,
+            'password': password,
+            'fullName': fullName,
+            'position': position,
+          });
 
           try {
-            await postgresConnection.open();
-
-            final query = '''
-      INSERT INTO users_sotrud (user_id, email, password, full_name, position)
-      VALUES (@userId, @email, @password, @fullName, @position)
-    ''';
-
-            await postgresConnection.query(
-              query,
-              substitutionValues: {
-                'userId': currentUser?.uid,
-                'email': email,
-                'password': password,
-                'fullName': fullName,
-                'position': position,
-              },
+            var response = await http.post(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: body,
             );
 
-            print('Соединение закрыто');
+            if (response.statusCode == 201) {
+              print('User registered successfully.');
+            } else {
+              print('Failed to register user.');
+              print('Status code: ${response.statusCode}');
+              print('Response body: ${response.body}');
+            }
           } catch (e) {
-            print(e);
-          } finally {
-            await postgresConnection.close();
+            print('Error: $e');
           }
         }
       }
@@ -268,6 +339,8 @@ class _SignUpFormState extends State<SignUpForm> {
         ),
       ),
     );
+
+
   }
 
   bool checkPasswordsMatch() {
@@ -276,6 +349,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
     return password == confirmPassword;
   }
+  bool emailExists = false;
 
   @override
   Widget build(BuildContext context) {
@@ -287,15 +361,19 @@ class _SignUpFormState extends State<SignUpForm> {
           decoration: InputDecoration(
             labelText: 'Email',
             border: OutlineInputBorder(),
-            errorText: emailError,
+            errorText: emailExists ? 'Email уже существует' : null,
           ),
-          onChanged: (value) {
-            setState(() {
-              emailError = null;
-              _isButtonActive = isRegistrationButtonActive();
-            });
+          onChanged: (value) async {
+            final String email = value.trim();
+            emailExists = await checkEmailExists(email);
+            setState(() {});
           },
         ),
+
+
+
+
+
         SizedBox(height: 16.0),
         TextField(
           controller: passwordController,
@@ -314,120 +392,129 @@ class _SignUpFormState extends State<SignUpForm> {
         ),
         SizedBox(height: 16.0),
         TextField(
-            controller: confirmPasswordController,
+          controller: confirmPasswordController,
+          decoration: InputDecoration(
+            labelText: 'Подтвердите пароль',
+            border: OutlineInputBorder(),
+            errorText: !checkPasswordsMatch() ? 'Пароли не совпадают' : null,
+          ),
+          obscureText: true,
+          onChanged: (value) {
+            setState(() {
+              _isButtonActive = isRegistrationButtonActive();
+            });
+          },
+        ),
+        SizedBox(height: 16.0),
+        if (checkBoxValue1) ...[
+          TextField(
+            controller: restaurantController,
             decoration: InputDecoration(
-              labelText: 'Подтвердите пароль',
+              labelText: 'Ресторан',
               border: OutlineInputBorder(),
-              errorText: !checkPasswordsMatch() ? 'Пароли не совпадают' : null,
             ),
-            obscureText: true,
             onChanged: (value) {
               setState(() {
                 _isButtonActive = isRegistrationButtonActive();
               });
-            }),
-        SizedBox(height: 16.0),
-        if (checkBoxValue1) ...[
-          TextField(
-              controller: restaurantController,
-              decoration: InputDecoration(
-                labelText: 'Ресторан',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            },
+          ),
           SizedBox(height: 16.0),
           TextField(
-              controller: fullNameController,
-              decoration: InputDecoration(
-                labelText: 'ФИО',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: fullNameController,
+            decoration: InputDecoration(
+              labelText: 'ФИО',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
           TextField(
-              controller: positionController,
-              decoration: InputDecoration(
-                labelText: 'Должность',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: positionController,
+            decoration: InputDecoration(
+              labelText: 'Должность',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
         ],
         if (checkBoxValue3) ...[
           SizedBox(height: 16.0),
           TextField(
-              controller: fullNameController,
-              decoration: InputDecoration(
-                labelText: 'ФИО',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: fullNameController,
+            decoration: InputDecoration(
+              labelText: 'ФИО',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
           TextField(
-              controller: positionController,
-              decoration: InputDecoration(
-                labelText: 'Должность',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: positionController,
+            decoration: InputDecoration(
+              labelText: 'Должность',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
         ],
         if (checkBoxValue2) ...[
           TextField(
-              controller: companyController,
-              decoration: InputDecoration(
-                labelText: 'Название компании',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: companyController,
+            decoration: InputDecoration(
+              labelText: 'Название компании',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
           TextField(
-              controller: phoneController,
-              decoration: InputDecoration(
-                labelText: 'Номер телефона',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: phoneController,
+            decoration: InputDecoration(
+              labelText: 'Номер телефона',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
           TextField(
-              controller: innController,
-              decoration: InputDecoration(
-                labelText: 'ИНН',
-                border: OutlineInputBorder(),
-              ),
-              onChanged: (value) {
-                setState(() {
-                  _isButtonActive = isRegistrationButtonActive();
-                });
-              }),
+            controller: innController,
+            decoration: InputDecoration(
+              labelText: 'ИНН',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
           SizedBox(height: 16.0),
         ],
         Column(
@@ -486,14 +573,13 @@ class _SignUpFormState extends State<SignUpForm> {
           ],
         ),
         ElevatedButton(
-          onPressed: isRegistrationButtonActive()
-              ? () {
-                  _isButtonActive = true;
-                  _registerUser(context);
-                }
-              : null,
+          onPressed: (isRegistrationButtonActive() && !emailExists) ? () {
+            _isButtonActive = true;
+            _registerUser(context);
+          } : null,
           child: Text('Зарегистрироваться'),
         ),
+
       ],
     );
   }
