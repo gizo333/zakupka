@@ -82,34 +82,35 @@ class _SignUpFormState extends State<SignUpForm> {
   Future<bool> checkEmailExists(String email) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
 
-    final QuerySnapshot snapshotUsers = await firestore
+    final Future<QuerySnapshot> snapshotUsers = firestore
         .collection('users_sotrud')
         .where('email', isEqualTo: email)
         .limit(1)
         .get();
 
-    if (snapshotUsers.docs.isNotEmpty) {
-      return true;
-    }
-
-    final QuerySnapshot snapshotRestaurant = await firestore
+    final Future<QuerySnapshot> snapshotRestaurant = firestore
         .collection('restaurant')
         .where('email', isEqualTo: email)
         .limit(1)
         .get();
 
-    if (snapshotRestaurant.docs.isNotEmpty) {
-      return true;
-    }
-
-    final QuerySnapshot snapshotCompanies = await firestore
+    final Future<QuerySnapshot> snapshotCompanies = firestore
         .collection('companies')
         .where('email', isEqualTo: email)
         .limit(1)
         .get();
 
-    return snapshotCompanies.docs.isNotEmpty;
+    final results = await Future.wait([snapshotUsers, snapshotRestaurant, snapshotCompanies]);
+
+    for (QuerySnapshot result in results) {
+      if (result.docs.isNotEmpty) {
+        return true;
+      }
+    }
+
+    return false;
   }
+
 
 
 
