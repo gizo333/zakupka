@@ -234,14 +234,31 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                     updateUserUrl, headers: headers, body: updateUserJson);
 
                 if (updateResponse.statusCode == 200) {
-                  // print('Join request accepted');
+                  // Update status to 'accepted' after the initial update
+                  final updateStatus = {
+                    'status': 'accepted',
+                  };
+                  final updateStatusJson = jsonEncode(updateStatus);
+
+                  final updateStatusUrl = Uri.parse(
+                      'http://37.140.241.144:5000/status/join_requests/user_id/${user['user_id']}');
+
+                  final updateStatusResponse = await http.patch(
+                      updateStatusUrl, headers: headers, body: updateStatusJson);
+
+                  if (updateStatusResponse.statusCode == 200) {
+                    // Status update successful
+                  } else {
+                    throw Exception(
+                        'Ошибка при обновлении статуса: ${updateStatusResponse.statusCode}');
+                  }
+
                   // Navigator.pushNamed(context, '/kabinet');
                 } else if (updateResponse.statusCode == 404) {
                   throw Exception('User not found: $userId');
                 } else {
                   throw Exception(
-                      'Ошибка при обновлении данных: ${updateResponse
-                          .statusCode}');
+                      'Ошибка при обновлении данных: ${updateResponse.statusCode}');
                 }
               } else {
                 print('Пользователь с user_id "$userId" не найден');
@@ -249,9 +266,9 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
               }
             } else {
               throw Exception(
-                  'Ошибка при получении списка пользователей: ${response
-                      .statusCode}');
+                  'Ошибка при получении списка пользователей: ${response.statusCode}');
             }
+
           } catch (e) {
             print('Error accepting join request: $e');
             throw e;
