@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_excel/excel.dart';
 import 'dart:convert';
 // import 'package:excel/excel.dart';
@@ -103,6 +105,7 @@ class _TableViewState extends State<TableView> {
   }
 
   bool _sortAsc = true;
+  bool _isButtonDisabled = false;
   // ignore: unused_field
   int? _sortColumnIndex;
   Color? errorColor;
@@ -288,6 +291,8 @@ class _TableViewState extends State<TableView> {
                                 if (!kIsWeb) {
                                   _updateDB(
                                       position); // обновление записи в базе данных
+                                } else {
+                                  _updateDBWeb(position);
                                 }
 
                                 // обновление _searchResults и _lists
@@ -475,11 +480,19 @@ class _TableViewState extends State<TableView> {
                           ),
                         ),
                         onPressed: () async {
-                          _searchQuery = '';
-                          setState(() {});
-                          FocusScope.of(context).unfocus();
-                          await saveItog(_lists);
-                          setState(() {});
+                          if (!_isButtonDisabled) {
+                            _isButtonDisabled = true;
+                            _searchQuery = '';
+                            setState(() {});
+                            FocusScope.of(context).unfocus();
+                            await saveItog(_lists);
+                            setState(() {});
+                            Timer(Duration(seconds: 1), () {
+                              setState(() {
+                                _isButtonDisabled = false;
+                              });
+                            });
+                          }
                         },
                         child: const Text(
                           'Save',
@@ -720,6 +733,35 @@ class _TableViewState extends State<TableView> {
       await connection.close();
     } catch (e) {
       print('Error updating table data in PostgreSQL: $e');
+    }
+  }
+
+  Future<void> _updateDBWeb(PositionClass position) async {
+    final url =
+        'http://37.140.241.144:8085/apip/update'; // Replace with your API endpoint URL
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'tableName': widget.tableName,
+          'position': {
+            'name': position.name,
+            'ml': position.ml,
+            'itog': position.itog,
+            'code': position.code,
+          },
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        print('Database update successful');
+      } else {
+        print('Failed to update database. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error updating table data via API: $e');
     }
   }
 
