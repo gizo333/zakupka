@@ -247,7 +247,18 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       updateStatusUrl, headers: headers, body: updateStatusJson);
 
                   if (updateStatusResponse.statusCode == 200) {
-                    // Status update successful
+                    // After status update, send a DELETE request to remove the join request from the database
+                    final deleteJoinRequestUrl = Uri.parse(
+                        'http://37.140.241.144:5000/delete/join_requests/user_id/${user['user_id']}');
+
+                    final deleteResponse = await http.delete(deleteJoinRequestUrl, headers: headers);
+
+                    if (deleteResponse.statusCode == 200) {
+                      // Join request successfully deleted
+                    } else {
+                      throw Exception(
+                          'Ошибка при удалении заявки: ${deleteResponse.statusCode}');
+                    }
                   } else {
                     throw Exception(
                         'Ошибка при обновлении статуса: ${updateStatusResponse.statusCode}');
@@ -268,6 +279,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
               throw Exception(
                   'Ошибка при получении списка пользователей: ${response.statusCode}');
             }
+
 
           } catch (e) {
             print('Error accepting join request: $e');
@@ -309,8 +321,9 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       title: Text(request.restaurantName),
                       subtitle: Text(request.userFullName),
                       trailing: ElevatedButton(
-                        onPressed: () {
-                          acceptJoinRequest(request.restaurantName, request.userId);
+                        onPressed: () async {
+                          await acceptJoinRequest(request.restaurantName, request.userId);
+                          setState(() {});
                         },
                         child: Text('Принять'),
                       ),
