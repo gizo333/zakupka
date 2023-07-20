@@ -52,12 +52,13 @@ Future<void> saveDataToPostgreSQLB(
 
 Future<void> saveDataToPostgreSQLBWeb(
     List<PositionClass> _lists, String tablename) async {
+  final stopwatch = Stopwatch()..start(); // Start the stopwatch
   final url = Uri.parse('http://37.140.241.144:8085/apip/tables/savedatab');
   final body = json.encode({
     'tableName': tablename,
     'data': _lists.map((position) {
       final code = position.code ?? 0;
-      final name = position.name ?? '';
+      final name = _escapeString(position.name) ?? '';
       final ml = position.ml ?? 0;
       final itog = (position.itog ?? 0) + (position.ml ?? 0);
       return {
@@ -78,6 +79,8 @@ Future<void> saveDataToPostgreSQLBWeb(
 
     if (response.statusCode == 200) {
       print('good job!');
+      print(
+          'Time taken to save data to PostgreSQL: ${stopwatch.elapsed}'); // Print the elapsed time
     } else {
       print('Error saving data toPostgreSQL blyaaa: ${response.statusCode}');
     }

@@ -44,3 +44,27 @@ Future<String> convertExcelToJson(String filePath) async {
 
   return json.encode(jsonData);
 }
+
+Future<String> convertByteToJson(bytes) async {
+  Excel excel = Excel.decodeBytes(bytes!);
+  var jsonData = {};
+  for (var table in excel.tables.keys) {
+    var tableData = [];
+    for (var row in excel.tables[table]!.rows) {
+      var rowData = [];
+      for (var cell in row) {
+        // Если ячейка является объектом SharedString, конвертируем его в строку
+        if (cell?.value is SharedString) {
+          rowData.add(cell?.value.toString());
+        } else {
+          rowData.add(cell?.value);
+        }
+      }
+
+      tableData.add(rowData);
+    }
+    jsonData[table] = tableData;
+  }
+
+  return json.encode(jsonData);
+}
