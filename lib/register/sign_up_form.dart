@@ -69,15 +69,6 @@ class _SignUpFormState extends State<SignUpForm> {
             (checkBoxValue3 && fullName.isNotEmpty && position.isNotEmpty));
   }
 
-  // Future<bool> checkEmailExists(String email) async {
-  //   final QuerySnapshot snapshot = await FirebaseFirestore.instance
-  //       .collection('users_sotrud')
-  //       .where('email', isEqualTo: email)
-  //       .limit(1)
-  //       .get();
-  //
-  //   return snapshot.docs.isNotEmpty;
-  // }
 
   Future<bool> checkEmailExists(String email) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;

@@ -8,6 +8,8 @@ import '../connect_BD/connect_web.dart';
 import '../pages/account_screen.dart';
 import 'dart:io';
 
+import '../services/who.dart';
+
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
 
@@ -77,21 +79,6 @@ class _KabinetState extends State<Kabinet> {
       if (restaurantResults.isNotEmpty) {
         final userId = user?.uid.toString();
         final restaurantUrl = 'http://37.140.241.144:8080/api/restaurant/';
-        // final url = 'http://37.140.241.144:8080/api/restaurant/user_id';
-        //
-        // final response = await http.get(Uri.parse(url));
-        //
-        // if (response.statusCode == 200) {
-        //   final data = jsonDecode(response.body) as List<dynamic>;
-        //
-        //   if (data.contains(userId)) {
-        //     print('Массив данных содержит user.uid: $userId');
-        //   } else {
-        //     print('Массив данных не содержит user.uid: $userId');
-        //   }
-        // } else {
-        //   print('Ошибка при получении данных: ${response.statusCode}');
-        // }
 
         final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
         if (restaurantResponse.statusCode == 200) {
@@ -184,6 +171,42 @@ class _KabinetState extends State<Kabinet> {
                 child:
                     const Text("Excel", style: TextStyle(color: Colors.white)),
               ),
+              Padding(padding: EdgeInsets.all(8)),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor:
+                  Colors.black, // Цвет фона третьей кнопки
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                ),
+                onPressed: goListsNavigator,
+                child: const Text("Таблицы",
+                    style: TextStyle(color: Colors.white)),
+              ),
+              Padding(padding: EdgeInsets.all(8)),
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.black,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.all(Radius.circular(10)),
+                  ),
+                ),
+                onPressed: () async {
+                  if (user != null) {
+                    String message = await findFirebaseUser(user!.uid);
+                    print(message);
+                  } else {
+                    print("User is not logged in.");
+                  }
+                },
+                child: const Text("Кто", style: TextStyle(color: Colors.white)),
+              ),
+
+
+
+
+              Padding(padding: EdgeInsets.all(8)),
               if (isInRestaurantTable)
                 Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -201,19 +224,7 @@ class _KabinetState extends State<Kabinet> {
                       child: const Text("Запросы",
                           style: TextStyle(color: Colors.white)),
                     ),
-                    Padding(padding: EdgeInsets.all(8)),
-                    ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.black, // Цвет фона третьей кнопки
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                        ),
-                      ),
-                      onPressed: goListsNavigator,
-                      child: const Text("Таблицы",
-                          style: TextStyle(color: Colors.white)),
-                    ),
+
                   ],
                 ),
             ],
