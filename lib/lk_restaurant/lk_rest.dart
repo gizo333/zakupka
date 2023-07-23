@@ -194,14 +194,18 @@ class _KabinetState extends State<Kabinet> {
                 ),
                 onPressed: () async {
                   if (user != null) {
-                    String message = await findFirebaseUser(user!.uid);
-                    print(message);
+                    UserState result = await whoami(user!.uid);
+                    print(result.message);
+                    print(result.count);
                   } else {
                     print("User is not logged in.");
                   }
                 },
                 child: const Text("Кто", style: TextStyle(color: Colors.white)),
               ),
+
+
+
 
 
 
