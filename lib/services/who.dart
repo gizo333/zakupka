@@ -4,6 +4,8 @@ import 'package:http/http.dart' as http;
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
 ///                     print(result.count);
+///
+/// restaurant = 1; sotrud = 2; companies = 3;
 class UserState {
   final bool sotrud;
   final bool restaurant;
@@ -24,6 +26,8 @@ class UserState {
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
 ///                     print(result.count);
+///
+/// restaurant = 1; sotrud = 2; companies = 3;
 Future<UserState> findFirebaseUser(String firebaseUid) async {
   final response = await http.get(
     Uri.parse('http://37.140.241.144:5000/find-user/$firebaseUid'),
@@ -70,4 +74,6 @@ Future<UserState> findFirebaseUser(String firebaseUid) async {
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
 ///                     print(result.count);
+///
+/// restaurant = 1; sotrud = 2; companies = 3;
 Future<UserState> Function(String) whoami = findFirebaseUser;
