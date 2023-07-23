@@ -8,14 +8,14 @@ void createTableForUsers() async {
   try {
     await postgresConnection.open();
 
-    // Получение всех пользователей из таблицы users_sotrud
+    // Получение всех пользователей из таблицы restaurant
     final users = await postgresConnection.query('SELECT * FROM restaurant');
 
     for (final user in users) {
       final userId = user[6];
       final nameRest = user[3];
 
-      // Проверка, что поле name_rest заполнено
+      // Проверка, что поле restaurant заполнено
       if (nameRest != null && nameRest.isNotEmpty) {
         // Генерация имени новой таблицы на основе userId и nameRest
         final tableName = 'restaurant_${userId}_$nameRest';
