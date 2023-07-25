@@ -1,95 +1,68 @@
-// import 'dart:io';
-// import 'package:flutter/material.dart';
-// import 'package:postgres/postgres.dart';
-// import 'package:excel/excel.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'package:open_file/open_file.dart';
-//
-// import '../connect_BD/connect.dart';
-//
-// class ExcelTable extends StatefulWidget {
-//   @override
-//   _ExcelTableState createState() => _ExcelTableState();
-// }
-//
-// class _ExcelTableState extends State<ExcelTable> {
-//   final postgresConnection = createDatabaseConnection();
-//
-//   Future<String> _getFilePath() async {
-//     Directory? directory;
-//     if (Platform.isAndroid) {
-//       directory = await getExternalStorageDirectory();
-//     } else if (Platform.isIOS) {
-//       directory = await getApplicationDocumentsDirectory();
-//     }
-//
-//     if (directory != null) {
-//       return '${directory.path}/excel_table.xlsx';
-//     } else {
-//       throw Exception('Не удалось получить путь к директории приложения.');
-//     }
-//   }
-//
-//   Future<void> _generateExcelFile() async {
-//     final postgresConnection = createDatabaseConnection();
-//
-//     await postgresConnection.open();
-//
-//     final results = await postgresConnection.query('SELECT * FROM position');
-//
-//     final excel = Excel.createExcel();
-//     final sheet = excel['Sheet1'];
-//
-//     // Запись заголовков столбцов
-//     for (var columnIndex = 0; columnIndex < results.length; columnIndex++) {
-//       final row = results[columnIndex].asMap();
-//       final columnName = row.keys.toList()[0];
-//       sheet.cell(CellIndex.indexByColumnRow(columnIndex: columnIndex, rowIndex: 0)).value = columnName;
-//     }
-//
-//     // Запись данных
-//     for (var rowIndex = 0; rowIndex < results.length; rowIndex++) {
-//       final row = results[rowIndex].asMap();
-//       for (var columnIndex = 0; columnIndex < row.length; columnIndex++) {
-//         final columnName = row.keys.toList()[columnIndex];
-//         sheet.cell(CellIndex.indexByColumnRow(columnIndex: columnIndex, rowIndex: rowIndex + 1)).value = row[columnName].toString();
-//       }
-//     }
-//
-//     // Получение пути к файлу
-//     final filePath = await _getFilePath();
-//     final file = File(filePath);
-//
-//     // Сохранение файла Excel
-//     final fileBytes = excel.save();
-//     await file.writeAsBytes(fileBytes!);
-//
-//     await postgresConnection.close();
-//
-//     // Проверка успешного сохранения файла
-//     if (await file.exists()) {
-//       print('Файл Excel успешно сохранен: $filePath');
-//       // Открытие файла
-//       OpenFile.open(filePath);
-//     } else {
-//       print('Не удалось сохранить файл Excel.');
-//     }
-//   }
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Excel Table'),
-//       ),
-//       body: Center(
-//         child: ElevatedButton(
-//           onPressed: () {
-//             _generateExcelFile();
-//           },
-//           child: Text('Сгенерировать Excel'),
-//         ),
-//       ),
-//     );
-//   }
-// }
+import 'dart:html' as html;
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart' as http;
+import 'package:excel/excel.dart';
+
+Future<void> downloadTable(String tableName) async {
+  final user = (FirebaseAuth.instance.currentUser?.uid ?? '').toLowerCase();
+
+  if (tableName == null || tableName.isEmpty) {
+    print('Название таблицы не может быть пустым.');
+    return;
+  }
+
+
+  final url = Uri.parse('http://37.140.241.144:8085/api/tables/download/$tableName');
+
+  // if (user == null) {
+  //   print('Пользователь не зарегистрирован.');
+  //   return;
+  // }
+
+  final headers = {
+    'Content-Type': 'application/json',
+    'user': user,
+  };
+
+  try {
+    final response = await http.get(url, headers: headers);
+
+    if (response.statusCode == 200) {
+      var excel = Excel.createExcel();
+
+      List<dynamic> list = jsonDecode(response.body);
+
+      for (var item in list) {
+        if (item is Map<String, dynamic>) {
+          item.remove('id'); // Удалить столбец 'id'
+          excel.sheets['Sheet1']?.appendRow(item.values.toList());
+        }
+      }
+
+      List<int>? encodedExcel = await excel.encode();
+      if (encodedExcel != null) {
+        final blob = html.Blob([encodedExcel]);
+        final url = html.Url.createObjectUrlFromBlob(blob);
+        final anchor = html.document.createElement('a') as html.AnchorElement
+          ..href = url
+          ..style.display = 'none'
+          ..download = '$tableName.xlsx';
+        html.document.body?.children.add(anchor);
+
+        anchor.click();
+
+        html.document.body?.children.remove(anchor);
+        html.Url.revokeObjectUrl(url);
+
+        // print('Таблица успешно загружена.');
+      } else {
+        // print('Ошибка при кодировании Excel файла');
+      }
+    } else {
+      // print('Ошибка загрузки таблицы: ${response.statusCode}');
+    }
+  } catch (e) {
+    // print('Ошибка загрузки таблицы: $e');
+  }
+}

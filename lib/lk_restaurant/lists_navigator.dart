@@ -6,6 +6,7 @@ import 'package:postgres/postgres.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../table/tableview.dart';
+import '../table/teble_to_excel.dart';
 
 class ListsNavigatorPage extends StatefulWidget {
   const ListsNavigatorPage({Key? key}) : super(key: key);
@@ -251,17 +252,34 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
                 final tableName = _tableList[index];
                 return ListTile(
                   title: Text(tableName.split('_').last),
-                  trailing: IconButton(
-                      icon: Icon(Icons.delete),
-                      onPressed: () async {
-                        if (kIsWeb) {
-                          await deleteTableWeb(tableName);
-                        } else {
-                          deleteTable(tableName);
-                        }
-                      }),
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,  // Задает основной размер по минимальному значению
+                    children: <Widget>[
+                      IconButton(
+                        icon: Icon(Icons.file_download),  // Иконка загрузки
+                        onPressed: () {
+                          downloadTable('$tableName');  // Вместо 'your_table_name' укажите имя вашей таблицы
+                        },
+                      ),
+
+
+
+
+                      IconButton(
+                        icon: Icon(Icons.delete),
+                        onPressed: () async {
+                          if (kIsWeb) {
+                            await deleteTableWeb(tableName);
+                          } else {
+                            deleteTable(tableName);
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                   onTap: () => navigateToTableView(tableName),
                 );
+
               },
             ),
           ),
