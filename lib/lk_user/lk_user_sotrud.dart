@@ -16,14 +16,18 @@ class _LkUserState extends State<LkUser> {
   final user = FirebaseAuth.instance.currentUser;
 
 
+  void goList() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/restaurantList');
+    }
+  }
 
-
+//------------
+  // проверяет принадлежит ли сотрудник к какому либо ресторану, чекает поле rest_name если не null то принадлежит
   Future<bool> checkUser() async {
     if (user?.uid == null) return false;
-
     try {
       var response = await http.get(Uri.parse('http://37.140.241.144:5000/checkUser/${user?.uid}'));
-
       if (response.statusCode == 200) {
         return json.decode(response.body);
       } else {
@@ -33,14 +37,6 @@ class _LkUserState extends State<LkUser> {
     } catch(e) {
       print('Error occurred: $e');
       return false;
-    }
-  }
-
-
-
-  void goList() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/restaurantList');
     }
   }
 
@@ -56,6 +52,9 @@ class _LkUserState extends State<LkUser> {
               });
             }
           }
+          // найти способ проще, написать одну функцию которая будет определять?
+//------------
+
 
           return Scaffold(
             backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),

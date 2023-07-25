@@ -69,7 +69,6 @@ class MyApp extends StatelessWidget {
         '/lk-user': (context) => LkUser(),
         '/requests': (context) => JoinRequestsPage(),
         '/listsNavigator': (context) => ListsNavigatorPage(),
-        //'/excel': (context) => ExcelTable(),
       },
       initialRoute: '/',
     );
