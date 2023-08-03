@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'dart:io' show File, Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:open_file/open_file.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:path_provider/path_provider.dart';
 
@@ -45,13 +46,17 @@ Future<void> downloadTable(String tableName) async {
       } else {
         // Если это мобильная платформа
         var data = response.bodyBytes;
-        final directory = await getApplicationDocumentsDirectory();
+        final directory = await getApplicationSupportDirectory(); // Изменение здесь
         final path = directory.path;
         final filePath = '$path/$tableName.xlsx';
         File file = File(filePath);
         await file.writeAsBytes(data);
 
         print('Файл сохранен в $filePath');
+
+        // Открыть файл с помощью пакета open_file
+        final result = await OpenFile.open(filePath);
+        print(result.message); // Вывести сообщение о результате открытия файла
       }
     } else {
       print('Ошибка загрузки таблицы: ${response.statusCode}');
