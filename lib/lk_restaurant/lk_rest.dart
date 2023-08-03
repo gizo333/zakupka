@@ -29,79 +29,45 @@ class _KabinetState extends State<Kabinet> {
   }
 
   void fetchRestaurantName() async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Mobile device
-      final postgresConnection = createDatabaseConnection();
-      await postgresConnection.open();
+    // Browser
+    final userSotrudResults =
+        await getDataFromServer('users_sotrud', 'user_id');
+    final restaurantResults = await getDataFromServer('restaurant', 'user_id');
+    final userId = user?.uid;
 
-      try {
-        final userSotrudResults = await postgresConnection.query(
-          'SELECT name_rest FROM users_sotrud WHERE user_id = @userId;',
-          substitutionValues: {'userId': user?.uid},
+    if (userSotrudResults.isNotEmpty) {
+      final isUserFoundInUsersSotrud = userSotrudResults.contains(userId);
+      if (isUserFoundInUsersSotrud) {
+        setState(() {
+          restaurantName = userSotrudResults[0].toString();
+        });
+        return;
+      }
+    }
+    if (restaurantResults.isNotEmpty) {
+      final userId = user?.uid.toString();
+      final restaurantUrl = 'http://37.140.241.144:8080/api/restaurant/';
+      final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
+      if (restaurantResponse.statusCode == 200) {
+        final restaurantData =
+            jsonDecode(restaurantResponse.body) as List<dynamic>;
+
+        final matchingRestaurant = restaurantData.firstWhere(
+          (result) => result['user_id'] == userId,
+          orElse: () => null,
         );
 
-        final restaurantResults = await postgresConnection.query(
-          'SELECT restaurant FROM restaurant WHERE user_id = @userId;',
-          substitutionValues: {'userId': user?.uid},
-        );
-
-        if (userSotrudResults.isNotEmpty) {
+        if (matchingRestaurant != null) {
+          restaurantName = matchingRestaurant['restaurant'].toString();
           setState(() {
-            restaurantName = userSotrudResults[0][0].toString();
-          });
-        } else if (restaurantResults.isNotEmpty) {
-          setState(() {
-            restaurantName = restaurantResults[0][0].toString();
             isInRestaurantTable = true;
           });
-        }
-      } finally {
-        await postgresConnection.close();
-      }
-    } else {
-      // Browser
-      final userSotrudResults =
-          await getDataFromServer('users_sotrud', 'user_id');
-      final restaurantResults =
-          await getDataFromServer('restaurant', 'user_id');
-      final userId = user?.uid;
-
-      if (userSotrudResults.isNotEmpty) {
-        final isUserFoundInUsersSotrud = userSotrudResults.contains(userId);
-        if (isUserFoundInUsersSotrud) {
-          setState(() {
-            restaurantName = userSotrudResults[0].toString();
-          });
-          return;
-        }
-      }
-
-      if (restaurantResults.isNotEmpty) {
-        final userId = user?.uid.toString();
-        final restaurantUrl = 'http://37.140.241.144:8080/api/restaurant/';
-
-        final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
-        if (restaurantResponse.statusCode == 200) {
-          final restaurantData =
-              jsonDecode(restaurantResponse.body) as List<dynamic>;
-
-          final matchingRestaurant = restaurantData.firstWhere(
-            (result) => result['user_id'] == userId,
-            orElse: () => null,
-          );
-
-          if (matchingRestaurant != null) {
-            restaurantName = matchingRestaurant['restaurant'].toString();
-            setState(() {
-              isInRestaurantTable = true;
-            });
-          } else {
-            // Обработка случая, когда ресторан с указанным user_id не найден
-          }
         } else {
-          throw Exception(
-              'Ошибка при получении данных: ${restaurantResponse.statusCode}');
+          // Обработка случая, когда ресторан с указанным user_id не найден
         }
+      } else {
+        throw Exception(
+            'Ошибка при получении данных: ${restaurantResponse.statusCode}');
       }
     }
   }
@@ -130,10 +96,16 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
+  void navigatorToCheckout() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/checkoutNavigator');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),
+      backgroundColor: const Color.fromRGBO(38, 37, 35, 1),
       resizeToAvoidBottomInset: false,
       appBar: AppBar(
         title: Text(restaurantName),
@@ -157,81 +129,139 @@ class _KabinetState extends State<Kabinet> {
       ),
       body: SafeArea(
         child: Center(
-          child: Column(
-            children: [
-              Padding(padding: EdgeInsets.all(8)),
-              ElevatedButton(
-                onPressed: goExcel,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black, // Цвет фона третьей кнопки
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                ),
-                child:
-                    const Text("Excel", style: TextStyle(color: Colors.white)),
-              ),
-              Padding(padding: EdgeInsets.all(8)),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor:
-                  Colors.black, // Цвет фона третьей кнопки
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                ),
-                onPressed: goListsNavigator,
-                child: const Text("Таблицы",
-                    style: TextStyle(color: Colors.white)),
-              ),
-              Padding(padding: EdgeInsets.all(8)),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.black,
-                  shape: const RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(Radius.circular(10)),
-                  ),
-                ),
-                onPressed: () async {
-                  if (user != null) {
-                    UserState result = await whoami(user!.uid);
-                    print(result.message);
-                    print(result.count);
-                  } else {
-                    print("User is not logged in.");
-                  }
-                },
-                child: const Text("Кто", style: TextStyle(color: Colors.white)),
-              ),
-
-
-
-
-
-
-
-              Padding(padding: EdgeInsets.all(8)),
-              if (isInRestaurantTable)
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
-                  children: [
-                    Padding(padding: EdgeInsets.all(8)),
-                    ElevatedButton(
-                      onPressed: goStop,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor:
-                            Colors.black, // Цвет фона третьей кнопки
-                        shape: const RoundedRectangleBorder(
-                          borderRadius: BorderRadius.all(Radius.circular(10)),
-                        ),
+          child: Container(
+            color: const Color.fromRGBO(47, 46, 42, 1),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  child: ElevatedButton(
+                    onPressed: goExcel,
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      backgroundColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
                       ),
-                      child: const Text("Запросы",
-                          style: TextStyle(color: Colors.white)),
                     ),
-
-                  ],
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Excel", style: TextStyle(color: Colors.white)),
+                        Padding(padding: EdgeInsets.fromLTRB(20, 0, 20, 0)),
+                        Text(
+                          'I dont know what is it',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-            ],
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  child: ElevatedButton(
+                    onPressed: goListsNavigator,
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      backgroundColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Taблицы", style: TextStyle(color: Colors.white)),
+                        Padding(padding: EdgeInsets.fromLTRB(10, 0, 10, 0)),
+                        Text(
+                          'Простой способ провести инвентаризацию',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                Container(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  child: ElevatedButton(
+                    onPressed: navigatorToCheckout,
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      backgroundColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Заказ", style: TextStyle(color: Colors.white)),
+                        Padding(padding: EdgeInsets.fromLTRB(10, 0, 10, 0)),
+                        Text(
+                          'Формирует заказ и отправляет поставщику',
+                          style: TextStyle(color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(height: 8),
+                // Container(
+                //   padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
+                //   child: ElevatedButton(
+                //     onPressed: () async {
+                //       if (user != null) {
+                //         UserState result = await whoami(user!.uid);
+                //         print(result.message);
+                //         print(result.count);
+                //       } else {
+                //         print("User is not logged in.");
+                //       }
+                //     },
+                //     style: ElevatedButton.styleFrom(
+                //       padding:
+                //           EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                //       backgroundColor: Colors.black,
+                //       shape: const RoundedRectangleBorder(
+                //         borderRadius: BorderRadius.all(Radius.circular(10)),
+                //       ),
+                //     ),
+                //     child: Row(
+                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                //       children: [
+                //         Text("Кто я ))", style: TextStyle(color: Colors.white)),
+                //         Icon(Icons.arrow_forward, color: Colors.white),
+                //       ],
+                //     ),
+                //   ),
+                // ),
+                if (isInRestaurantTable) SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: goStop,
+                  style: ElevatedButton.styleFrom(
+                    padding: EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                    backgroundColor: Colors.black,
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(10)),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text("Запросы", style: TextStyle(color: Colors.white)),
+                      Icon(Icons.arrow_forward, color: Colors.white),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

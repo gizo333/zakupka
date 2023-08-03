@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:new_flut_proj/lk_restaurant/checkout_list.dart';
 import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
@@ -32,9 +33,7 @@ void main() async {
   );
 }
 
-
 class MyApp extends StatelessWidget {
-
   final User? user = FirebaseAuth.instance.currentUser;
   get checkBoxValue1 => bool;
   get checkBoxValue2 => bool;
@@ -55,20 +54,20 @@ class MyApp extends StatelessWidget {
         '/': (context) => FirebaseStream(),
         '/kabinet': (context) => const Kabinet(),
         '/home': (context) => const HomeScreen(),
-        // '/table': (context) => const TableView(),
         '/account': (context) => const AccountScreen(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => SignUpScreen(),
         '/reset_password': (context) => const ResetPasswordScreen(),
         '/verify_email': (context) => VerifyEmailScreen(
-          checkBoxValue1: checkBoxValue1,
-          checkBoxValue2: checkBoxValue2,
-          checkBoxValue3: checkBoxValue3,
-        ),
+              checkBoxValue1: checkBoxValue1,
+              checkBoxValue2: checkBoxValue2,
+              checkBoxValue3: checkBoxValue3,
+            ),
         '/restaurantList': (context) => RestaurantListPage(),
         '/lk-user': (context) => LkUser(),
         '/requests': (context) => JoinRequestsPage(),
         '/listsNavigator': (context) => ListsNavigatorPage(),
+        '/checkoutNavigator': (context) => CheckoutPage(),
       },
       initialRoute: '/',
     );
