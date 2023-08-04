@@ -17,13 +17,6 @@ class _CheckoutPageState extends State<CheckoutPage> {
     "Самогон",
     "Арарат",
     "Спирт",
-    "Спирт",
-    "Спирт",
-    "Спирт",
-    "Спирт",
-    "Спирт",
-    "Спирт",
-    "Спирт",
   ];
 
   List<String> filteredCompanies = [];
