@@ -64,7 +64,7 @@ class _StockPageState extends State<StockPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text('Checklist')),
+      appBar: AppBar(title: Text('Сформировать ассортимент ресторана')),
       body: Column(
         children: [
           Expanded(
