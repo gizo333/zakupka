@@ -47,6 +47,10 @@ dependencies:
   firebase_core_web:
   vibration:
   http:
+  connectivity:
+  fluttertoast:
+  permission_handler:
+  universal_html:
   flutter:
     sdk: flutter
 
