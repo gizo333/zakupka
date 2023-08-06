@@ -1,5 +1,10 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/foundation.dart';
+
+
+
 /// данная функция определяет к какой группе пользователей относиться авторизованный пользователь
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
@@ -21,7 +26,7 @@ class UserState {
     required this.count,
   });
 }
-
+final user = FirebaseAuth.instance.currentUser;
 /// данная функция определяет к какой группе пользователей относиться авторизованный пользователь
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
@@ -77,3 +82,47 @@ Future<UserState> findFirebaseUser(String firebaseUid) async {
 ///
 /// restaurant = 1; sotrud = 2; companies = 3;
 Future<UserState> Function(String) whoami = findFirebaseUser;
+
+
+class Who {
+  static final Who _singleton = Who._internal();
+  Function? onStateChange;
+
+  /// Определяет из какой группы пользоаетель!
+  ///
+  /// обращаться if (Who().rest) = ресторан
+  ///
+  /// if (Who().comp) = поставщик
+  ///
+  /// if (Who().sotrud) = обычный пользователь
+  ///
+  /// На каждой старнице где хотим использовать нужно добавить в @override
+  ///   void initState() {
+  ///   Who().WhoYou();
+  ///   }
+  factory Who() {
+    return _singleton;
+  }
+
+  Who._internal();
+
+  bool rest = false;
+  bool sotrud = false;
+  bool comp = false;
+
+  Future<void> WhoYou() async {
+    rest = true; // или другое значение
+    if (onStateChange != null) onStateChange!();
+    var currentUser = user; // Замените 'user' на вашего текущего пользователя
+    if (currentUser != null) {
+      UserState result = await whoami(currentUser.uid);
+      if (result.count == 1) {
+        rest = true;
+      } else if (result.count == 2) {
+        sotrud = true;
+      } else if (result.count == 3) {
+        comp = true;
+      }
+    }
+  }
+}
