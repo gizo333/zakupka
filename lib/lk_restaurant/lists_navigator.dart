@@ -149,7 +149,6 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
             // 'user': user.toString(),
           },
           body: body);
-
       if (response.statusCode == 200) {
         // Таблица успешно создана, выполните действия, необходимые после создания
         await fetchTableListFromPostgreSQLWeb();
