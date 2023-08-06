@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
+import '../services/who.dart';
+
 class AccountScreen extends StatefulWidget {
   const AccountScreen({super.key});
 
@@ -52,9 +54,12 @@ class _AccountScreenState extends State<AccountScreen> {
              //Text("Name: ${userData}"),
 
             TextButton(
-              onPressed: () => signOut(),
+              onPressed: () {
+                signOut();
+              },
               child: const Text('Выйти'),
-            ),
+            )
+
           ],
         ),
       ),

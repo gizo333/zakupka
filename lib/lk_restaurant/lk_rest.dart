@@ -7,8 +7,9 @@ import '../connect_BD/connect.dart';
 import '../connect_BD/connect_web.dart';
 import '../pages/account_screen.dart';
 import 'dart:io';
-
 import '../services/who.dart';
+
+
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
@@ -26,6 +27,31 @@ class _KabinetState extends State<Kabinet> {
   void initState() {
     super.initState();
     fetchRestaurantName();
+    Who().WhoYou();
+  }
+
+  void goInvent() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/table');
+    }
+  }
+
+  void goStop() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/requests');
+    }
+  }
+
+  void goExcel() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/excel');
+    }
+  }
+
+  void goListsNavigator() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/listsNavigator');
+    }
   }
 
   void fetchRestaurantName() async {
@@ -61,9 +87,9 @@ class _KabinetState extends State<Kabinet> {
     } else {
       // Browser
       final userSotrudResults =
-          await getDataFromServer('users_sotrud', 'user_id');
+      await getDataFromServer('users_sotrud', 'user_id');
       final restaurantResults =
-          await getDataFromServer('restaurant', 'user_id');
+      await getDataFromServer('restaurant', 'user_id');
       final userId = user?.uid;
 
       if (userSotrudResults.isNotEmpty) {
@@ -83,10 +109,10 @@ class _KabinetState extends State<Kabinet> {
         final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
         if (restaurantResponse.statusCode == 200) {
           final restaurantData =
-              jsonDecode(restaurantResponse.body) as List<dynamic>;
+          jsonDecode(restaurantResponse.body) as List<dynamic>;
 
           final matchingRestaurant = restaurantData.firstWhere(
-            (result) => result['user_id'] == userId,
+                (result) => result['user_id'] == userId,
             orElse: () => null,
           );
 
@@ -106,29 +132,7 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void goInvent() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/table');
-    }
-  }
 
-  void goStop() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/requests');
-    }
-  }
-
-  void goExcel() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/excel');
-    }
-  }
-
-  void goListsNavigator() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/listsNavigator');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -169,7 +173,7 @@ class _KabinetState extends State<Kabinet> {
                   ),
                 ),
                 child:
-                    const Text("Excel", style: TextStyle(color: Colors.white)),
+                const Text("Excel", style: TextStyle(color: Colors.white)),
               ),
               Padding(padding: EdgeInsets.all(8)),
               ElevatedButton(
@@ -211,7 +215,7 @@ class _KabinetState extends State<Kabinet> {
 
 
               Padding(padding: EdgeInsets.all(8)),
-              if (isInRestaurantTable)
+              if (Who().rest)
                 Column(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
@@ -220,7 +224,7 @@ class _KabinetState extends State<Kabinet> {
                       onPressed: goStop,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            Colors.black, // Цвет фона третьей кнопки
+                        Colors.black, // Цвет фона третьей кнопки
                         shape: const RoundedRectangleBorder(
                           borderRadius: BorderRadius.all(Radius.circular(10)),
                         ),
@@ -237,4 +241,6 @@ class _KabinetState extends State<Kabinet> {
       ),
     );
   }
+
+
 }
