@@ -3,6 +3,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
+import 'package:new_flut_proj/services/test.dart';
+import 'package:new_flut_proj/services/who.dart';
 import 'package:new_flut_proj/theme/app_bar.dart';
 import 'package:provider/provider.dart';
 import '/pages/account_screen.dart';
@@ -42,6 +44,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Who().WhoYou();
     return MaterialApp(
       debugShowCheckedModeBanner: false, // убирает надпись debug
       theme: ThemeData(
@@ -55,7 +58,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => FirebaseStream(),
         '/kabinet': (context) => const Kabinet(),
         '/home': (context) => const HomeScreen(),
-        // '/table': (context) => const TableView(),
+         '/speed': (context) => TestSpeed(),
         '/account': (context) => const AccountScreen(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => SignUpScreen(),

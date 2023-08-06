@@ -86,8 +86,14 @@ Future<UserState> Function(String) whoami = findFirebaseUser;
 
 class Who {
   static final Who _singleton = Who._internal();
-  Function? onStateChange;
 
+  bool _rest = false;
+  bool _sotrud = false;
+  bool _comp = false;
+
+  bool get rest => _rest;
+  bool get sotrud => _sotrud;
+  bool get comp => _comp;
   /// Определяет из какой группы пользоаетель!
   ///
   /// обращаться if (Who().rest) = ресторан
@@ -106,23 +112,38 @@ class Who {
 
   Who._internal();
 
-  bool rest = false;
-  bool sotrud = false;
-  bool comp = false;
-
+  void reset() {
+    _rest = false;
+    _sotrud = false;
+    _comp = false;
+  }
+  /// Определяет из какой группы пользоаетель!
+  ///
+  /// обращаться if (Who().rest) = ресторан
+  ///
+  /// if (Who().comp) = поставщик
+  ///
+  /// if (Who().sotrud) = обычный пользователь
+  ///
+  /// На каждой старнице где хотим использовать нужно добавить в @override
+  ///   void initState() {
+  ///   Who().WhoYou();
+  ///   }
   Future<void> WhoYou() async {
-    rest = true; // или другое значение
-    if (onStateChange != null) onStateChange!();
-    var currentUser = user; // Замените 'user' на вашего текущего пользователя
+    // Сброс текущего состояния
+    reset();
+
+    var currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       UserState result = await whoami(currentUser.uid);
       if (result.count == 1) {
-        rest = true;
+        _rest = true;
       } else if (result.count == 2) {
-        sotrud = true;
+        _sotrud = true;
       } else if (result.count == 3) {
-        comp = true;
+        _comp = true;
       }
     }
   }
 }
+
