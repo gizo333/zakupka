@@ -6,8 +6,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../connect_BD/connect.dart';
 import '../connect_BD/connect_web.dart';
+import '../lk_restaurant/lk_rest.dart';
+import '../lk_user/lk_user_sotrud.dart';
+import '../services/who.dart';
 import '/services/snack_bar.dart';
-import 'package:http/http.dart' as http;
 
 
 class LoginScreen extends StatefulWidget {
@@ -28,8 +30,10 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     emailTextInputController.dispose();
     passwordTextInputController.dispose();
-
     super.dispose();
+  }
+  void initState(){
+    super.initState();
   }
 
   void togglePasswordView() {
@@ -39,111 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> login() async {
-    final navigator = Navigator.of(context);
-    final isValid = formKey.currentState!.validate();
-    if (isValid == null || isValid == false) return;
-
     try {
       await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: emailTextInputController.text.trim(),
         password: passwordTextInputController.text.trim(),
       );
 
-      final User? user = FirebaseAuth.instance.currentUser;
-
-      if (user != null) {
-        if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-          final postgresConnection = createDatabaseConnection();
-
-          try {
-            await postgresConnection.open();
-
-            final query = 'SELECT * FROM users_sotrud WHERE user_id = @userId';
-            final results = await postgresConnection.query(
-                query, substitutionValues: {
-              'userId': user.uid,
-            });
-
-            if (results.isNotEmpty) {
-              final nameRest = results.first[6] as String?;
-
-              if (nameRest != null && nameRest.isNotEmpty &&
-                  nameRest != 'null') {
-                navigator.pushNamedAndRemoveUntil(
-                    '/kabinet', (Route<dynamic> route) => false);
-                return;
-              } else {
-                navigator.pushNamedAndRemoveUntil(
-                    '/lk-user', (Route<dynamic> route) => false);
-                return;
-              }
-            }
-
-            final query2 = 'SELECT * FROM restaurant WHERE user_id = @userId';
-            final results2 = await postgresConnection.query(
-                query2, substitutionValues: {
-              'userId': user.uid,
-            });
-
-            if (results2.isNotEmpty) {
-              navigator.pushNamedAndRemoveUntil(
-                  '/kabinet', (Route<dynamic> route) => false);
-              return;
-            }
-
-            final query3 = 'SELECT * FROM companies WHERE user_id = @userId';
-            final results3 = await postgresConnection.query(
-                query3, substitutionValues: {
-              'userId': user.uid,
-            });
-
-            if (results3.isNotEmpty) {
-              navigator.pushNamedAndRemoveUntil(
-                  '/kabinet', (Route<dynamic> route) => false);
-              return;
-            }
-          } catch (e) {
-            print(e);
-          } finally {
-            await postgresConnection.close();
-          }
-        } else {
-          final tableName = 'users_sotrud';
-          final fieldName = 'user_id';
-
-          try {
-            final data = await getDataFromServer(tableName, fieldName);
-            final userId = user.uid;
-
-            final isUserFoundInUsersSotrud = data.contains(userId);
-
-            if (isUserFoundInUsersSotrud) {
-              navigator.pushNamedAndRemoveUntil(
-                  '/lk-user', (Route<dynamic> route) => false);
-              return;
-            }
-
-            final restaurantTableName = 'restaurant';
-            final restaurantData = await getDataFromServer(
-                restaurantTableName, 'user_id');
-            final isUserFoundInRestaurant = restaurantData.contains(userId);
-
-            if (isUserFoundInRestaurant) {
-              navigator.pushNamedAndRemoveUntil(
-                  '/kabinet', (Route<dynamic> route) => false);
-              return;
-            }
-
-            // Handle case when no match is found
-          } catch (e) {
-            throw Exception('Ошибка при выполнении запроса: $e');
-          }
-        }
-
-
-
-
-      }
     } on FirebaseAuthException catch (e) {
       print(e.code);
       print(e);
@@ -170,8 +75,6 @@ class _LoginScreenState extends State<LoginScreen> {
       print(e);
     }
 
-    // По умолчанию переходим на страницу '/kabinet'
-    // navigator.pushNamedAndRemoveUntil('/kabinet', (Route<dynamic> route) => false);
   }
 
   @override
@@ -243,9 +146,31 @@ class _LoginScreenState extends State<LoginScreen> {
 
               const SizedBox(height: 30),
               ElevatedButton(
-                onPressed: login,
+                onPressed: () {
+                  login().then((_) async {
+                    // Получаем текущего пользователя
+                    var currentUser = FirebaseAuth.instance.currentUser;
+                    if (currentUser != null) {
+                      // Получаем экземпляр Who
+                      Who whoInstance = Who();
+                      // Вызываем функцию для определения типа пользователя
+                      await whoInstance.WhoYou();
+                      // Теперь используем этот же экземпляр для проверки типа пользователя
+                      if (whoInstance.rest) {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => Kabinet()));
+                      } else if (whoInstance.sotrud) {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LkUser()));
+                      } else if (whoInstance.comp) {
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => LkUser()));
+                      }
+                    }
+                  });
+                },
                 child: const Center(child: Text('Войти')),
               ),
+
+
+
               const SizedBox(height: 30),
               TextButton(
                 onPressed: () => Navigator.of(context).pushNamed('/signup'),
