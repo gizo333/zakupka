@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
-import '../connect_BD/connect.dart';
 import 'validation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
@@ -188,6 +187,8 @@ class _SignUpFormState extends State<SignUpForm> {
 
       User? user = userCredential.user;
       if (user != null) {
+
+
         if (checkBoxValue2) {
           // Регистрация компании
           await widget.firestore.collection('companies').doc(user.uid).set({
@@ -198,35 +199,38 @@ class _SignUpFormState extends State<SignUpForm> {
             'inn': inn,
           });
 
-          // Сохранение данных в PostgreSQL
-          final postgresConnection = createDatabaseConnection();
 
-          try {
-            await postgresConnection.open();
-
-            final query = '''
-            INSERT INTO companies (user_id, email, password, company, phone, inn)
-            VALUES (@userId, @email, @password, @company, @phone, @inn)
-          ''';
-
-            await postgresConnection.query(
-              query,
-              substitutionValues: {
-                'userId': user.uid,
+          var url = Uri.parse('http://37.140.241.144:5000/register_company');
+            var body = jsonEncode({
+                'userId': user.uid, // Предполагается, что у вас есть user.uid с идентификатором пользователя
                 'email': email,
                 'password': password,
                 'company': company,
                 'phone': phone,
                 'inn': inn,
-              },
+              });
+
+          try {
+            var response = await http.post(
+              url,
+              headers: {"Content-Type": "application/json"},
+              body: body,
             );
 
-            print('Соединение закрыто');
+            if (response.statusCode == 201) {
+              print('User registered successfully.');
+            } else {
+              print('Failed to register user.');
+              print('Status code: ${response.statusCode}');
+              print('Response body: ${response.body}');
+            }
           } catch (e) {
-            print(e);
-          } finally {
-            await postgresConnection.close();
+            print('Error: $e');
           }
+
+
+
+
         } else if (checkBoxValue1) {
           // Регистрация ресторана
           final currentUser = FirebaseAuth.instance.currentUser;
@@ -271,6 +275,9 @@ class _SignUpFormState extends State<SignUpForm> {
           } catch (e) {
             print('Error: $e');
           }
+
+
+
         } else if (checkBoxValue3) {
           // Регистрация пользователя-сотрудника
           final currentUser = FirebaseAuth.instance.currentUser;

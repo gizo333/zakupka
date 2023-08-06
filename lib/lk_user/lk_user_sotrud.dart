@@ -16,6 +16,13 @@ class _LkUserState extends State<LkUser> {
   final user = FirebaseAuth.instance.currentUser;
 
 
+  @override
+  void initState() {
+    super.initState();
+    Who().WhoYou();
+
+  }
+
   void goList() {
     if (user != null) {
       Navigator.pushNamed(context, '/restaurantList');
@@ -48,7 +55,8 @@ class _LkUserState extends State<LkUser> {
           if (snapshot.hasData) {
             if (snapshot.data == true) {
               WidgetsBinding.instance.addPostFrameCallback((_) {
-                Navigator.pushNamed(context, '/kabinet');
+                Navigator.pushNamedAndRemoveUntil(context, '/kabinet', (Route<dynamic> route) => false);
+
               });
             }
           }

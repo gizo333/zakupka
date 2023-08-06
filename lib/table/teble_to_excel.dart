@@ -7,6 +7,7 @@ import 'package:open_file/open_file.dart';
 import 'package:universal_html/html.dart' as html;
 import 'package:path_provider/path_provider.dart';
 
+///данная функция позволяет скачать файл из БД в .xlsx формате
 Future<void> downloadTable(String tableName) async {
   final user = (FirebaseAuth.instance.currentUser?.uid ?? '').toLowerCase();
 

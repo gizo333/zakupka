@@ -289,7 +289,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
           if (kIsWeb) {
             await createrTableWeb();
           } else {
-            createrTable();
+            createrTableWeb();
           }
         },
         child: Icon(Icons.add),

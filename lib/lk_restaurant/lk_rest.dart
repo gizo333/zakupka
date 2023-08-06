@@ -7,8 +7,9 @@ import '../connect_BD/connect.dart';
 import '../connect_BD/connect_web.dart';
 import '../pages/account_screen.dart';
 import 'dart:io';
-
 import '../services/who.dart';
+
+
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
@@ -26,6 +27,31 @@ class _KabinetState extends State<Kabinet> {
   void initState() {
     super.initState();
     fetchRestaurantName();
+    Who().WhoYou();
+  }
+
+  void goInvent() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/table');
+    }
+  }
+
+  void goStop() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/requests');
+    }
+  }
+
+  void goExcel() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/excel');
+    }
+  }
+
+  void goListsNavigator() {
+    if (user != null) {
+      Navigator.pushNamed(context, '/listsNavigator');
+    }
   }
 
   void fetchRestaurantName() async {
@@ -72,29 +98,7 @@ class _KabinetState extends State<Kabinet> {
     }
   }
 
-  void goInvent() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/table');
-    }
-  }
 
-  void goStop() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/requests');
-    }
-  }
-
-  void goExcel() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/excel');
-    }
-  }
-
-  void goListsNavigator() {
-    if (user != null) {
-      Navigator.pushNamed(context, '/listsNavigator');
-    }
-  }
 
   void navigatorToCheckout() {
     if (user != null) {
@@ -160,6 +164,7 @@ class _KabinetState extends State<Kabinet> {
                     ),
                   ),
                 ),
+
                 SizedBox(height: 8),
                 Container(
                   padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
@@ -212,6 +217,7 @@ class _KabinetState extends State<Kabinet> {
                     ),
                   ),
                 ),
+
                 SizedBox(height: 8),
                 // Container(
                 //   padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
@@ -242,7 +248,7 @@ class _KabinetState extends State<Kabinet> {
                 //     ),
                 //   ),
                 // ),
-                if (isInRestaurantTable) SizedBox(height: 8),
+                if (Who().rest) SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: goStop,
                   style: ElevatedButton.styleFrom(
@@ -267,4 +273,6 @@ class _KabinetState extends State<Kabinet> {
       ),
     );
   }
+
+
 }
