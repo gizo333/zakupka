@@ -6,15 +6,13 @@ import 'package:postgres/postgres.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'dart:io';
 
-
-
 class JoinRequestsPage extends StatefulWidget {
   @override
   _JoinRequestsPageState createState() => _JoinRequestsPageState();
 }
 
 class _JoinRequestsPageState extends State<JoinRequestsPage> {
-  String currentUserId = '';// Идентификатор текущего пользователя
+  String currentUserId = ''; // Идентификатор текущего пользователя
   @override
   void initState() {
     super.initState();
@@ -25,269 +23,245 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       setState(() {
-        currentUserId = user.uid; // Установка идентификатора текущего пользователя
+        currentUserId =
+            user.uid; // Установка идентификатора текущего пользователя
       });
     }
   }
 
   Future<dynamic> fetchJoinRequests() async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final postgresConnection = PostgreSQLConnection(
-        '37.140.241.144',
-        5432,
-        'postgres',
-        username: 'postgres',
-        password: '1',
-      );
+    try {
+      final usersUrl = Uri.parse('http://37.140.241.144:8080/api/restaurant');
+      final usersResponse = await http.get(usersUrl);
+      String? userRestaurant;
 
-      try {
-        await postgresConnection.open();
-        final userRestaurant = await _fetchUserRestaurant(postgresConnection, currentUserId);
-        final results = await postgresConnection.query('''
-        SELECT jr.restaurant_name, jr.user_full_name
-        FROM join_requests jr
-        WHERE jr.restaurant_name = '$userRestaurant'
-      ''');
+      if (usersResponse.statusCode == 200) {
+        final usersData = jsonDecode(usersResponse.body);
+        final currentUser = usersData.firstWhere(
+            (user) => user['user_id'] == currentUserId,
+            orElse: () => null);
 
-        final list = results.map((row) => JoinRequest(
-          restaurantName: row[0] as String,
-          userFullName: row[1] as String,
-          userId: '',
-        )).toList();
-
-        return list;
-      } catch (e) {
-        print('Error fetching join requests: $e');
-        throw e;
-      } finally {
-        await postgresConnection.close();
-      }
-    } else {
-      try {
-        final usersUrl = Uri.parse('http://37.140.241.144:8080/api/restaurant');
-        final usersResponse = await http.get(usersUrl);
-        String? userRestaurant;
-
-        if (usersResponse.statusCode == 200) {
-          final usersData = jsonDecode(usersResponse.body);
-          final currentUser = usersData.firstWhere((user) => user['user_id'] == currentUserId, orElse: () => null);
-
-          if (currentUser == null) {
-            throw Exception('Пользователь с ID $currentUserId не найден');
-          }
-
-          userRestaurant = currentUser['restaurant'];
-
-          if (userRestaurant == null) {
-            throw Exception('Авторизованный ресторан для пользователя с ID $currentUserId не найден');
-          }
-        } else {
-          throw Exception('Ошибка при получении данных о пользователях: ${usersResponse.statusCode}');
+        if (currentUser == null) {
+          throw Exception('Пользователь с ID $currentUserId не найден');
         }
 
-        final joinRequestsUrl = Uri.parse('http://37.140.241.144:8080/api/join_requests');
-        final joinRequestsResponse = await http.get(joinRequestsUrl);
+        userRestaurant = currentUser['restaurant'];
 
-
-        if (joinRequestsResponse.statusCode == 200) {
-          final joinRequestsData = jsonDecode(joinRequestsResponse.body);
-          final filteredJoinRequestsList = joinRequestsData
-              .where((item) => item['restaurant_name'] == userRestaurant)
-              .map((item) => JoinRequest(
-            restaurantName: item['restaurant_name'],
-            userFullName: item['user_full_name'],
-            userId: item['user_id'],
-          ))
-              .toList();
-
-          return filteredJoinRequestsList;
-        } else {
-          throw Exception('Ошибка при получении данных о запросах на присоединение: ${joinRequestsResponse.statusCode}');
+        if (userRestaurant == null) {
+          throw Exception(
+              'Авторизованный ресторан для пользователя с ID $currentUserId не найден');
         }
-      } catch (e) {
-        throw Exception('Ошибка при выполнении запроса: $e');
+      } else {
+        throw Exception(
+            'Ошибка при получении данных о пользователях: ${usersResponse.statusCode}');
       }
+
+      final joinRequestsUrl =
+          Uri.parse('http://37.140.241.144:8080/api/join_requests');
+      final joinRequestsResponse = await http.get(joinRequestsUrl);
+
+      if (joinRequestsResponse.statusCode == 200) {
+        final joinRequestsData = jsonDecode(joinRequestsResponse.body);
+        final filteredJoinRequestsList = joinRequestsData
+            .where((item) => item['restaurant_name'] == userRestaurant)
+            .map((item) => JoinRequest(
+                  restaurantName: item['restaurant_name'],
+                  userFullName: item['user_full_name'],
+                  userId: item['user_id'],
+                ))
+            .toList();
+
+        return filteredJoinRequestsList;
+      } else {
+        throw Exception(
+            'Ошибка при получении данных о запросах на присоединение: ${joinRequestsResponse.statusCode}');
+      }
+    } catch (e) {
+      throw Exception('Ошибка при выполнении запроса: $e');
     }
-
   }
 
+  Future<String> _fetchUserRestaurant(
+      PostgreSQLConnection? connection, String userId) async {
+    final url =
+        Uri.parse('http://37.140.241.144:8080/api/restaurant/user/$userId');
 
+    try {
+      final response = await http.get(url);
 
-  Future<String> _fetchUserRestaurant(PostgreSQLConnection? connection,String userId) async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      final postgresConnection = connection ?? PostgreSQLConnection(
-        '37.140.241.144',
-        5432,
-        'postgres',
-        username: 'postgres',
-        password: '1',
-      );
-
-      try {
-        if (postgresConnection.isClosed) {
-          await postgresConnection.open();
-        }
-
-        final userRestaurantQuery = 'SELECT restaurant FROM restaurant WHERE user_id = \'$userId\'';
-        final userRestaurantResult = await postgresConnection.query(userRestaurantQuery);
-
-        if (userRestaurantResult.isEmpty) {
-          throw Exception('User restaurant not found');
-        }
-
-        final userRestaurant = userRestaurantResult[0][0] as String;
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final userRestaurant = data['restaurant'] as String;
         return userRestaurant;
-      } catch (e) {
-        throw Exception('Error fetching user restaurant: $e');
-      } finally {
-        if (connection == null && !postgresConnection.isClosed) {
-          await postgresConnection.close();
-        }
+      } else {
+        throw Exception(
+            'Ошибка при получении ресторана пользователя: ${response.statusCode}');
       }
-    } else {
-      final url = Uri.parse('http://37.140.241.144:8080/api/restaurant/user/$userId');
-
-      try {
-        final response = await http.get(url);
-
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final userRestaurant = data['restaurant'] as String;
-          return userRestaurant;
-        } else {
-          throw Exception('Ошибка при получении ресторана пользователя: ${response.statusCode}');
-        }
-      } catch (e) {
-        throw Exception('Ошибка при выполнении запроса: $e');
-      }
+    } catch (e) {
+      throw Exception('Ошибка при выполнении запроса: $e');
     }
   }
 
+  Future<String?> getUserIdFromNameRest(String nameRest) async {
+    final url = Uri.parse(
+        'http://37.140.241.144:8080/api/users_sotrud/user_id/$nameRest');
+    final response = await http.get(url);
 
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
 
+      // Извлекаем значение 'user_id' из полученных данных
+      String userId = data['user_id'];
 
+      return userId;
+    } else {
+      print('Ошибка при получении user_id: ${response.statusCode}');
+      return null;
+    }
+  }
 
+// чекает принадлежит ли сотрудник ресторану
+  Future<String?> getRestName(String userId) async {
+    final url = Uri.parse(
+        'http://37.140.241.144:8080/api/users_sotrud/name_rest/$userId');
+    final response = await http.get(url);
 
+    if (response.statusCode == 200) {
+      final Map<String, dynamic> data = jsonDecode(response.body);
+      return data['name_rest'];
+    } else {
+      print('Ошибка при получении rest_name: ${response.statusCode}');
+      return null;
+    }
+  }
 
+// функция вставляет значения в промежуточную таблицу, связывает ресторан с сотрудником
+  Future<void> insertRestaurantUser(String restaurantName, String currentUserId,
+      String nameRestInSotrud) async {
+    final restaurantUsersUrl =
+        Uri.parse('http://37.140.241.144:8080/api/restaurant_users');
+    final headers = {"Content-Type": "application/json"};
 
+    final body = jsonEncode({
+      'restaurant_name': restaurantName,
+      'user_id_in_restaurant': currentUserId,
+      'name_rest_in_sotrud': nameRestInSotrud,
+    });
+    try {
+      final response =
+          await http.post(restaurantUsersUrl, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        print('Успешная вставка'); // Успешная вставка
+      } else {
+        print('Ошибка при вставке: ${response.statusCode}'); // Обработка ошибки
+        print('Response body: ${response.body}'); // Вывод тела ответа
+      }
+    } catch (e) {
+      print('Произошла ошибка при вставке данных: $e');
+    }
+  }
 
   Future<void> acceptJoinRequest(String restaurantName, String userId) async {
-    if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Код для мобильных устройств
-      final postgresConnection = PostgreSQLConnection(
-        '37.140.241.144',
-        5432,
-        'postgres',
-        username: 'postgres',
-        password: '1',
-      );
+    final userListUrl =
+        Uri.parse('http://37.140.241.144:8080/api/users_sotrud');
+    final headers = {"Content-Type": "application/json"};
 
-      try {
-        await postgresConnection.open();
-        final userIdResult = await postgresConnection.query(
-          "SELECT user_id FROM join_requests WHERE restaurant_name = '$restaurantName' AND status = 'pending'",
-        );
+    try {
+      print('Starting acceptJoinRequest function');
 
-        if (userIdResult.isNotEmpty) {
-          final userId = userIdResult.first[0] as String;
-          await postgresConnection.execute(
-            "UPDATE join_requests SET status = 'accepted' WHERE user_id = '$userId' AND restaurant_name = '$restaurantName' AND status = 'pending'",
-          );
+      final response = await http.get(userListUrl, headers: headers);
+      print('User list response status code: ${response.statusCode}');
+      print('User list response body: ${response.body}');
 
-          // Обновление поля name_rest в таблице users_sotrud
-          await postgresConnection.execute(
-            "UPDATE users_sotrud SET name_rest = '$restaurantName' WHERE user_id = '$userId'",
-          );
+      if (response.statusCode == 200) {
+        final userList = jsonDecode(response.body) as List<dynamic>;
+        print('Received user list: $userList');
 
-          print('Join request accepted');
+        final user = userList.firstWhere((user) => user['user_id'] == userId,
+            orElse: () => null);
+        if (user != null) {
+          // Check if the name_rest field is null or different
+          if (user['name_rest'] == null ||
+              user['name_rest'] != restaurantName) {
+            print('Updating user data for user ID: ${user['user_id']}');
+            print('Restaurant name: $restaurantName');
+            print('User ID: $userId');
 
-          // Navigator.pushNamed(context, '/kabinet');
-        }
-      }
-      catch (e) {
-        print('Error accepting join request: $e');
-        throw e;
-      }
-        } else {
-          final userListUrl = Uri.parse(
-              'http://37.140.241.144:8080/api/users_sotrud');
-          final headers = {"Content-Type": "application/json"};
+            final updateUser = {
+              'name_rest': restaurantName,
+            };
+            final updateUserJson = jsonEncode(updateUser);
+            print('User ID for updating: ${user['user_id']}');
+            final updateUserUrl = Uri.parse(
+                'http://37.140.241.144:8080/api/users_sotrud/user_id/$userId');
 
-          try {
-            final response = await http.get(userListUrl, headers: headers);
+            final updateResponse = await http.patch(updateUserUrl,
+                headers: headers, body: updateUserJson);
 
-            if (response.statusCode == 200) {
-              final userList = jsonDecode(response.body) as List<dynamic>;
+            print('Update response status code: ${updateResponse.statusCode}');
+            print('Update response body: ${updateResponse.body}');
 
-              final user = userList.firstWhere((user) =>
-              user['user_id'] == userId, orElse: () => null);
-              if (user != null) {
-                final updateUser = {
-                  'name_rest': restaurantName,
-                };
-                final updateUserJson = jsonEncode(updateUser);
+            if (updateResponse.statusCode == 200) {
+              // Update status
+              final updateStatus = {
+                'status': 'accepted',
+              };
+              final updateStatusJson = jsonEncode(updateStatus);
 
-                final updateUserUrl = Uri.parse(
-                    'http://37.140.241.144:8080/api/users_sotrud/user_id/${user['user_id']}');
+              final updateStatusUrl = Uri.parse(
+                  'http://37.140.241.144:5000/status/join_requests/user_id/${user['user_id']}');
 
-                final updateResponse = await http.patch(
-                    updateUserUrl, headers: headers, body: updateUserJson);
+              final updateStatusResponse = await http.patch(updateStatusUrl,
+                  headers: headers, body: updateStatusJson);
 
-                if (updateResponse.statusCode == 200) {
-                  // Update status to 'accepted' after the initial update
-                  final updateStatus = {
-                    'status': 'accepted',
-                  };
-                  final updateStatusJson = jsonEncode(updateStatus);
+              print(
+                  'Update status response status code: ${updateStatusResponse.statusCode}');
+              print(
+                  'Update status response body: ${updateStatusResponse.body}');
 
-                  final updateStatusUrl = Uri.parse(
-                      'http://37.140.241.144:5000/status/join_requests/user_id/${user['user_id']}');
+              if (updateStatusResponse.statusCode == 200) {
+                // Delete join request
+                final deleteJoinRequestUrl = Uri.parse(
+                    'http://37.140.241.144:5000/delete/join_requests/user_id/${user['user_id']}');
 
-                  final updateStatusResponse = await http.patch(
-                      updateStatusUrl, headers: headers, body: updateStatusJson);
+                final deleteResponse =
+                    await http.delete(deleteJoinRequestUrl, headers: headers);
 
-                  if (updateStatusResponse.statusCode == 200) {
-                    // After status update, send a DELETE request to remove the join request from the database
-                    final deleteJoinRequestUrl = Uri.parse(
-                        'http://37.140.241.144:5000/delete/join_requests/user_id/${user['user_id']}');
+                print(
+                    'Delete response status code: ${deleteResponse.statusCode}');
+                print('Delete response body: ${deleteResponse.body}');
 
-                    final deleteResponse = await http.delete(deleteJoinRequestUrl, headers: headers);
-
-                    if (deleteResponse.statusCode == 200) {
-                      // Join request successfully deleted
-                    } else {
-                      throw Exception(
-                          'Ошибка при удалении заявки: ${deleteResponse.statusCode}');
-                    }
-                  } else {
-                    throw Exception(
-                        'Ошибка при обновлении статуса: ${updateStatusResponse.statusCode}');
-                  }
-
-                  // Navigator.pushNamed(context, '/kabinet');
-                } else if (updateResponse.statusCode == 404) {
-                  throw Exception('User not found: $userId');
+                if (deleteResponse.statusCode == 200) {
+                  print('Join request successfully deleted');
                 } else {
                   throw Exception(
-                      'Ошибка при обновлении данных: ${updateResponse.statusCode}');
+                      'Error deleting request: ${deleteResponse.statusCode}');
                 }
               } else {
-                print('Пользователь с user_id "$userId" не найден');
-                // Добавьте здесь обработку, если пользователь не найден
+                throw Exception(
+                    'Error updating status: ${updateStatusResponse.statusCode}');
               }
             } else {
-              throw Exception(
-                  'Ошибка при получении списка пользователей: ${response.statusCode}');
+              print('Field name_rest already set to the desired value');
+              // Handle case where the field is already set to the desired value
             }
-
-
-          } catch (e) {
-            print('Error accepting join request: $e');
-            throw e;
+          } else {
+            print('Field name_rest already set');
+            // Handle case where the field is already set
           }
+        } else {
+          print('User with user_id "$userId" not found');
+          // Handle case where user is not found
         }
+      } else {
+        throw Exception('Error getting user list: ${response.statusCode}');
       }
-
+    } catch (e) {
+      print('Error accepting join request: $e');
+      throw e;
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -322,7 +296,22 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                       subtitle: Text(request.userFullName),
                       trailing: ElevatedButton(
                         onPressed: () async {
-                          await acceptJoinRequest(request.restaurantName, request.userId);
+                          await acceptJoinRequest(
+                              request.restaurantName, request.userId);
+
+                          // Получаем имя ресторана
+                          final nameRestInSotrud =
+                              await getRestName(request.userId);
+
+                          if (nameRestInSotrud != null) {
+                            await insertRestaurantUser(request.restaurantName,
+                                currentUserId, nameRestInSotrud);
+                            print(
+                                'Имя ресторана для пользователя ${request.userId}: $nameRestInSotrud');
+                          } else {
+                            print('Ошибка при получении имени ресторана');
+                          }
+
                           setState(() {});
                         },
                         child: Text('Принять'),

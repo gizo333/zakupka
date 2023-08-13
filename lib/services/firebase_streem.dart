@@ -25,9 +25,11 @@ class FirebaseStream extends StatelessWidget {
               body: Center(child: Text('Что-то пошло не так!')));
         } else if (snapshot.hasData) {
           if (!snapshot.data!.emailVerified) {
-            return  VerifyEmailScreen(checkBoxValue1: checkBoxValue1,
+            return VerifyEmailScreen(
+              checkBoxValue1: checkBoxValue1,
               checkBoxValue2: checkBoxValue2,
-              checkBoxValue3: checkBoxValue3,);
+              checkBoxValue3: checkBoxValue3,
+            );
           }
           return const Kabinet(); //если пользователь авторизован переходим на эту страницу
         } else {
