@@ -1,4 +1,3 @@
-
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -7,7 +6,6 @@ import '../lk_restaurant/lk_rest.dart';
 import '../lk_user/lk_user_sotrud.dart';
 import '../services/who.dart';
 import '/services/snack_bar.dart';
-
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({Key? key}) : super(key: key);
@@ -29,7 +27,8 @@ class _LoginScreenState extends State<LoginScreen> {
     passwordTextInputController.dispose();
     super.dispose();
   }
-  void initState(){
+
+  void initState() {
     super.initState();
   }
 
@@ -45,7 +44,6 @@ class _LoginScreenState extends State<LoginScreen> {
         email: emailTextInputController.text.trim(),
         password: passwordTextInputController.text.trim(),
       );
-
     } on FirebaseAuthException catch (e) {
       print(e.code);
       print(e);
@@ -71,7 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       print(e);
     }
-
   }
 
   @override
@@ -92,9 +89,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 autocorrect: false,
                 controller: emailTextInputController,
                 validator: (email) =>
-                email != null && !EmailValidator.validate(email)
-                    ? 'Введите правильный Email'
-                    : null,
+                    email != null && !EmailValidator.validate(email)
+                        ? 'Введите правильный Email'
+                        : null,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'Введите Email',
@@ -140,7 +137,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   color: isWrongPassword ? Colors.red : Colors.black,
                 ),
               ),
-
               const SizedBox(height: 30),
               ElevatedButton(
                 onPressed: () {
@@ -154,20 +150,20 @@ class _LoginScreenState extends State<LoginScreen> {
                       await whoInstance.WhoYou();
                       // Теперь используем этот же экземпляр для проверки типа пользователя
                       if (whoInstance.rest) {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => Kabinet()));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => Kabinet()));
                       } else if (whoInstance.sotrud) {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => LkUser()));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => LkUser()));
                       } else if (whoInstance.comp) {
-                        Navigator.push(context, MaterialPageRoute(builder: (context) => LkUser()));
+                        Navigator.push(context,
+                            MaterialPageRoute(builder: (context) => LkUser()));
                       }
                     }
                   });
                 },
                 child: const Center(child: Text('Войти')),
               ),
-
-
-
               const SizedBox(height: 30),
               TextButton(
                 onPressed: () => Navigator.of(context).pushNamed('/signup'),
@@ -190,4 +186,3 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
-

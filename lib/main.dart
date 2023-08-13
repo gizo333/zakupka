@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => FirebaseStream(),
         '/kabinet': (context) => const Kabinet(),
         '/home': (context) => const HomeScreen(),
-         '/speed': (context) => TestSpeed(),
+        '/speed': (context) => TestSpeed(),
         '/account': (context) => const AccountScreen(),
         '/login': (context) => const LoginScreen(),
         '/signup': (context) => SignUpScreen(),

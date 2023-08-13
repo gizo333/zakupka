@@ -46,22 +46,17 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     checkBoxValue2 = widget.checkBoxValue2;
     checkBoxValue3 = widget.checkBoxValue3;
 
-    print('checkBoxValue1: $checkBoxValue1');
-    print('checkBoxValue2: $checkBoxValue2');
-    print('checkBoxValue3: $checkBoxValue3');
-
     var currentUser = FirebaseAuth.instance.currentUser;
     if (currentUser != null) {
       isEmailVerified = currentUser.emailVerified;
     }
-
 
     if (!isEmailVerified) {
       sendVerificationEmail();
 
       timer = Timer.periodic(
         const Duration(seconds: 3),
-            (_) => checkEmailVerified(),
+        (_) => checkEmailVerified(),
       );
     }
   }
@@ -87,14 +82,16 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
       timer?.cancel();
       if (checkBoxValue1) {
         createTableForUsers();
-        Navigator.pushNamedAndRemoveUntil(context, '/kabinet', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/kabinet', (route) => false);
       } else if (checkBoxValue2) {
-        Navigator.pushNamedAndRemoveUntil(context, '/stop', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/lk-user', (route) => false);
       } else if (checkBoxValue3) {
-        Navigator.pushNamedAndRemoveUntil(context, '/lk-user', (route) => false);
+        Navigator.pushNamedAndRemoveUntil(
+            context, '/lk-user', (route) => false);
       }
     }
-
   }
 
   Future<void> sendVerificationEmail() async {
@@ -123,47 +120,47 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   Widget build(BuildContext context) => isEmailVerified
       ? const HomeScreen()
       : Scaffold(
-    resizeToAvoidBottomInset: false,
-    appBar: AppBar(
-      title: const Text('Верификация Email адреса'),
-    ),
-    body: SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Письмо с подтверждением было отправлено на вашу электронную почту.',
-              style: TextStyle(
-                fontSize: 20,
+          resizeToAvoidBottomInset: false,
+          appBar: AppBar(
+            title: const Text('Верификация Email адреса'),
+          ),
+          body: SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    'Письмо с подтверждением было отправлено на вашу электронную почту.',
+                    style: TextStyle(
+                      fontSize: 20,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  ElevatedButton.icon(
+                    onPressed: canResendEmail ? sendVerificationEmail : null,
+                    icon: const Icon(Icons.email),
+                    label: const Text('Повторно отправить'),
+                  ),
+                  const SizedBox(height: 20),
+                  TextButton(
+                    onPressed: () async {
+                      timer?.cancel();
+                      var currentUser = FirebaseAuth.instance.currentUser;
+                      if (currentUser != null) {
+                        await currentUser.delete();
+                      }
+                    },
+                    child: const Text(
+                      'Отменить',
+                      style: TextStyle(
+                        color: Colors.blue,
+                      ),
+                    ),
+                  )
+                ],
               ),
             ),
-            const SizedBox(height: 20),
-            ElevatedButton.icon(
-              onPressed: canResendEmail ? sendVerificationEmail : null,
-              icon: const Icon(Icons.email),
-              label: const Text('Повторно отправить'),
-            ),
-            const SizedBox(height: 20),
-            TextButton(
-              onPressed: () async {
-                timer?.cancel();
-                var currentUser = FirebaseAuth.instance.currentUser;
-                if (currentUser != null) {
-                  await currentUser.delete();
-                }
-              },
-              child: const Text(
-                'Отменить',
-                style: TextStyle(
-                  color: Colors.blue,
-                ),
-              ),
-            )
-          ],
-        ),
-      ),
-    ),
-  );
+          ),
+        );
 }
