@@ -29,6 +29,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     }
   }
 
+// чекает запросы к рестарану
   Future<dynamic> fetchJoinRequests() async {
     try {
       final usersUrl = Uri.parse('http://37.140.241.144:8080/api/restaurant');
@@ -102,7 +103,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     }
   }
 
-  Future<String?> getUserIdFromNameRest(String nameRest) async {
+// получает id сотрудника который привязан к ресторану
+  Future<String?> getUserId(String nameRest) async {
     final url = Uri.parse(
         'http://37.140.241.144:8080/api/users_sotrud/user_id/$nameRest');
     final response = await http.get(url);
@@ -137,7 +139,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
 // функция вставляет значения в промежуточную таблицу, связывает ресторан с сотрудником
   Future<void> insertRestaurantUser(String restaurantName, String currentUserId,
-      String nameRestInSotrud) async {
+      String nameRestInSotrud, String userId_sotrud) async {
     final restaurantUsersUrl =
         Uri.parse('http://37.140.241.144:8080/api/restaurant_users');
     final headers = {"Content-Type": "application/json"};
@@ -146,16 +148,17 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       'restaurant_name': restaurantName,
       'user_id_in_restaurant': currentUserId,
       'name_rest_in_sotrud': nameRestInSotrud,
+      'user_id_varchar': userId_sotrud,
     });
     try {
       final response =
           await http.post(restaurantUsersUrl, headers: headers, body: body);
 
       if (response.statusCode == 200) {
-        print('Успешная вставка'); // Успешная вставка
+        //print('Успешная вставка'); // Успешная вставка
       } else {
         print('Ошибка при вставке: ${response.statusCode}'); // Обработка ошибки
-        print('Response body: ${response.body}'); // Вывод тела ответа
+        // print('Response body: ${response.body}'); // Вывод тела ответа
       }
     } catch (e) {
       print('Произошла ошибка при вставке данных: $e');
@@ -168,15 +171,15 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     final headers = {"Content-Type": "application/json"};
 
     try {
-      print('Starting acceptJoinRequest function');
+      //print('Starting acceptJoinRequest function');
 
       final response = await http.get(userListUrl, headers: headers);
-      print('User list response status code: ${response.statusCode}');
-      print('User list response body: ${response.body}');
+      //print('User list response status code: ${response.statusCode}');
+      // print('User list response body: ${response.body}');
 
       if (response.statusCode == 200) {
         final userList = jsonDecode(response.body) as List<dynamic>;
-        print('Received user list: $userList');
+        // print('Received user list: $userList');
 
         final user = userList.firstWhere((user) => user['user_id'] == userId,
             orElse: () => null);
@@ -184,23 +187,23 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
           // Check if the name_rest field is null or different
           if (user['name_rest'] == null ||
               user['name_rest'] != restaurantName) {
-            print('Updating user data for user ID: ${user['user_id']}');
-            print('Restaurant name: $restaurantName');
-            print('User ID: $userId');
+            // print('Updating user data for user ID: ${user['user_id']}');
+            // print('Restaurant name: $restaurantName');
+            // print('User ID: $userId');
 
             final updateUser = {
               'name_rest': restaurantName,
             };
             final updateUserJson = jsonEncode(updateUser);
-            print('User ID for updating: ${user['user_id']}');
+            //print('User ID for updating: ${user['user_id']}');
             final updateUserUrl = Uri.parse(
                 'http://37.140.241.144:8080/api/users_sotrud/user_id/$userId');
 
             final updateResponse = await http.patch(updateUserUrl,
                 headers: headers, body: updateUserJson);
 
-            print('Update response status code: ${updateResponse.statusCode}');
-            print('Update response body: ${updateResponse.body}');
+            // print('Update response status code: ${updateResponse.statusCode}');
+            // print('Update response body: ${updateResponse.body}');
 
             if (updateResponse.statusCode == 200) {
               // Update status
@@ -215,10 +218,10 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
               final updateStatusResponse = await http.patch(updateStatusUrl,
                   headers: headers, body: updateStatusJson);
 
-              print(
-                  'Update status response status code: ${updateStatusResponse.statusCode}');
-              print(
-                  'Update status response body: ${updateStatusResponse.body}');
+              // print(
+              //     'Update status response status code: ${updateStatusResponse.statusCode}');
+              // print(
+              //     'Update status response body: ${updateStatusResponse.body}');
 
               if (updateStatusResponse.statusCode == 200) {
                 // Delete join request
@@ -228,12 +231,12 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 final deleteResponse =
                     await http.delete(deleteJoinRequestUrl, headers: headers);
 
-                print(
-                    'Delete response status code: ${deleteResponse.statusCode}');
-                print('Delete response body: ${deleteResponse.body}');
+                // print(
+                //     'Delete response status code: ${deleteResponse.statusCode}');
+                // print('Delete response body: ${deleteResponse.body}');
 
                 if (deleteResponse.statusCode == 200) {
-                  print('Join request successfully deleted');
+                  //print('Join request successfully deleted');
                 } else {
                   throw Exception(
                       'Error deleting request: ${deleteResponse.statusCode}');
@@ -304,8 +307,11 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                               await getRestName(request.userId);
 
                           if (nameRestInSotrud != null) {
-                            await insertRestaurantUser(request.restaurantName,
-                                currentUserId, nameRestInSotrud);
+                            await insertRestaurantUser(
+                                request.restaurantName,
+                                currentUserId,
+                                nameRestInSotrud,
+                                request.userId);
                             print(
                                 'Имя ресторана для пользователя ${request.userId}: $nameRestInSotrud');
                           } else {

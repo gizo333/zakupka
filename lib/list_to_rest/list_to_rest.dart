@@ -23,201 +23,232 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   Future<void> fetchAndPrintRestaurants() async {
     List<String> restaurants = await fetchRestaurants(searchQuery);
     for (var restaurant in restaurants) {
-      //print('Restaurant: $restaurant');
+      print('Restaurant: $restaurant');
     }
   }
+
   Future<List<String>> fetchRestaurants(String searchQuery) async {
-    if (kIsWeb) {
-      // Использовать HTTP для веб-версии
-      List<dynamic> data = await getDataFromServer('restaurant', 'restaurant');
-      List<String> filteredData = data.where((item) => item.contains(searchQuery)).cast<String>().toList();
-      return filteredData;
-    } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Использовать Postgres для Android и IOS
-      final postgresConnection = createDatabaseConnection();
+    //if (kIsWeb) {
+    // Использовать HTTP для веб-версии
+    List<dynamic> data = await getDataFromServer('restaurant', 'restaurant');
+    List<String> filteredData = data
+        .where((item) => item.contains(searchQuery))
+        .cast<String>()
+        .toList();
 
-      try {
-        await postgresConnection.open();
-        final results = await postgresConnection.query(
-          'SELECT restaurant FROM restaurant WHERE restaurant ILIKE @query',
-          substitutionValues: {'query': '%$searchQuery%'},
-        );
+    return filteredData;
+    // }
+    // else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    //   // Использовать Postgres для Android и IOS
+    //   final postgresConnection = createDatabaseConnection();
 
-        final list = results.map((row) => row[0] as String).toList();
-        return list;
-      } catch (e) {
-        print('Error fetching restaurants: $e');
-        throw e;
-      } finally {
-        await postgresConnection.close();
-      }
-    } else {
-      throw UnsupportedError('This platform is not supported');
-    }
+    //   try {
+    //     await postgresConnection.open();
+    //     final results = await postgresConnection.query(
+    //       'SELECT restaurant FROM restaurant WHERE restaurant ILIKE @query',
+    //       substitutionValues: {'query': '%$searchQuery%'},
+    //     );
+
+    //     final list = results.map((row) => row[0] as String).toList();
+    //     return list;
+    //   } catch (e) {
+    //     print('Error fetching restaurants: $e');
+    //     throw e;
+    //   } finally {
+    //     await postgresConnection.close();
+    //   }
+    // }
+    //  else {
+    //   throw UnsupportedError('This platform is not supported');
+    // }
   }
+
   Future<String> getUserFullName(String userId) async {
-    if (kIsWeb) {
-      // Использовать HTTP для веб-версии
-      Map<String, dynamic> data = await getUserData('users_sotrud', userId);
-      if (data.isNotEmpty) {
-        return data['full_name'] ?? '';
-      } else {
-        print('No such user');
-        return '';
-      }
-    } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Использовать Postgres для Android и IOS
-      final postgresConnection = createDatabaseConnection();
+    //if (kIsWeb) {
+    // Использовать HTTP для веб-версии
+    try {
+      final response = await http.get(
+        Uri.parse('http://37.140.241.144:8080/api/user_full_name/$userId'),
+      );
 
-      try {
-        await postgresConnection.open();
-        final result = await postgresConnection.query(
-          'SELECT full_name FROM users_sotrud WHERE user_id = \'$userId\'',
-        );
-
-        if (result.isNotEmpty) {
-          final fullName = result.first[0] as String?;
-          return fullName ?? '';
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data is Map && data.containsKey('full_name')) {
+          return data['full_name'] as String;
         } else {
+          print('No such user');
           return '';
         }
-      } catch (e) {
-        print('Error fetching user full name: $e');
-        throw e;
-      } finally {
-        await postgresConnection.close();
+      } else if (response.statusCode == 404) {
+        print('Пользователь не найден');
+        return '';
+      } else {
+        throw Exception('Ошибка при получении данных: ${response.statusCode}');
       }
-    } else {
-      throw UnsupportedError('This platform is not supported');
+    } catch (e) {
+      print('Ошибка при выполнении запроса: $e');
+      throw Exception('Ошибка при выполнении запроса: $e');
     }
+    //}
+    // else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    //   // Использовать Postgres для Android и IOS
+    //   final postgresConnection = createDatabaseConnection();
+
+    //   try {
+    //     await postgresConnection.open();
+    //     final result = await postgresConnection.query(
+    //       'SELECT full_name FROM users_sotrud WHERE user_id = \'$userId\'',
+    //     );
+
+    //     if (result.isNotEmpty) {
+    //       final fullName = result.first[0] as String?;
+    //       return fullName ?? '';
+    //     } else {
+    //       return '';
+    //     }
+    //   } catch (e) {
+    //     print('Error fetching user full name: $e');
+    //     throw e;
+    //   } finally {
+    //     await postgresConnection.close();
+    //   }
+    // }
+    //  else {
+    //   throw UnsupportedError('This platform is not supported');
+    // }
   }
-  Future<void> sendJoinRequest(String restaurantName, String userFullName, String userId, RestaurantListProvider restaurantListProvider) async {
+
+  Future<void> sendJoinRequest(String restaurantName, String userFullName,
+      String userId, RestaurantListProvider restaurantListProvider) async {
     print('User Full Name: $userFullName');
 
     // Отменить предыдущий запрос, если есть
     if (restaurantListProvider.selectedRestaurant != null) {
       final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
-      final previousJoinRequestStatus = restaurantListProvider.getRequestStatus(previousRestaurantName, userId);
+      final previousJoinRequestStatus = restaurantListProvider.getRequestStatus(
+          previousRestaurantName, userId);
       if (previousJoinRequestStatus == 'pending') {
-        await cancelJoinRequest(previousRestaurantName, userId, restaurantListProvider);
+        await cancelJoinRequest(
+            previousRestaurantName, userId, restaurantListProvider);
       }
     }
     // Отправка нового запроса на вступление
-    if (kIsWeb) {
-      // Использовать HTTP для веб-версии
-      http.post(
-        Uri.parse('http://37.140.241.144:8080/api/join_requests'),
-        headers: <String, String>{
-          'Content-Type': 'application/json; charset=UTF-8',
-        },
-        body: jsonEncode(<String, String>{
-          'restaurant_name': restaurantName,
-          'user_full_name': userFullName,
-          'user_id': userId,
-          'status': 'pending',
-        }),
-      ).then((response) {
-        if (response.statusCode == 200) {
-          print('Join request sent successfully');
-          // Обновление состояния запроса в провайдере
-          restaurantListProvider.selectedRestaurant = restaurantName;
-          if (!restaurantListProvider.joinRequests.containsKey(
-              restaurantName)) {
-            restaurantListProvider.joinRequests[restaurantName] = {};
-          }
-          restaurantListProvider.joinRequests[restaurantName]![userId] =
-          'pending';
-          restaurantListProvider.notifyListeners();
-        } else {
-          print('Error sending join request: ${response.statusCode}');
-          throw Exception('Failed to send join request');
-        }
-      }).catchError((error) {
-        print('Error sending join request: $error');
-        throw error;
-      });
-    } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Использовать Postgres для Android и IOS
-      if (restaurantListProvider.selectedRestaurant != null) {
-        final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
-        await cancelJoinRequest(previousRestaurantName, userId, restaurantListProvider);
-      }
-
-      final postgresConnection = createDatabaseConnection();
-
-      final buttonStateValue = buttonState;
-
-      try {
-        await postgresConnection.open();
-        await postgresConnection.execute(
-          "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
-        );
+    //if (kIsWeb) {
+    // Использовать HTTP для веб-версии
+    http
+        .post(
+      Uri.parse('http://37.140.241.144:8080/api/join_requests'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'restaurant_name': restaurantName,
+        'user_full_name': userFullName,
+        'user_id': userId,
+        'status': 'pending',
+      }),
+    )
+        .then((response) {
+      if (response.statusCode == 200) {
         print('Join request sent successfully');
         // Обновление состояния запроса в провайдере
         restaurantListProvider.selectedRestaurant = restaurantName;
         if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
           restaurantListProvider.joinRequests[restaurantName] = {};
         }
-        restaurantListProvider.joinRequests[restaurantName]![userId] = 'pending';
+        restaurantListProvider.joinRequests[restaurantName]![userId] =
+            'pending';
         restaurantListProvider.notifyListeners();
-      } catch (e) {
-        print('Error sending join request: $e');
-        throw e;
-      } finally {
-        await postgresConnection.close();
+      } else {
+        print('Error sending join request: ${response.statusCode}');
+        throw Exception('Failed to send join request');
       }
-    } else {
-      throw UnsupportedError('This platform is not supported');
-    }
+    }).catchError((error) {
+      print('Error sending join request: $error');
+      throw error;
+    });
+    //}
+    // else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    //   // Использовать Postgres для Android и IOS
+    //   if (restaurantListProvider.selectedRestaurant != null) {
+    //     final previousRestaurantName =
+    //         restaurantListProvider.selectedRestaurant!;
+    //     await cancelJoinRequest(
+    //         previousRestaurantName, userId, restaurantListProvider);
+    //   }
+
+    //   final postgresConnection = createDatabaseConnection();
+
+    //   final buttonStateValue = buttonState;
+
+    //   try {
+    //     await postgresConnection.open();
+    //     await postgresConnection.execute(
+    //       "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
+    //     );
+    //     print('Join request sent successfully');
+    //     // Обновление состояния запроса в провайдере
+    //     restaurantListProvider.selectedRestaurant = restaurantName;
+    //     if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
+    //       restaurantListProvider.joinRequests[restaurantName] = {};
+    //     }
+    //     restaurantListProvider.joinRequests[restaurantName]![userId] =
+    //         'pending';
+    //     restaurantListProvider.notifyListeners();
+    //   } catch (e) {
+    //     print('Error sending join request: $e');
+    //     throw e;
+    //   } finally {
+    //     await postgresConnection.close();
+    //   }
+    // }
+    // else {
+    //   throw UnsupportedError('This platform is not supported');
+    // }
   }
 
-
-
-  Future<void> cancelJoinRequest(String restaurantName, String userId, RestaurantListProvider restaurantListProvider) async {
-    if (kIsWeb) {
-      // Использовать HTTP для веб-версии
-      final response = await executeServerRequest('join_requests', '', body: {
-        "restaurant_name": restaurantName,
-        "user_id": userId,
-        "operation": "delete"
-      });
-      if (response.containsKey('error')) {
-        // Обработка ошибки при удалении записи
-        print('Error canceling join request: ${response['error']}');
-        throw Exception('Error canceling join request');
-      } else {
-        // Успешное удаление записи
-        print('Join request canceled successfully');
-        // Дополнительные действия после успешного удаления записи
-      }
-      if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
-        restaurantListProvider.currentJoinRequestRestaurant = null;
-      }
-
-    } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-      // Использовать Postgres для Android и IOS
-      if (restaurantListProvider.selectedRestaurant == restaurantName) {
-        restaurantListProvider.selectedRestaurant = null;
-      }
-      final postgresConnection = createDatabaseConnection();
-      try {
-        await postgresConnection.open();
-        await postgresConnection.execute(
-          "DELETE FROM join_requests WHERE restaurant_name = '$restaurantName' AND user_id = '$userId'",
-        );
-        print('Join request canceled successfully');
-        // Обновление состояния запроса в провайдере
-        restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
-        restaurantListProvider.notifyListeners();
-      } catch (e) {
-        print('Error canceling join request: $e');
-        throw e;
-      } finally {
-        await postgresConnection.close();
-      }
+  Future<void> cancelJoinRequest(String restaurantName, String userId,
+      RestaurantListProvider restaurantListProvider) async {
+    //if (kIsWeb) {
+    //Использовать HTTP для веб-версии
+    final response = await executeServerRequest('join_requests', '', body: {
+      "restaurant_name": restaurantName,
+      "user_id": userId,
+      "operation": "delete"
+    });
+    if (response.containsKey('error')) {
+      // Обработка ошибки при удалении записи
+      print('Error canceling join request: ${response['error']}');
+      throw Exception('Error canceling join request');
     } else {
-      throw UnsupportedError('This platform is not supported');
+      // Успешное удаление записи
+      print('Join request canceled successfully');
+      // Дополнительные действия после успешного удаления записи
     }
+    if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
+      restaurantListProvider.currentJoinRequestRestaurant = null;
+    }
+    restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
+    restaurantListProvider.notifyListeners();
+    // } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
+    //   // Использовать Postgres для Android и IOS
+    //   if (restaurantListProvider.selectedRestaurant == restaurantName) {
+    //     restaurantListProvider.selectedRestaurant = null;
+    //   }
+    //   final postgresConnection = createDatabaseConnection();
+    //   try {
+    //     // Обновление состояния запроса в провайдере
+    //     restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
+    //     restaurantListProvider.notifyListeners();
+    //   } catch (e) {
+    //     print('Error canceling join request: $e');
+    //     throw e;
+    //   } finally {
+    //     await postgresConnection.close();
+    //   }
+    // } else {
+    //   throw UnsupportedError('This platform is not supported');
+    // }
   }
 
   @override
@@ -291,15 +322,15 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                         'Error: ${fullNameSnapshot.error}'),
                                   );
                                 } else if (fullNameSnapshot.hasData) {
-                                  final userFullName =
-                                  fullNameSnapshot.data!;
+                                  final userFullName = fullNameSnapshot.data!;
                                   return ListView.builder(
                                     itemCount: restaurants.length,
                                     itemBuilder: (context, index) {
                                       final name = restaurants[index];
                                       final isRequestSent =
-                                          _restaurantListProvider.getRequestStatus(
-                                              name, userId) ==
+                                          _restaurantListProvider
+                                                  .getRequestStatus(
+                                                      name, userId) ==
                                               'pending';
                                       return Column(
                                         children: [
@@ -307,82 +338,91 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                             title: Text(name),
                                             trailing: kIsWeb
                                                 ? isRequestSent
-                                                ? ElevatedButton(
-                                              onPressed: () async {
-                                                final restaurantListProvider =
-                                                Provider.of<
-                                                    RestaurantListProvider>(
-                                                    context,
-                                                    listen: false);
-                                                await cancelJoinRequest(
-                                                    name,
-                                                    userId,
-                                                    restaurantListProvider);
-                                                setState(() {
-                                                  // Удалить запрос из списка и обновить состояние
-                                                  _restaurantListProvider
-                                                      .joinRequests[name]
-                                                      ?.remove(userId);
-                                                });
-                                              },
-                                              child: Text('Отменить'),
-                                            )
-                                                : ElevatedButton(
-                                              onPressed: () async {
-                                                final restaurantListProvider =
-                                                Provider.of<
-                                                    RestaurantListProvider>(
-                                                    context,
-                                                    listen: false);
-                                                await sendJoinRequest(
-                                                    name,
-                                                    userFullName,
-                                                    userId,
-                                                    restaurantListProvider);
-                                                setState(() {
-                                                  // Удалить предыдущий запрос и обновить состояние
-                                                  _restaurantListProvider
-                                                      .joinRequests
-                                                      .forEach((key, value) {
-                                                    if (value.containsKey(
-                                                        userId)) {
-                                                      value.remove(userId);
-                                                    }
-                                                  });
-                                                });
-                                              },
-                                              child: Text('Вступить'),
-                                            )
+                                                    ? ElevatedButton(
+                                                        onPressed: () async {
+                                                          final restaurantListProvider =
+                                                              Provider.of<
+                                                                      RestaurantListProvider>(
+                                                                  context,
+                                                                  listen:
+                                                                      false);
+                                                          await cancelJoinRequest(
+                                                              name,
+                                                              userId,
+                                                              restaurantListProvider);
+                                                          setState(() {
+                                                            // Удалить запрос из списка и обновить состояние
+                                                            _restaurantListProvider
+                                                                .joinRequests[
+                                                                    name]
+                                                                ?.remove(
+                                                                    userId);
+                                                          });
+                                                        },
+                                                        child: Text('Отменить'),
+                                                      )
+                                                    : ElevatedButton(
+                                                        onPressed: () async {
+                                                          final restaurantListProvider =
+                                                              Provider.of<
+                                                                      RestaurantListProvider>(
+                                                                  context,
+                                                                  listen:
+                                                                      false);
+                                                          await sendJoinRequest(
+                                                              name,
+                                                              userFullName,
+                                                              userId,
+                                                              restaurantListProvider);
+                                                          setState(() {
+                                                            // Удалить предыдущий запрос и обновить состояние
+                                                            _restaurantListProvider
+                                                                .joinRequests
+                                                                .forEach((key,
+                                                                    value) {
+                                                              if (value
+                                                                  .containsKey(
+                                                                      userId)) {
+                                                                value.remove(
+                                                                    userId);
+                                                              }
+                                                            });
+                                                          });
+                                                        },
+                                                        child: Text('Вступить'),
+                                                      )
                                                 : isRequestSent
-                                                ? ElevatedButton(
-                                              onPressed: () async {
-                                                final restaurantListProvider =
-                                                Provider.of<
-                                                    RestaurantListProvider>(
-                                                    context,
-                                                    listen: false);
-                                                await cancelJoinRequest(
-                                                    name,
-                                                    userId,
-                                                    restaurantListProvider);
-                                              },
-                                              child: Text('Отменить'),
-                                            )
-                                                : ElevatedButton(
-                                              onPressed: () async {
-                                                final restaurantListProvider =
-                                                Provider.of<
-                                                    RestaurantListProvider>(
-                                                    context,
-                                                    listen: false);
-                                                await sendJoinRequest(
-                                                    name,
-                                                    userFullName,
-                                                    userId,
-                                                    restaurantListProvider);
-                                              },
-                                              child: Text('Вступить'),
-                                            ),
+                                                    ? ElevatedButton(
+                                                        onPressed: () async {
+                                                          final restaurantListProvider =
+                                                              Provider.of<
+                                                                      RestaurantListProvider>(
+                                                                  context,
+                                                                  listen:
+                                                                      false);
+                                                          await cancelJoinRequest(
+                                                              name,
+                                                              userId,
+                                                              restaurantListProvider);
+                                                        },
+                                                        child: Text('Отменить'),
+                                                      )
+                                                    : ElevatedButton(
+                                                        onPressed: () async {
+                                                          final restaurantListProvider =
+                                                              Provider.of<
+                                                                      RestaurantListProvider>(
+                                                                  context,
+                                                                  listen:
+                                                                      false);
+                                                          await sendJoinRequest(
+                                                              name,
+                                                              userFullName,
+                                                              userId,
+                                                              restaurantListProvider);
+                                                        },
+                                                        child: Text('Вступить'),
+                                                      ),
                                           ),
                                           Divider(
                                             height: 1,
@@ -426,6 +466,4 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       ),
     );
   }
-
-
 }

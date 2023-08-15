@@ -20,43 +20,126 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   TextEditingController _tableNameController = TextEditingController();
   late String realName;
 
-  Future<void> fetchTableListFromPostgreSQL() async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+  // Future<void> fetchTableListFromPostgreSQL() async {
+  //   final connection = PostgreSQLConnection(
+  //     '37.140.241.144',
+  //     5432,
+  //     'postgres',
+  //     username: 'postgres',
+  //     password: '1',
+  //   );
 
+  //   final user = FirebaseAuth.instance.currentUser;
+
+  //   try {
+  //     await connection.open();
+
+  //     final rTablesResult = await connection.query(
+  //       "SELECT table_name FROM information_schema.tables "
+  //       "WHERE table_schema = 'public' AND table_name LIKE @tableName",
+  //       substitutionValues: {'tableName': 'r_${user?.uid?.toLowerCase()}_%'},
+  //     );
+  //     print(user?.uid);
+
+  //     final rTables = rTablesResult.map((row) => row[0] as String).toList();
+
+  //     setState(() {
+  //       _tableList = rTables
+  //           // .map((tableName) => tableName.split('_').last)
+  //           .toList();
+  //     });
+
+  //     await connection.close();
+  //   } catch (e) {
+  //     print('Error fetching table list from PostgreSQL: $e');
+  //   }
+  // }
+
+  // Future<void> fetchTableListFromPostgreSQLWeb() async {
+  //   final user = FirebaseAuth.instance.currentUser;
+
+  //   final url = Uri.parse('http://37.140.241.144:8085/api/tables/alltables');
+
+  //   try {
+  //     final response = await http.get(url);
+
+  //     if (response.statusCode == 200) {
+  //       final tables = json.decode(response.body) as List<dynamic>;
+
+  //       final filteredTables = tables
+  //           .cast<String>()
+  //           .where((tableName) =>
+  //               tableName.startsWith('r_${user?.uid?.toLowerCase()}_'))
+  //           .toList();
+
+  //       setState(() {
+  //         _tableList = filteredTables;
+  //       });
+  //     } else {
+  //       print('Error fetching table list from API: ${response.statusCode}');
+  //     }
+  //   } catch (e) {
+  //     print('Error fetching table list from API: $e');
+  //   }
+  // }
+
+  Future<void> fetchTableListFromPostgreSQLWeb() async {
     final user = FirebaseAuth.instance.currentUser;
 
+    final url = Uri.parse('http://37.140.241.144:8080/api/restaurant_users');
+
     try {
-      await connection.open();
+      if (user != null) {
+        final response = await http.get(url);
 
-      final rTablesResult = await connection.query(
-        "SELECT table_name FROM information_schema.tables "
-        "WHERE table_schema = 'public' AND table_name LIKE @tableName",
-        substitutionValues: {'tableName': 'r_${user?.uid?.toLowerCase()}_%'},
-      );
-      print(user?.uid);
+        if (response.statusCode == 200) {
+          final userList = json.decode(response.body) as List<dynamic>;
 
-      final rTables =
-          rTablesResult.map((row) => row[0] as String).toList();
+          final userRestaurant = userList
+              .cast<Map<String, dynamic>>()
+              .firstWhere((userMap) => userMap['user_id_varchar'] == user.uid,
+                  orElse: () => {});
 
-      setState(() {
-        _tableList = rTables
-            // .map((tableName) => tableName.split('_').last)
-            .toList();
-      });
+          if (userRestaurant.isNotEmpty) {
+            final userRestaurantId = userRestaurant['user_id_in_restaurant'];
 
-      await connection.close();
+            final userRestaurantPrefix = 'r_${userRestaurantId.toLowerCase()}_';
+
+            final responseTables = await http.get(
+              Uri.parse('http://37.140.241.144:8085/api/tables/alltables'),
+            );
+
+            if (responseTables.statusCode == 200) {
+              final tables = json.decode(responseTables.body) as List<dynamic>;
+
+              final filteredTables = tables
+                  .cast<String>()
+                  .where(
+                      (tableName) => tableName.startsWith(userRestaurantPrefix))
+                  .toList();
+
+              setState(() {
+                _tableList = filteredTables;
+              });
+            } else {
+              print(
+                  'Error fetching table list from API: ${responseTables.statusCode}');
+            }
+          } else {
+            print('User is not associated with a restaurant');
+          }
+        } else {
+          print('Error fetching user data from API: ${response.statusCode}');
+        }
+      } else {
+        print('User is not logged in');
+      }
     } catch (e) {
-      print('Error fetching table list from PostgreSQL: $e');
+      print('Error fetching data from API: $e');
     }
   }
 
-  Future<void> fetchTableListFromPostgreSQLWeb() async {
+  Future<void> visionRest() async {
     final user = FirebaseAuth.instance.currentUser;
 
     final url = Uri.parse('http://37.140.241.144:8085/api/tables/alltables');
@@ -84,51 +167,51 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
-  Future<void> createrTable() async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+  // Future<void> createrTable() async {
+  //   final connection = PostgreSQLConnection(
+  //     '37.140.241.144',
+  //     5432,
+  //     'postgres',
+  //     username: 'postgres',
+  //     password: '1',
+  //   );
 
-    final user = FirebaseAuth.instance.currentUser;
+  //   final user = FirebaseAuth.instance.currentUser;
 
-    try {
-      await connection.open();
+  //   try {
+  //     await connection.open();
 
-      String tableName;
-      if (_tableNameController.text.isNotEmpty) {
-        tableName =
-            'r_${user?.uid?.toLowerCase()}_${_tableNameController.text}';
-      } else {
-        tableName =
-            'r_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
-      }
+  //     String tableName;
+  //     if (_tableNameController.text.isNotEmpty) {
+  //       tableName =
+  //           'r_${user?.uid?.toLowerCase()}_${_tableNameController.text}';
+  //     } else {
+  //       tableName =
+  //           'r_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
+  //     }
 
-      await connection.execute(
-        'CREATE TABLE $tableName ('
-        'id SERIAL PRIMARY KEY, '
-        'code INTEGER, '
-        'name TEXT, '
-        'ml INTEGER, '
-        'itog INTEGER'
-        ')',
-      );
+  //     await connection.execute(
+  //       'CREATE TABLE $tableName ('
+  //       'id SERIAL PRIMARY KEY, '
+  //       'code INTEGER, '
+  //       'name TEXT, '
+  //       'ml INTEGER, '
+  //       'itog INTEGER'
+  //       ')',
+  //     );
 
-      await connection.execute(
-        'INSERT INTO links (r_table_name, linked_table_name) '
-        "VALUES ('r_${user?.uid?.toLowerCase()}', '$tableName')",
-      );
+  //     await connection.execute(
+  //       'INSERT INTO links (r_table_name, linked_table_name) '
+  //       "VALUES ('r_${user?.uid?.toLowerCase()}', '$tableName')",
+  //     );
 
-      await fetchTableListFromPostgreSQL(); // Refresh the table list
+  //     await fetchTableListFromPostgreSQL(); // Refresh the table list
 
-      await connection.close();
-    } catch (e) {
-      print('Error creating r table: $e');
-    }
-  }
+  //     await connection.close();
+  //   } catch (e) {
+  //     print('Error creating r table: $e');
+  //   }
+  // }
 
   Future<void> createrTableWeb() async {
     final user = FirebaseAuth.instance.currentUser?.uid;
@@ -152,6 +235,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       if (response.statusCode == 200) {
         // Таблица успешно создана, выполните действия, необходимые после создания
         await fetchTableListFromPostgreSQLWeb();
+        await visionRest();
       } else {
         print('Ошибка создания таблицы: ${response.statusCode}');
       }
@@ -160,31 +244,31 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
-  Future<void> deleteTable(String tableName) async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+  // Future<void> deleteTable(String tableName) async {
+  //   final connection = PostgreSQLConnection(
+  //     '37.140.241.144',
+  //     5432,
+  //     'postgres',
+  //     username: 'postgres',
+  //     password: '1',
+  //   );
 
-    try {
-      await connection.open();
+  //   try {
+  //     await connection.open();
 
-      await connection.execute('DROP TABLE IF EXISTS $tableName');
+  //     await connection.execute('DROP TABLE IF EXISTS $tableName');
 
-      await connection.execute(
-        "DELETE FROM links WHERE linked_table_name = '$tableName'",
-      );
+  //     await connection.execute(
+  //       "DELETE FROM links WHERE linked_table_name = '$tableName'",
+  //     );
 
-      await fetchTableListFromPostgreSQL(); // Refresh the table list
+  //     await fetchTableListFromPostgreSQL(); // Refresh the table list
 
-      await connection.close();
-    } catch (e) {
-      print('Error deleting table: $e');
-    }
-  }
+  //     await connection.close();
+  //   } catch (e) {
+  //     print('Error deleting table: $e');
+  //   }
+  // }
 
   Future<void> deleteTableWeb(String tableName) async {
     final apiUrl =
@@ -194,6 +278,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       final response = await http.delete(Uri.parse(apiUrl));
 
       await fetchTableListFromPostgreSQLWeb();
+      await visionRest();
 
       if (response.statusCode == 200) {
         print('Table $tableName deleted');
@@ -219,11 +304,12 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   @override
   void initState() {
     super.initState();
-    if (kIsWeb) {
-      fetchTableListFromPostgreSQLWeb();
-    } else {
-      fetchTableListFromPostgreSQL();
-    }
+    //if (kIsWeb) {
+    fetchTableListFromPostgreSQLWeb();
+    visionRest();
+    // } else {
+    //   fetchTableListFromPostgreSQL();
+    // }
   }
 
   @override
@@ -252,33 +338,30 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
                 return ListTile(
                   title: Text(tableName.split('_').last),
                   trailing: Row(
-                    mainAxisSize: MainAxisSize.min,  // Задает основной размер по минимальному значению
+                    mainAxisSize: MainAxisSize
+                        .min, // Задает основной размер по минимальному значению
                     children: <Widget>[
                       IconButton(
-                        icon: Icon(Icons.file_download),  // Иконка загрузки
+                        icon: Icon(Icons.file_download), // Иконка загрузки
                         onPressed: () {
-                          downloadTable('$tableName');  // Вместо 'your_table_name' укажите имя вашей таблицы
+                          downloadTable(
+                              '$tableName'); // Вместо 'your_table_name' укажите имя вашей таблицы
                         },
                       ),
-
-
-
-
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () async {
-                          if (kIsWeb) {
-                            await deleteTableWeb(tableName);
-                          } else {
-                            deleteTable(tableName);
-                          }
+                          //if (kIsWeb) {
+                          await deleteTableWeb(tableName);
+                          // } else {
+                          //   deleteTable(tableName);
+                          // }
                         },
                       ),
                     ],
                   ),
                   onTap: () => navigateToTableView(tableName),
                 );
-
               },
             ),
           ),
@@ -286,11 +369,11 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          if (kIsWeb) {
-            await createrTableWeb();
-          } else {
-            createrTableWeb();
-          }
+          //if (kIsWeb) {
+          await createrTableWeb();
+          // } else {
+          //   createrTableWeb();
+          // }
         },
         child: Icon(Icons.add),
       ),
