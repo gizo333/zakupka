@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:connectivity/connectivity.dart';
 
-
 class TestSpeed extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -50,7 +49,8 @@ class _SpeedTestScreenState extends State<SpeedTestScreen> {
       var speedKbps = (fileSize / downloadTime) * 8 / 1024;
 
       setState(() {
-        _speedResult = 'Скорость загрузки: ${speedKbps.toStringAsFixed(2)} Kbps';
+        _speedResult =
+            'Скорость загрузки: ${speedKbps.toStringAsFixed(2)} Kbps';
       });
     } else {
       setState(() {
