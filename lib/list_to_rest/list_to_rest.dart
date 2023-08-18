@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -67,8 +67,8 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     //if (kIsWeb) {
     // Использовать HTTP для веб-версии
     try {
-      final response = await http.get(
-        Uri.parse('http://37.140.241.144:8080/api/user_full_name/$userId'),
+      final response = await https.get(
+        Uri.parse('https://zakup.bar:8080/api/user_full_name/$userId'),
       );
 
       if (response.statusCode == 200) {
@@ -135,9 +135,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     // Отправка нового запроса на вступление
     //if (kIsWeb) {
     // Использовать HTTP для веб-версии
-    http
+    https
         .post(
-      Uri.parse('http://37.140.241.144:8080/api/join_requests'),
+      Uri.parse('https://zakup.bar:8080/api/join_requests'),
       headers: <String, String>{
         'Content-Type': 'application/json; charset=UTF-8',
       },

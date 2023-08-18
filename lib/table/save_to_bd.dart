@@ -2,7 +2,7 @@ import 'dart:convert';
 
 import 'package:new_flut_proj/table/classes.dart';
 import 'package:postgres/postgres.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 
 Future<void> saveDataToPostgreSQLB(
     List<dynamic> _lists, String tablename) async {
@@ -53,7 +53,7 @@ Future<void> saveDataToPostgreSQLB(
 Future<void> saveDataToPostgreSQLBWeb(
     List<PositionClass> _lists, String tablename) async {
   final stopwatch = Stopwatch()..start(); // Start the stopwatch
-  final url = Uri.parse('http://37.140.241.144:8085/apip/tables/savedatab');
+  final url = Uri.parse('https://zakup.bar:8085/apip/tables/savedatab');
   final body = json.encode({
     'tableName': tablename,
     'data': _lists.map((position) {
@@ -71,7 +71,7 @@ Future<void> saveDataToPostgreSQLBWeb(
   });
 
   try {
-    final response = await http.post(
+    final response = await https.post(
       url,
       headers: {'Content-Type': 'application/json'},
       body: body,

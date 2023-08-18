@@ -1,13 +1,13 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 
 Future<Map<String, dynamic>> getUserData(
     String tableName, String userId) async {
   final url =
-      Uri.parse('http://37.140.241.144:8080/api/$tableName/user_id/$userId');
+      Uri.parse('https://zakup.bar:8080/api/$tableName/user_id/$userId');
 
   try {
-    final response = await http.get(url);
+    final response = await https.get(url);
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -32,10 +32,10 @@ Future<Map<String, dynamic>> getUserData(
 
 Future<List<dynamic>> getDataFromServer(
     String tableName, String fieldName) async {
-  final url = Uri.parse('http://37.140.241.144:8080/api/$tableName/$fieldName');
+  final url = Uri.parse('https://zakup.bar:8080/api/$tableName/$fieldName');
 
   try {
-    final response = await http.get(url);
+    final response = await https.get(url);
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -50,12 +50,12 @@ Future<List<dynamic>> getDataFromServer(
 
 Future<dynamic> executeServerRequest(String tableName, String fieldName,
     {dynamic body}) async {
-  final url = Uri.parse('http://37.140.241.144:8080/api/$tableName/$fieldName');
+  final url = Uri.parse('https://zakup.bar:8080/api/$tableName/$fieldName');
   final headers = {"Content-Type": "application/json"};
 
   try {
     final response =
-        await http.post(url, body: jsonEncode(body), headers: headers);
+        await https.post(url, body: jsonEncode(body), headers: headers);
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);

@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
@@ -33,7 +33,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   Future<dynamic> fetchJoinRequests() async {
     try {
       final usersUrl = Uri.parse('http://37.140.241.144:8080/api/restaurant');
-      final usersResponse = await http.get(usersUrl);
+      final usersResponse = await https.get(usersUrl);
       String? userRestaurant;
 
       if (usersResponse.statusCode == 200) {
@@ -59,7 +59,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
       final joinRequestsUrl =
           Uri.parse('http://37.140.241.144:8080/api/join_requests');
-      final joinRequestsResponse = await http.get(joinRequestsUrl);
+      final joinRequestsResponse = await https.get(joinRequestsUrl);
 
       if (joinRequestsResponse.statusCode == 200) {
         final joinRequestsData = jsonDecode(joinRequestsResponse.body);
@@ -88,7 +88,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         Uri.parse('http://37.140.241.144:8080/api/restaurant/user/$userId');
 
     try {
-      final response = await http.get(url);
+      final response = await https.get(url);
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -107,7 +107,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   Future<String?> getUserId(String nameRest) async {
     final url = Uri.parse(
         'http://37.140.241.144:8080/api/users_sotrud/user_id/$nameRest');
-    final response = await http.get(url);
+    final response = await https.get(url);
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
@@ -126,7 +126,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   Future<String?> getRestName(String userId) async {
     final url = Uri.parse(
         'http://37.140.241.144:8080/api/users_sotrud/name_rest/$userId');
-    final response = await http.get(url);
+    final response = await https.get(url);
 
     if (response.statusCode == 200) {
       final Map<String, dynamic> data = jsonDecode(response.body);
@@ -152,7 +152,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     });
     try {
       final response =
-          await http.post(restaurantUsersUrl, headers: headers, body: body);
+          await https.post(restaurantUsersUrl, headers: headers, body: body);
 
       if (response.statusCode == 200) {
         //print('Успешная вставка'); // Успешная вставка
@@ -173,7 +173,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
     try {
       //print('Starting acceptJoinRequest function');
 
-      final response = await http.get(userListUrl, headers: headers);
+      final response = await https.get(userListUrl, headers: headers);
       //print('User list response status code: ${response.statusCode}');
       // print('User list response body: ${response.body}');
 
@@ -197,9 +197,9 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
             final updateUserJson = jsonEncode(updateUser);
             //print('User ID for updating: ${user['user_id']}');
             final updateUserUrl = Uri.parse(
-                'http://37.140.241.144:8080/api/users_sotrud/user_id/$userId');
+                'https://zakup.bar:8080/api/users_sotrud/user_id/$userId');
 
-            final updateResponse = await http.patch(updateUserUrl,
+            final updateResponse = await https.patch(updateUserUrl,
                 headers: headers, body: updateUserJson);
 
             // print('Update response status code: ${updateResponse.statusCode}');
@@ -213,9 +213,9 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
               final updateStatusJson = jsonEncode(updateStatus);
 
               final updateStatusUrl = Uri.parse(
-                  'http://37.140.241.144:5000/status/join_requests/user_id/${user['user_id']}');
+                  'https://zakup.bar:5000/status/join_requests/user_id/${user['user_id']}');
 
-              final updateStatusResponse = await http.patch(updateStatusUrl,
+              final updateStatusResponse = await https.patch(updateStatusUrl,
                   headers: headers, body: updateStatusJson);
 
               // print(
@@ -226,10 +226,10 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
               if (updateStatusResponse.statusCode == 200) {
                 // Delete join request
                 final deleteJoinRequestUrl = Uri.parse(
-                    'http://37.140.241.144:5000/delete/join_requests/user_id/${user['user_id']}');
+                    'https://zakup.bar:5000/delete/join_requests/user_id/${user['user_id']}');
 
                 final deleteResponse =
-                    await http.delete(deleteJoinRequestUrl, headers: headers);
+                    await https.delete(deleteJoinRequestUrl, headers: headers);
 
                 // print(
                 //     'Delete response status code: ${deleteResponse.statusCode}');

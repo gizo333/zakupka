@@ -1,86 +1,45 @@
-import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:connectivity/connectivity.dart';
+// import 'dart:typed_data';
 
-class TestSpeed extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Speed Test App',
-      home: SpeedTestScreen(),
-    );
-  }
-}
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:http/http.dart' as http;
+// import 'dart:convert';
+// import 'package:encrypt/encrypt.dart';
 
-class SpeedTestScreen extends StatefulWidget {
-  @override
-  _SpeedTestScreenState createState() => _SpeedTestScreenState();
-}
+// Future<void> visionRest() async {
+//   final user = FirebaseAuth.instance.currentUser;
 
-class _SpeedTestScreenState extends State<SpeedTestScreen> {
-  String _speedResult = '';
+//   final url =
+//       Uri.parse('http://37.140.241.144:8085/api/tables/encrypted-alltables');
 
-  Future<void> _runSpeedTest() async {
-    // Проверяем доступность интернета
-    var connectivityResult = await (Connectivity().checkConnectivity());
-    if (connectivityResult != ConnectivityResult.mobile &&
-        connectivityResult != ConnectivityResult.wifi) {
-      setState(() {
-        _speedResult = 'Нет подключения к интернету';
-      });
-      return;
-    }
+//   try {
+//     final response = await http.get(url);
 
-    // Запускаем тестирование загрузки файла с некоторого URL
-    var url = 'https://pagespeed.web.dev/'; // Замените на реальный URL файла
-    var response = await http.get(Uri.parse(url));
+//     if (response.statusCode == 200) {
+//       final encryptedTables =
+//           json.decode(response.body)['encryptedTables'] as String;
 
-    if (response.statusCode == 200) {
-      // Получаем размер файла в байтах
-      var fileSize = response.bodyBytes.length;
+//       // Расшифровываем данные на клиенте
+//       Uint8List secretKey;
+//       final decipher = AES(Key(secretKey), mode: AESMode.cbc);
+//       final decryptedTables =
+//           decipher.decrypt(Encrypted.fromBase16(encryptedTables));
 
-      // Измеряем время загрузки файла
-      var startTime = DateTime.now();
-      await http.get(Uri.parse(url));
-      var endTime = DateTime.now();
+//       final tables = json.decode(utf8.decode(decryptedTables)) as List<dynamic>;
 
-      // Вычисляем скорость загрузки (в Килобитах в секунду)
-      var downloadTime = endTime.difference(startTime).inMilliseconds / 1000;
-      var speedKbps = (fileSize / downloadTime) * 8 / 1024;
+//       final filteredTables = tables
+//           .cast<String>()
+//           .where((tableName) =>
+//               tableName.startsWith('r_${user?.uid?.toLowerCase()}_'))
+//           .toList();
 
-      setState(() {
-        _speedResult =
-            'Скорость загрузки: ${speedKbps.toStringAsFixed(2)} Kbps';
-      });
-    } else {
-      setState(() {
-        _speedResult = 'Ошибка при измерении скорости';
-      });
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Speed Test App'),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed: _runSpeedTest,
-              child: Text('Измерить скорость интернета'),
-            ),
-            SizedBox(height: 20),
-            Text(
-              _speedResult,
-              style: TextStyle(fontSize: 16),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
+//       setState(() {
+//         _tableList = filteredTables;
+//       });
+//     } else {
+//       print(
+//           'Error fetching encrypted table list from API: ${response.statusCode}');
+//     }
+//   } catch (e) {
+//     print('Error fetching encrypted table list from API: $e');
+//   }
+// }

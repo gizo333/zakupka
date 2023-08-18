@@ -1,10 +1,9 @@
 import 'dart:convert';
-
+import 'dart:typed_data';
+import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:postgres/postgres.dart';
-import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import '../table/tableview.dart';
 import '../table/teble_to_excel.dart';
 
@@ -20,77 +19,14 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   TextEditingController _tableNameController = TextEditingController();
   late String realName;
 
-  // Future<void> fetchTableListFromPostgreSQL() async {
-  //   final connection = PostgreSQLConnection(
-  //     '37.140.241.144',
-  //     5432,
-  //     'postgres',
-  //     username: 'postgres',
-  //     password: '1',
-  //   );
-
-  //   final user = FirebaseAuth.instance.currentUser;
-
-  //   try {
-  //     await connection.open();
-
-  //     final rTablesResult = await connection.query(
-  //       "SELECT table_name FROM information_schema.tables "
-  //       "WHERE table_schema = 'public' AND table_name LIKE @tableName",
-  //       substitutionValues: {'tableName': 'r_${user?.uid?.toLowerCase()}_%'},
-  //     );
-  //     print(user?.uid);
-
-  //     final rTables = rTablesResult.map((row) => row[0] as String).toList();
-
-  //     setState(() {
-  //       _tableList = rTables
-  //           // .map((tableName) => tableName.split('_').last)
-  //           .toList();
-  //     });
-
-  //     await connection.close();
-  //   } catch (e) {
-  //     print('Error fetching table list from PostgreSQL: $e');
-  //   }
-  // }
-
-  // Future<void> fetchTableListFromPostgreSQLWeb() async {
-  //   final user = FirebaseAuth.instance.currentUser;
-
-  //   final url = Uri.parse('http://37.140.241.144:8085/api/tables/alltables');
-
-  //   try {
-  //     final response = await http.get(url);
-
-  //     if (response.statusCode == 200) {
-  //       final tables = json.decode(response.body) as List<dynamic>;
-
-  //       final filteredTables = tables
-  //           .cast<String>()
-  //           .where((tableName) =>
-  //               tableName.startsWith('r_${user?.uid?.toLowerCase()}_'))
-  //           .toList();
-
-  //       setState(() {
-  //         _tableList = filteredTables;
-  //       });
-  //     } else {
-  //       print('Error fetching table list from API: ${response.statusCode}');
-  //     }
-  //   } catch (e) {
-  //     print('Error fetching table list from API: $e');
-  //   }
-  // }
-
   Future<void> fetchTableListFromPostgreSQLWeb() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    final url = Uri.parse('http://37.140.241.144:8080/api/restaurant_users');
+    final url = Uri.parse('https://zakup.bar:8080/api/restaurant_users');
 
     try {
       if (user != null) {
-        final response = await http.get(url);
+        final response = await https.get(url);
 
         if (response.statusCode == 200) {
           final userList = json.decode(response.body) as List<dynamic>;
@@ -105,8 +41,8 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
 
             final userRestaurantPrefix = 'r_${userRestaurantId.toLowerCase()}_';
 
-            final responseTables = await http.get(
-              Uri.parse('http://37.140.241.144:8085/api/tables/alltables'),
+            final responseTables = await https.get(
+              Uri.parse('https://zakup.bar:8085/api/tables/alltables'),
             );
 
             if (responseTables.statusCode == 200) {
@@ -142,10 +78,10 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   Future<void> visionRest() async {
     final user = FirebaseAuth.instance.currentUser;
 
-    final url = Uri.parse('http://37.140.241.144:8085/api/tables/alltables');
+    final url = Uri.parse('https://zakup.bar:8085/api/tables/alltables');
 
     try {
-      final response = await http.get(url);
+      final response = await https.get(url);
 
       if (response.statusCode == 200) {
         final tables = json.decode(response.body) as List<dynamic>;
@@ -167,55 +103,9 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
-  // Future<void> createrTable() async {
-  //   final connection = PostgreSQLConnection(
-  //     '37.140.241.144',
-  //     5432,
-  //     'postgres',
-  //     username: 'postgres',
-  //     password: '1',
-  //   );
-
-  //   final user = FirebaseAuth.instance.currentUser;
-
-  //   try {
-  //     await connection.open();
-
-  //     String tableName;
-  //     if (_tableNameController.text.isNotEmpty) {
-  //       tableName =
-  //           'r_${user?.uid?.toLowerCase()}_${_tableNameController.text}';
-  //     } else {
-  //       tableName =
-  //           'r_${user?.uid?.toLowerCase()}_${DateTime.now().microsecondsSinceEpoch}';
-  //     }
-
-  //     await connection.execute(
-  //       'CREATE TABLE $tableName ('
-  //       'id SERIAL PRIMARY KEY, '
-  //       'code INTEGER, '
-  //       'name TEXT, '
-  //       'ml INTEGER, '
-  //       'itog INTEGER'
-  //       ')',
-  //     );
-
-  //     await connection.execute(
-  //       'INSERT INTO links (r_table_name, linked_table_name) '
-  //       "VALUES ('r_${user?.uid?.toLowerCase()}', '$tableName')",
-  //     );
-
-  //     await fetchTableListFromPostgreSQL(); // Refresh the table list
-
-  //     await connection.close();
-  //   } catch (e) {
-  //     print('Error creating r table: $e');
-  //   }
-  // }
-
   Future<void> createrTableWeb() async {
     final user = FirebaseAuth.instance.currentUser?.uid;
-    final url = Uri.parse('http://37.140.241.144:8085/api/tables/create');
+    final url = Uri.parse('https://zakup.bar:8085/api/tables/create');
     final tableName = _tableNameController.text.isNotEmpty
         ? _tableNameController.text
         : DateTime.now().microsecondsSinceEpoch.toString();
@@ -226,7 +116,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     });
 
     try {
-      final response = await http.post(url,
+      final response = await https.post(url,
           headers: {
             'Content-Type': 'application/json',
             // 'user': user.toString(),
@@ -244,38 +134,12 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
     }
   }
 
-  // Future<void> deleteTable(String tableName) async {
-  //   final connection = PostgreSQLConnection(
-  //     '37.140.241.144',
-  //     5432,
-  //     'postgres',
-  //     username: 'postgres',
-  //     password: '1',
-  //   );
-
-  //   try {
-  //     await connection.open();
-
-  //     await connection.execute('DROP TABLE IF EXISTS $tableName');
-
-  //     await connection.execute(
-  //       "DELETE FROM links WHERE linked_table_name = '$tableName'",
-  //     );
-
-  //     await fetchTableListFromPostgreSQL(); // Refresh the table list
-
-  //     await connection.close();
-  //   } catch (e) {
-  //     print('Error deleting table: $e');
-  //   }
-  // }
-
   Future<void> deleteTableWeb(String tableName) async {
     final apiUrl =
-        'http://37.140.241.144:8085/api/tables/deletetable/' '$tableName';
+        'https://zakup.bar:8085/api/tables/deletetable/' '$tableName';
 
     try {
-      final response = await http.delete(Uri.parse(apiUrl));
+      final response = await https.delete(Uri.parse(apiUrl));
 
       await fetchTableListFromPostgreSQLWeb();
       await visionRest();
@@ -304,12 +168,9 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
   @override
   void initState() {
     super.initState();
-    //if (kIsWeb) {
+
     fetchTableListFromPostgreSQLWeb();
     visionRest();
-    // } else {
-    //   fetchTableListFromPostgreSQL();
-    // }
   }
 
   @override
@@ -351,11 +212,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
                       IconButton(
                         icon: Icon(Icons.delete),
                         onPressed: () async {
-                          //if (kIsWeb) {
                           await deleteTableWeb(tableName);
-                          // } else {
-                          //   deleteTable(tableName);
-                          // }
                         },
                       ),
                     ],
@@ -369,11 +226,7 @@ class ListsNavigatorPageState extends State<ListsNavigatorPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          //if (kIsWeb) {
           await createrTableWeb();
-          // } else {
-          //   createrTableWeb();
-          // }
         },
         child: Icon(Icons.add),
       ),
