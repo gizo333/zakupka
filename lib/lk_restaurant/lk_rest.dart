@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -8,8 +8,6 @@ import '../connect_BD/connect_web.dart';
 import '../pages/account_screen.dart';
 import 'dart:io';
 import '../services/who.dart';
-
-
 
 class Kabinet extends StatefulWidget {
   const Kabinet({Key? key}) : super(key: key);
@@ -64,16 +62,18 @@ class _KabinetState extends State<Kabinet> {
     if (userSotrudResults.isNotEmpty) {
       final isUserFoundInUsersSotrud = userSotrudResults.contains(userId);
       if (isUserFoundInUsersSotrud) {
-        setState(() {
-          restaurantName = userSotrudResults[0].toString();
-        });
+        if (mounted) {
+          setState(() {
+            restaurantName = userSotrudResults[0].toString();
+          });
+        }
         return;
       }
     }
     if (restaurantResults.isNotEmpty) {
       final userId = user?.uid.toString();
-      final restaurantUrl = 'http://37.140.241.144:8080/api/restaurant/';
-      final restaurantResponse = await http.get(Uri.parse(restaurantUrl));
+      final restaurantUrl = 'https://zakup.bar:8080/api/restaurant/';
+      final restaurantResponse = await https.get(Uri.parse(restaurantUrl));
       if (restaurantResponse.statusCode == 200) {
         final restaurantData =
             jsonDecode(restaurantResponse.body) as List<dynamic>;
@@ -97,8 +97,6 @@ class _KabinetState extends State<Kabinet> {
       }
     }
   }
-
-
 
   void navigatorToCheckout() {
     if (user != null) {
@@ -273,6 +271,4 @@ class _KabinetState extends State<Kabinet> {
       ),
     );
   }
-
-
 }

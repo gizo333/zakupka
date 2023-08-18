@@ -9,7 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:postgres/postgres.dart';
 import 'classes.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
@@ -71,10 +71,10 @@ class _TableViewState extends State<TableView> {
     //   searchQuery = "";
     // }
     final url = Uri.parse(
-        'http://37.140.241.144:8085/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
+        'https://zakup.bar:8085/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
 
     try {
-      final response = await http.get(url);
+      final response = await https.get(url);
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
@@ -738,10 +738,10 @@ class _TableViewState extends State<TableView> {
 
   Future<void> _updateDBWeb(PositionClass position) async {
     final url =
-        'http://37.140.241.144:8085/apip/update'; // Replace with your API endpoint URL
+        'https://zakup.bar:8085/apip/update'; // Replace with your API endpoint URL
 
     try {
-      final response = await http.post(
+      final response = await https.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({

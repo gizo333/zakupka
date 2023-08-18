@@ -1,8 +1,8 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../lk_restaurant/lk_rest.dart';
 import '../pages/account_screen.dart';
+import '../services/check_sotrud_in_rest.dart';
 import '../services/who.dart';
 
 class LkUser extends StatefulWidget {
@@ -14,11 +14,50 @@ class LkUser extends StatefulWidget {
 
 class _LkUserState extends State<LkUser> {
   final user = FirebaseAuth.instance.currentUser;
+  bool isBound =
+      false; // Добавляем состояние для хранения информации о привязке
 
   @override
   void initState() {
     super.initState();
     Who().WhoYou();
+    // checkBinding(); // Выполняем проверку при инициализации виджета
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    checkBinding(); // Выполняем проверку при обновлении виджета
+  }
+
+  Future<void> checkBinding() async {
+    try {
+      if (user != null) {
+        final userUid = user!.uid;
+        final result = await checkRestaurantBinding(userUid);
+        final isBound = result['isBound'] as bool;
+
+        if (isBound) {
+          Navigator.pushAndRemoveUntil<void>(
+            context,
+            PageRouteBuilder<void>(
+              pageBuilder: (context, animation, secondaryAnimation) =>
+                  Kabinet(),
+              transitionsBuilder:
+                  (context, animation, secondaryAnimation, child) {
+                return child;
+              },
+              transitionDuration: Duration(
+                  milliseconds:
+                      0), // Устанавливаем нулевую продолжительность анимации
+            ),
+            (route) => false, // Удаляем все предыдущие маршруты
+          );
+        }
+      }
+    } catch (error) {
+      print('Error: $error');
+    }
   }
 
   void goList() {
@@ -27,110 +66,76 @@ class _LkUserState extends State<LkUser> {
     }
   }
 
-//------------
-  // проверяет принадлежит ли сотрудник к какому либо ресторану, чекает поле rest_name если не null то принадлежит
-  // Future<bool> checkUser() async {
-  //   if (user?.uid == null) return false;
-  //   try {
-  //     var response = await http
-  //         .get(Uri.parse('http://37.140.241.144:5000/checkUser/${user?.uid}'));
-  //     if (response.statusCode == 200) {
-  //       return json.decode(response.body);
-  //     } else {
-  //       print('Server error: ${response.body}');
-  //       return false;
-  //     }
-  //   } catch (e) {
-  //     print('Error occurred: $e');
-  //     return false;
-  //   }
-  // }
-
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
-        // future: checkUser(),
-        builder: (BuildContext context, AsyncSnapshot<bool> snapshot) {
-      // if (snapshot.hasData) {
-      //   if (snapshot.data == true) {
-      //     WidgetsBinding.instance.addPostFrameCallback((_) {
-      //       Navigator.pushNamedAndRemoveUntil(context, '/kabinet', (Route<dynamic> route) => false);
-
-      //     });
-      //   }
-      // }
-      // найти способ проще, написать одну функцию которая будет определять?
-//------------
-
-      return Scaffold(
-        backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),
-        resizeToAvoidBottomInset: false,
-        appBar: AppBar(
-          title: const Text('Личный кабинет'),
-          actions: [
-            IconButton(
-              onPressed: () {
-                if (user != null) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AccountScreen()),
-                  );
-                }
-              },
-              icon: Icon(
-                Icons.account_circle,
-                color: (user == null) ? Colors.white : Colors.yellow,
-              ),
+    return Scaffold(
+      backgroundColor: const Color.fromRGBO(242, 242, 240, 0.9),
+      resizeToAvoidBottomInset: false,
+      appBar: AppBar(
+        title: const Text('Личный кабинет'),
+        actions: [
+          IconButton(
+            onPressed: () {
+              if (user != null) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => const AccountScreen()),
+                );
+              }
+            },
+            icon: Icon(
+              Icons.account_circle,
+              color: (user == null) ? Colors.white : Colors.yellow,
+            ),
+          ),
+        ],
+      ),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: () {},
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    backgroundColor: Colors.white70,
+                    shadowColor: Colors.blueGrey,
+                  ),
+                  child: const Text("Вакансии"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (mounted && isBound) {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) => Kabinet()));
+                    } else {
+                      print('User is not bound to any restaurant.');
+                    }
+                  },
+                  child: const Text("Check Restaurant Binding"),
+                ),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                ElevatedButton(
+                  onPressed: goList,
+                  style: ElevatedButton.styleFrom(
+                    foregroundColor: Colors.black,
+                    backgroundColor: Colors.white70,
+                    shadowColor: Colors.blueGrey,
+                  ),
+                  child: const Text("Список ресторанов"),
+                ),
+              ],
             ),
           ],
         ),
-        body: SafeArea(
-          child: Column(
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  ElevatedButton(
-                    onPressed: () {},
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
-                      shadowColor: Colors.blueGrey,
-                    ),
-                    child: const Text("Вакансии"),
-                  ),
-                  ElevatedButton(
-                    onPressed: () async {
-                      if (user != null) {
-                        final message = await findFirebaseUser(user!.uid);
-                        //print(message);
-                      } else {
-                        print("User is not logged in.");
-                      }
-                    },
-                    child: const Text("Кнопка"),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
-                  ElevatedButton(
-                    onPressed: goList,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.black,
-                      backgroundColor: Colors.white70,
-                      shadowColor: Colors.blueGrey,
-                    ),
-                    child: const Text("Список ресторанов"),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
-    });
+      ),
+    );
   }
 }

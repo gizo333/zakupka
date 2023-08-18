@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
 import 'validation.dart';
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 
 class SignUpForm extends StatefulWidget {
   final FirebaseAuth auth;
@@ -21,7 +21,7 @@ class _SignUpFormState extends State<SignUpForm> {
   final TextEditingController emailController = TextEditingController();
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController confirmPasswordController =
-  TextEditingController();
+      TextEditingController();
   final TextEditingController companyController = TextEditingController();
   final TextEditingController phoneController = TextEditingController();
   final TextEditingController innController = TextEditingController();
@@ -32,7 +32,6 @@ class _SignUpFormState extends State<SignUpForm> {
   static bool checkBoxValue1 = true;
   static bool checkBoxValue2 = false;
   static bool checkBoxValue3 = false;
-
 
   String? emailError;
   String? passwordError;
@@ -58,16 +57,15 @@ class _SignUpFormState extends State<SignUpForm> {
             checkBoxValue2 ||
             checkBoxValue3) &&
         ((checkBoxValue1 &&
-            restaurant.isNotEmpty &&
-            fullName.isNotEmpty &&
-            position.isNotEmpty) ||
+                restaurant.isNotEmpty &&
+                fullName.isNotEmpty &&
+                position.isNotEmpty) ||
             (checkBoxValue2 &&
                 company.isNotEmpty &&
                 phone.isNotEmpty &&
                 inn.isNotEmpty) ||
             (checkBoxValue3 && fullName.isNotEmpty && position.isNotEmpty));
   }
-
 
   Future<bool> checkEmailExists(String email) async {
     final FirebaseFirestore firestore = FirebaseFirestore.instance;
@@ -90,7 +88,8 @@ class _SignUpFormState extends State<SignUpForm> {
         .limit(1)
         .get();
 
-    final results = await Future.wait([snapshotUsers, snapshotRestaurant, snapshotCompanies]);
+    final results = await Future.wait(
+        [snapshotUsers, snapshotRestaurant, snapshotCompanies]);
 
     for (QuerySnapshot result in results) {
       if (result.docs.isNotEmpty) {
@@ -101,13 +100,8 @@ class _SignUpFormState extends State<SignUpForm> {
     return false;
   }
 
-
-
-
-
   Future<void> _registerUser(BuildContext context) async {
     // Проверка состояния обоих чекбоксов
-
 
     if (!(checkBoxValue1 || checkBoxValue2 || checkBoxValue3)) {
       showDialog(
@@ -178,17 +172,14 @@ class _SignUpFormState extends State<SignUpForm> {
         return;
       }
 
-
       UserCredential userCredential =
-      await widget.auth.createUserWithEmailAndPassword(
+          await widget.auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
       User? user = userCredential.user;
       if (user != null) {
-
-
         if (checkBoxValue2) {
           // Регистрация компании
           await widget.firestore.collection('companies').doc(user.uid).set({
@@ -199,19 +190,19 @@ class _SignUpFormState extends State<SignUpForm> {
             'inn': inn,
           });
 
-
-          var url = Uri.parse('http://37.140.241.144:5000/register_company');
-            var body = jsonEncode({
-                'userId': user.uid, // Предполагается, что у вас есть user.uid с идентификатором пользователя
-                'email': email,
-                'password': password,
-                'company': company,
-                'phone': phone,
-                'inn': inn,
-              });
+          var url = Uri.parse('https://zakup.bar:5000/register_company');
+          var body = jsonEncode({
+            'userId': user
+                .uid, // Предполагается, что у вас есть user.uid с идентификатором пользователя
+            'email': email,
+            'password': password,
+            'company': company,
+            'phone': phone,
+            'inn': inn,
+          });
 
           try {
-            var response = await http.post(
+            var response = await https.post(
               url,
               headers: {"Content-Type": "application/json"},
               body: body,
@@ -227,10 +218,6 @@ class _SignUpFormState extends State<SignUpForm> {
           } catch (e) {
             print('Error: $e');
           }
-
-
-
-
         } else if (checkBoxValue1) {
           // Регистрация ресторана
           final currentUser = FirebaseAuth.instance.currentUser;
@@ -246,7 +233,7 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL
-          var url = Uri.parse('http://37.140.241.144:5000/register_restaurant');
+          var url = Uri.parse('https://zakup.bar:5000/register_restaurant');
 
           // Параметры, которые вы хотите отправить на сервер
           var body = jsonEncode({
@@ -259,7 +246,7 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           try {
-            var response = await http.post(
+            var response = await https.post(
               url,
               headers: {"Content-Type": "application/json"},
               body: body,
@@ -275,9 +262,6 @@ class _SignUpFormState extends State<SignUpForm> {
           } catch (e) {
             print('Error: $e');
           }
-
-
-
         } else if (checkBoxValue3) {
           // Регистрация пользователя-сотрудника
           final currentUser = FirebaseAuth.instance.currentUser;
@@ -292,7 +276,7 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           // Сохранение данных в PostgreSQL через Node.js API
-          var url = Uri.parse('http://37.140.241.144:5000/register_user');
+          var url = Uri.parse('https://zakup.bar:5000/register_user');
 
           // Параметры, которые вы хотите отправить на сервер
           var body = jsonEncode({
@@ -304,7 +288,7 @@ class _SignUpFormState extends State<SignUpForm> {
           });
 
           try {
-            var response = await http.post(
+            var response = await https.post(
               url,
               headers: {"Content-Type": "application/json"},
               body: body,
@@ -337,8 +321,6 @@ class _SignUpFormState extends State<SignUpForm> {
         ),
       ),
     );
-
-
   }
 
   bool checkPasswordsMatch() {
@@ -347,6 +329,7 @@ class _SignUpFormState extends State<SignUpForm> {
 
     return password == confirmPassword;
   }
+
   bool emailExists = false;
 
   @override
@@ -367,11 +350,6 @@ class _SignUpFormState extends State<SignUpForm> {
             setState(() {});
           },
         ),
-
-
-
-
-
         SizedBox(height: 16.0),
         TextField(
           controller: passwordController,
@@ -571,13 +549,14 @@ class _SignUpFormState extends State<SignUpForm> {
           ],
         ),
         ElevatedButton(
-          onPressed: (isRegistrationButtonActive() && !emailExists) ? () {
-            _isButtonActive = true;
-            _registerUser(context);
-          } : null,
+          onPressed: (isRegistrationButtonActive() && !emailExists)
+              ? () {
+                  _isButtonActive = true;
+                  _registerUser(context);
+                }
+              : null,
           child: Text('Зарегистрироваться'),
         ),
-
       ],
     );
   }

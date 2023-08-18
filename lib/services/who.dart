@@ -1,9 +1,7 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'package:flutter/foundation.dart';
-
-
 
 /// данная функция определяет к какой группе пользователей относиться авторизованный пользователь
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
@@ -26,7 +24,9 @@ class UserState {
     required this.count,
   });
 }
+
 final user = FirebaseAuth.instance.currentUser;
+
 /// данная функция определяет к какой группе пользователей относиться авторизованный пользователь
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
@@ -34,8 +34,12 @@ final user = FirebaseAuth.instance.currentUser;
 ///
 /// restaurant = 1; sotrud = 2; companies = 3;
 Future<UserState> findFirebaseUser(String firebaseUid) async {
-  final response = await http.get(
-    Uri.parse('http://37.140.241.144:5000/find-user/$firebaseUid'),
+  final response = await https.post(
+    Uri.parse('https://zakup.bar:5000/find-user'),
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: jsonEncode({'firebaseUid': firebaseUid}),
   );
 
   if (response.statusCode == 200) {
@@ -74,7 +78,6 @@ Future<UserState> findFirebaseUser(String firebaseUid) async {
   }
 }
 
-
 /// данная функция определяет к какой группе пользователей относиться авторизованный пользователь
 /// вызов функции await whoami(user!.uid); или UserState result = await whoami(user!.uid);
 ///                     print(result.message);
@@ -82,7 +85,6 @@ Future<UserState> findFirebaseUser(String firebaseUid) async {
 ///
 /// restaurant = 1; sotrud = 2; companies = 3;
 Future<UserState> Function(String) whoami = findFirebaseUser;
-
 
 class Who {
   static final Who _singleton = Who._internal();
@@ -94,6 +96,7 @@ class Who {
   bool get rest => _rest;
   bool get sotrud => _sotrud;
   bool get comp => _comp;
+
   /// Определяет из какой группы пользоаетель!
   ///
   /// обращаться if (Who().rest) = ресторан
@@ -117,6 +120,7 @@ class Who {
     _sotrud = false;
     _comp = false;
   }
+
   /// Определяет из какой группы пользоаетель!
   ///
   /// обращаться if (Who().rest) = ресторан
@@ -146,4 +150,3 @@ class Who {
     }
   }
 }
-

@@ -1,6 +1,6 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/http.dart' as https;
 import 'dart:io' show File, Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:open_file/open_file.dart';
@@ -16,7 +16,8 @@ Future<void> downloadTable(String tableName) async {
     return;
   }
 
-  final url = Uri.parse('http://37.140.241.144:8080/api/tables/download/$tableName');
+  final url =
+      Uri.parse('https://zakup.bar:8080/api/tables/download/$tableName');
 
   final headers = {
     'Content-Type': 'application/json',
@@ -24,7 +25,7 @@ Future<void> downloadTable(String tableName) async {
   };
 
   try {
-    final response = await http.get(url, headers: headers);
+    final response = await https.get(url, headers: headers);
 
     if (response.statusCode == 200) {
       if (kIsWeb) {
@@ -47,7 +48,8 @@ Future<void> downloadTable(String tableName) async {
       } else {
         // Если это мобильная платформа
         var data = response.bodyBytes;
-        final directory = await getApplicationSupportDirectory(); // Изменение здесь
+        final directory =
+            await getApplicationSupportDirectory(); // Изменение здесь
         final path = directory.path;
         final filePath = '$path/$tableName.xlsx';
         File file = File(filePath);
