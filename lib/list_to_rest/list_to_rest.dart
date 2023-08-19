@@ -28,8 +28,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
   }
 
   Future<List<String>> fetchRestaurants(String searchQuery) async {
-    //if (kIsWeb) {
-    // Использовать HTTP для веб-версии
     List<dynamic> data = await getDataFromServer('restaurant', 'restaurant');
     List<String> filteredData = data
         .where((item) => item.contains(searchQuery))
@@ -37,35 +35,9 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
         .toList();
 
     return filteredData;
-    // }
-    // else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-    //   // Использовать Postgres для Android и IOS
-    //   final postgresConnection = createDatabaseConnection();
-
-    //   try {
-    //     await postgresConnection.open();
-    //     final results = await postgresConnection.query(
-    //       'SELECT restaurant FROM restaurant WHERE restaurant ILIKE @query',
-    //       substitutionValues: {'query': '%$searchQuery%'},
-    //     );
-
-    //     final list = results.map((row) => row[0] as String).toList();
-    //     return list;
-    //   } catch (e) {
-    //     print('Error fetching restaurants: $e');
-    //     throw e;
-    //   } finally {
-    //     await postgresConnection.close();
-    //   }
-    // }
-    //  else {
-    //   throw UnsupportedError('This platform is not supported');
-    // }
   }
 
   Future<String> getUserFullName(String userId) async {
-    //if (kIsWeb) {
-    // Использовать HTTP для веб-версии
     try {
       final response = await https.get(
         Uri.parse('https://zakup.bar:8080/api/user_full_name/$userId'),
@@ -89,33 +61,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       print('Ошибка при выполнении запроса: $e');
       throw Exception('Ошибка при выполнении запроса: $e');
     }
-    //}
-    // else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-    //   // Использовать Postgres для Android и IOS
-    //   final postgresConnection = createDatabaseConnection();
-
-    //   try {
-    //     await postgresConnection.open();
-    //     final result = await postgresConnection.query(
-    //       'SELECT full_name FROM users_sotrud WHERE user_id = \'$userId\'',
-    //     );
-
-    //     if (result.isNotEmpty) {
-    //       final fullName = result.first[0] as String?;
-    //       return fullName ?? '';
-    //     } else {
-    //       return '';
-    //     }
-    //   } catch (e) {
-    //     print('Error fetching user full name: $e');
-    //     throw e;
-    //   } finally {
-    //     await postgresConnection.close();
-    //   }
-    // }
-    //  else {
-    //   throw UnsupportedError('This platform is not supported');
-    // }
   }
 
   Future<void> sendJoinRequest(String restaurantName, String userFullName,
