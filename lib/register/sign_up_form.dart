@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:new_flut_proj/register/verify_email_screen.dart';
+import '../animation/question.dart';
 import 'validation.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as https;
@@ -510,6 +511,32 @@ class _SignUpFormState extends State<SignUpForm> {
                   },
                 ),
                 Text('Ресторан'),
+                SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    // Открыть модальное окно с дополнительной информацией
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text(
+                              'Дополнительная информация о ресторане'),
+                          content: const Text(
+                              'Если вы являетесь представителем ресторана, мы приглашаем вас пройти регистрацию. Присоединившись к нашей платформе, вы сможете воспользоваться нашими сервисами и облегчить ведение ресторанного бизнеса.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text('Закрыть'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: AnimatedQuestionMarkIcon(),
+                ),
               ],
             ),
             Row(
@@ -526,7 +553,33 @@ class _SignUpFormState extends State<SignUpForm> {
                     });
                   },
                 ),
-                Text('Компания'),
+                Text('Поставщик'),
+                SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    // Открыть модальное окно с дополнительной информацией
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title: const Text(
+                              'Дополнительная информация о поставщике'),
+                          content: const Text(
+                              'Если вы являетесь поставщиком и собираетесь воспользоваться этим сервисом, продолжайте регистрацию, чтобы присоединиться к нашей платформе и начать успешное сотрудничество'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text('Закрыть'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: AnimatedQuestionMarkIcon(),
+                ),
               ],
             ),
             Row(
@@ -543,7 +596,33 @@ class _SignUpFormState extends State<SignUpForm> {
                     });
                   },
                 ),
-                Text('Пользователь'),
+                Text('Гость'),
+                SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    // Открыть модальное окно с дополнительной информацией
+                    showDialog(
+                      context: context,
+                      builder: (context) {
+                        return AlertDialog(
+                          title:
+                              const Text('Дополнительная информация о госте'),
+                          content: const Text(
+                              'Если вы гость, мы рады пригласить вас на нашу платформу. Здесь вы сможете общаться, найти работу или присоединяться к ресторанам или поставщикам для дальнейшей работы.'),
+                          actions: [
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: Text('Закрыть'),
+                            ),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                  child: AnimatedQuestionMarkIcon(),
+                ),
               ],
             ),
           ],
