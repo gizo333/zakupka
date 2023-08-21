@@ -1,3 +1,5 @@
+// ignore_for_file: use_build_context_synchronously, prefer_const_constructors
+
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../lk_restaurant/lk_rest.dart';
@@ -21,7 +23,6 @@ class _LkUserState extends State<LkUser> {
   void initState() {
     super.initState();
     Who().WhoYou();
-    // checkBinding(); // Выполняем проверку при инициализации виджета
   }
 
   @override
@@ -30,34 +31,34 @@ class _LkUserState extends State<LkUser> {
     checkBinding(); // Выполняем проверку при обновлении виджета
   }
 
+// проверяет привзян ли к ресторану если да то переходит на страницу
   Future<void> checkBinding() async {
-    try {
-      if (user != null) {
-        final userUid = user!.uid;
-        final result = await checkRestaurantBinding(userUid);
-        final isBound = result['isBound'] as bool;
+    // try {
+    if (user != null) {
+      final userUid = user!.uid;
+      final result = await checkRestaurantBinding(userUid);
+      final isBound = result['isBound'] as bool;
 
-        if (isBound) {
-          Navigator.pushAndRemoveUntil<void>(
-            context,
-            PageRouteBuilder<void>(
-              pageBuilder: (context, animation, secondaryAnimation) =>
-                  Kabinet(),
-              transitionsBuilder:
-                  (context, animation, secondaryAnimation, child) {
-                return child;
-              },
-              transitionDuration: Duration(
-                  milliseconds:
-                      0), // Устанавливаем нулевую продолжительность анимации
-            ),
-            (route) => false, // Удаляем все предыдущие маршруты
-          );
-        }
+      if (isBound) {
+        Navigator.pushAndRemoveUntil<void>(
+          context,
+          PageRouteBuilder<void>(
+            pageBuilder: (context, animation, secondaryAnimation) => Kabinet(),
+            transitionsBuilder:
+                (context, animation, secondaryAnimation, child) {
+              return child;
+            },
+            transitionDuration: Duration(
+                milliseconds:
+                    0), // Устанавливаем нулевую продолжительность анимации
+          ),
+          (route) => false, // Удаляем все предыдущие маршруты
+        );
       }
-    } catch (error) {
-      print('Error: $error');
     }
+    // } catch (error) {
+    //   print('Error: $error');
+    // }
   }
 
   void goList() {

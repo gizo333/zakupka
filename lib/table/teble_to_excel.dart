@@ -1,13 +1,12 @@
 import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as https;
-import 'dart:io' show File, Platform;
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'package:open_file/open_file.dart';
 import 'package:universal_html/html.dart' as html;
+import 'dart:io' show File;
 import 'package:path_provider/path_provider.dart';
+import 'package:open_file/open_file.dart';
 
-///данная функция позволяет скачать файл из БД в .xlsx формате
 Future<void> downloadTable(String tableName) async {
   final user = (FirebaseAuth.instance.currentUser?.uid ?? '').toLowerCase();
 
@@ -29,12 +28,10 @@ Future<void> downloadTable(String tableName) async {
 
     if (response.statusCode == 200) {
       if (kIsWeb) {
-        // Если это веб-платформа
         var data = response.bodyBytes;
         final blob = html.Blob([data]);
         final url = html.Url.createObjectUrlFromBlob(blob);
-        final anchor = html.AnchorElement()
-          ..href = url
+        final anchor = html.AnchorElement(href: url)
           ..style.display = 'none'
           ..download = '$tableName.xlsx';
         html.document.body?.children.add(anchor);
@@ -46,10 +43,8 @@ Future<void> downloadTable(String tableName) async {
 
         print('Таблица успешно загружена.');
       } else {
-        // Если это мобильная платформа
         var data = response.bodyBytes;
-        final directory =
-            await getApplicationSupportDirectory(); // Изменение здесь
+        final directory = await getApplicationSupportDirectory();
         final path = directory.path;
         final filePath = '$path/$tableName.xlsx';
         File file = File(filePath);
@@ -57,14 +52,24 @@ Future<void> downloadTable(String tableName) async {
 
         print('Файл сохранен в $filePath');
 
-        // Открыть файл с помощью пакета open_file
         final result = await OpenFile.open(filePath);
-        print(result.message); // Вывести сообщение о результате открытия файла
+        print(result.message);
       }
     } else {
-      print('Ошибка загрузки таблицы: ${response.statusCode}');
+      print('Ошибка загрузки таблицы. Код состояния: ${response.statusCode}');
+      print('Тело ответа: ${response.body}');
     }
   } catch (e) {
     print('Ошибка загрузки таблицы: $e');
+    if (e is https.ClientException) {
+      if (e.uri != null) {
+        print('URI запроса: ${e.uri}');
+      }
+      if (e.message != null) {
+        print('Сообщение об ошибке: ${e.message}');
+      }
+    } else if (kIsWeb && e is html.DomException) {
+      print('Ошибка DOM: ${e.message}');
+    }
   }
 }

@@ -1,34 +1,34 @@
 import 'dart:convert';
 import 'package:http/http.dart' as https;
 
-Future<Map<String, dynamic>> getUserData(
-    String tableName, String userId) async {
-  final url =
-      Uri.parse('https://zakup.bar:8080/api/$tableName/user_id/$userId');
+// Future<Map<String, dynamic>> getUserData(
+//     String tableName, String userId) async {
+//   final url =
+//       Uri.parse('https://zakup.bar:8080/api/$tableName/user_id/$userId');
 
-  try {
-    final response = await https.get(url);
+//   try {
+//     final response = await https.get(url);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data is List && data.isNotEmpty) {
-        return data.first.cast<String, dynamic>();
-      } else if (data is Map) {
-        return data.cast<String, dynamic>();
-      } else {
-        return {}; // Возвращаем пустую карту, если данные отсутствуют или не в ожидаемом формате
-      }
-    } else if (response.statusCode == 404) {
-      print('Пользователь не найден');
-      return {}; // Возвращаем пустую карту вместо null
-    } else {
-      throw Exception(
-          'Ошибка при получении данных!!!!vv: ${response.statusCode}');
-    }
-  } catch (e) {
-    throw Exception('Ошибка при выполнении запроса: $e');
-  }
-}
+//     if (response.statusCode == 200) {
+//       final data = jsonDecode(response.body);
+//       if (data is List && data.isNotEmpty) {
+//         return data.first.cast<String, dynamic>();
+//       } else if (data is Map) {
+//         return data.cast<String, dynamic>();
+//       } else {
+//         return {}; // Возвращаем пустую карту, если данные отсутствуют или не в ожидаемом формате
+//       }
+//     } else if (response.statusCode == 404) {
+//       print('Пользователь не найден');
+//       return {}; // Возвращаем пустую карту вместо null
+//     } else {
+//       throw Exception(
+//           'Ошибка при получении данных!!!!vv: ${response.statusCode}');
+//     }
+//   } catch (e) {
+//     throw Exception('Ошибка при выполнении запроса: $e');
+//   }
+// }
 
 Future<List<dynamic>> getDataFromServer(
     String tableName, String fieldName) async {

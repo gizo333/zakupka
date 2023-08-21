@@ -7,6 +7,7 @@ import '../connect_BD/connect.dart';
 import '../connect_BD/connect_web.dart';
 import '../pages/account_screen.dart';
 import 'dart:io';
+import '../services/test.dart';
 import '../services/who.dart';
 
 class Kabinet extends StatefulWidget {
@@ -42,7 +43,7 @@ class _KabinetState extends State<Kabinet> {
 
   void goExcel() {
     if (user != null) {
-      Navigator.pushNamed(context, '/excel');
+      Navigator.pushNamed(context, '/test');
     }
   }
 
@@ -53,6 +54,7 @@ class _KabinetState extends State<Kabinet> {
   }
 
   void fetchRestaurantName() async {
+    print("Sending JWT Token: ${GlobalData.jwtToken}");
     // Browser
     final userSotrudResults =
         await getDataFromServer('users_sotrud', 'user_id');
@@ -73,7 +75,11 @@ class _KabinetState extends State<Kabinet> {
     if (restaurantResults.isNotEmpty) {
       final userId = user?.uid.toString();
       final restaurantUrl = 'https://zakup.bar:8080/api/restaurant/';
-      final restaurantResponse = await https.get(Uri.parse(restaurantUrl));
+      final restaurantResponse = await https.get(
+        Uri.parse(restaurantUrl),
+        headers: {'Authorization': 'Bearer ${GlobalData.jwtToken}'},
+      );
+
       if (restaurantResponse.statusCode == 200) {
         final restaurantData =
             jsonDecode(restaurantResponse.body) as List<dynamic>;
@@ -162,7 +168,33 @@ class _KabinetState extends State<Kabinet> {
                     ),
                   ),
                 ),
-
+                Container(
+                  padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (GlobalData.jwtToken != null) {
+                        print("JWT Token: ${GlobalData.jwtToken}");
+                      } else {
+                        print("Токен еще не получен");
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding:
+                          EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                      backgroundColor: Colors.black,
+                      shape: const RoundedRectangleBorder(
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                    ),
+                    child: const Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text("Вывести JWT Token",
+                            style: TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
                 SizedBox(height: 8),
                 Container(
                   padding: EdgeInsets.fromLTRB(20, 0, 20, 0),
@@ -215,37 +247,7 @@ class _KabinetState extends State<Kabinet> {
                     ),
                   ),
                 ),
-
                 SizedBox(height: 8),
-                // Container(
-                //   padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
-                //   child: ElevatedButton(
-                //     onPressed: () async {
-                //       if (user != null) {
-                //         UserState result = await whoami(user!.uid);
-                //         print(result.message);
-                //         print(result.count);
-                //       } else {
-                //         print("User is not logged in.");
-                //       }
-                //     },
-                //     style: ElevatedButton.styleFrom(
-                //       padding:
-                //           EdgeInsets.symmetric(horizontal: 20, vertical: 16),
-                //       backgroundColor: Colors.black,
-                //       shape: const RoundedRectangleBorder(
-                //         borderRadius: BorderRadius.all(Radius.circular(10)),
-                //       ),
-                //     ),
-                //     child: Row(
-                //       mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                //       children: [
-                //         Text("Кто я ))", style: TextStyle(color: Colors.white)),
-                //         Icon(Icons.arrow_forward, color: Colors.white),
-                //       ],
-                //     ),
-                //   ),
-                // ),
                 if (Who().rest) SizedBox(height: 8),
                 ElevatedButton(
                   onPressed: goStop,

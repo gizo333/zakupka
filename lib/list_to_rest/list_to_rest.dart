@@ -77,9 +77,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
             previousRestaurantName, userId, restaurantListProvider);
       }
     }
-    // Отправка нового запроса на вступление
-    //if (kIsWeb) {
-    // Использовать HTTP для веб-версии
+
     https
         .post(
       Uri.parse('https://zakup.bar:8080/api/join_requests'),
@@ -112,44 +110,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       print('Error sending join request: $error');
       throw error;
     });
-    //}
-    // else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-    //   // Использовать Postgres для Android и IOS
-    //   if (restaurantListProvider.selectedRestaurant != null) {
-    //     final previousRestaurantName =
-    //         restaurantListProvider.selectedRestaurant!;
-    //     await cancelJoinRequest(
-    //         previousRestaurantName, userId, restaurantListProvider);
-    //   }
-
-    //   final postgresConnection = createDatabaseConnection();
-
-    //   final buttonStateValue = buttonState;
-
-    //   try {
-    //     await postgresConnection.open();
-    //     await postgresConnection.execute(
-    //       "INSERT INTO join_requests (restaurant_name, user_full_name, user_id, status, button_state) VALUES ('$restaurantName', '$userFullName', '$userId', 'pending', '$buttonStateValue')",
-    //     );
-    //     print('Join request sent successfully');
-    //     // Обновление состояния запроса в провайдере
-    //     restaurantListProvider.selectedRestaurant = restaurantName;
-    //     if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
-    //       restaurantListProvider.joinRequests[restaurantName] = {};
-    //     }
-    //     restaurantListProvider.joinRequests[restaurantName]![userId] =
-    //         'pending';
-    //     restaurantListProvider.notifyListeners();
-    //   } catch (e) {
-    //     print('Error sending join request: $e');
-    //     throw e;
-    //   } finally {
-    //     await postgresConnection.close();
-    //   }
-    // }
-    // else {
-    //   throw UnsupportedError('This platform is not supported');
-    // }
   }
 
   Future<void> cancelJoinRequest(String restaurantName, String userId,
@@ -175,25 +135,6 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
     restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
     restaurantListProvider.notifyListeners();
-    // } else if (!kIsWeb && (Platform.isAndroid || Platform.isIOS)) {
-    //   // Использовать Postgres для Android и IOS
-    //   if (restaurantListProvider.selectedRestaurant == restaurantName) {
-    //     restaurantListProvider.selectedRestaurant = null;
-    //   }
-    //   final postgresConnection = createDatabaseConnection();
-    //   try {
-    //     // Обновление состояния запроса в провайдере
-    //     restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
-    //     restaurantListProvider.notifyListeners();
-    //   } catch (e) {
-    //     print('Error canceling join request: $e');
-    //     throw e;
-    //   } finally {
-    //     await postgresConnection.close();
-    //   }
-    // } else {
-    //   throw UnsupportedError('This platform is not supported');
-    // }
   }
 
   @override
