@@ -13,6 +13,7 @@ import 'package:http/http.dart' as https;
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
+import '../services/who.dart';
 
 class TableView extends StatefulWidget {
   final String tableName;
@@ -28,43 +29,43 @@ class _TableViewState extends State<TableView> {
   List<PositionClass> _lists = [];
   List<PositionClass> _searchResults = [];
 
-  Future<void> fetchTableDataFromPostgreSQL(String searchQuery) async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+  // Future<void> fetchTableDataFromPostgreSQL(String searchQuery) async {
+  //   final connection = PostgreSQLConnection(
+  //     '37.140.241.144',
+  //     5432,
+  //     'postgres',
+  //     username: 'postgres',
+  //     password: '1',
+  //   );
 
-    try {
-      await connection.open();
+  //   try {
+  //     await connection.open();
 
-      String query = 'SELECT code, name, ml, itog FROM ${widget.tableName}';
-      if (searchQuery.isNotEmpty) {
-        // Add a WHERE clause to the query to filter based on the search query
-        query += " WHERE LOWER(name) LIKE '%${searchQuery.toLowerCase()}%'";
-      }
+  //     String query = 'SELECT code, name, ml, itog FROM ${widget.tableName}';
+  //     if (searchQuery.isNotEmpty) {
+  //       // Add a WHERE clause to the query to filter based on the search query
+  //       query += " WHERE LOWER(name) LIKE '%${searchQuery.toLowerCase()}%'";
+  //     }
 
-      final result = await connection.query(query);
+  //     final result = await connection.query(query);
 
-      _lists = result.map((row) {
-        int code = int.tryParse(row[0].toString()) ?? 0;
-        String name = row[1].toString();
-        int ml = int.tryParse(row[2].toString()) ?? 0;
-        int itog = int.tryParse(row[3].toString()) ?? 0;
+  //     _lists = result.map((row) {
+  //       int code = int.tryParse(row[0].toString()) ?? 0;
+  //       String name = row[1].toString();
+  //       int ml = int.tryParse(row[2].toString()) ?? 0;
+  //       int itog = int.tryParse(row[3].toString()) ?? 0;
 
-        return PositionClass(code, name, ml, itog);
-      }).toList();
+  //       return PositionClass(code, name, ml, itog);
+  //     }).toList();
 
-      _searchResults = _lists; // обновить результаты поиска
-      setState(() {});
+  //     _searchResults = _lists; // обновить результаты поиска
+  //     setState(() {});
 
-      await connection.close();
-    } catch (e) {
-      print('Error fetching table data from PostgreSQL: $e');
-    }
-  }
+  //     await connection.close();
+  //   } catch (e) {
+  //     print('Error fetching table data from PostgreSQL: $e');
+  //   }
+  // }
 
   Future<void> fetchTableDataFromPostgreSQLWeb(String searchQuery) async {
     // if (searchQuery.isEmpty) {
@@ -78,15 +79,6 @@ class _TableViewState extends State<TableView> {
 
       if (response.statusCode == 200) {
         final result = json.decode(response.body);
-
-        // final data = List<PositionClass>.from(result.map((row) {
-        //   final code = int.tryParse(row[0].toString()) ?? 0;
-        //   final name = row[1].toString();
-        //   final ml = int.tryParse(row[2].toString()) ?? 0;
-        //   final itog = int.tryParse(row[3].toString()) ?? 0;
-
-        //   return PositionClass(code, name, ml, itog);
-        // }));
         _lists = (result as List<dynamic>).map((row) {
           int code = int.tryParse(row['code'].toString()) ?? 0;
           String name = row['name'].toString();
@@ -96,7 +88,6 @@ class _TableViewState extends State<TableView> {
           return PositionClass(code, name, ml, itog);
         }).toList();
         _searchResults = _lists; // обновить результаты поиска
-        print(_lists);
         setState(() {});
       }
     } catch (e) {
@@ -110,6 +101,7 @@ class _TableViewState extends State<TableView> {
   int? _sortColumnIndex;
   Color? errorColor;
   String _searchQuery = '';
+  bool isReadOnly = false;
 
   late String userId; // Идентификатор пользователя
 
@@ -118,6 +110,7 @@ class _TableViewState extends State<TableView> {
     setState(() {
       userId = currentUser!.uid; // Идентификатор пользователя
     });
+    isReadOnly = await isReadonlyFunc();
   }
 
   void _resetSearch() {
@@ -130,11 +123,8 @@ class _TableViewState extends State<TableView> {
   void initState() {
     super.initState();
     initializeFirebase();
-    if (kIsWeb) {
-      fetchTableDataFromPostgreSQLWeb(_searchQuery);
-    } else {
-      fetchTableDataFromPostgreSQL(_searchQuery);
-    }
+    fetchTableDataFromPostgreSQLWeb(_searchQuery);
+
     _lists = [];
   }
 
@@ -193,7 +183,6 @@ class _TableViewState extends State<TableView> {
                 // },
                 onChanged: (value) {
                   _searchQuery = value;
-                  print(value);
                   _searchResults = _lists
                       .where((item) => item.name
                           .toLowerCase()
@@ -288,12 +277,8 @@ class _TableViewState extends State<TableView> {
                               onChanged: (val) {
                                 position.name = val;
 
-                                if (!kIsWeb) {
-                                  _updateDB(
-                                      position); // обновление записи в базе данных
-                                } else {
-                                  _updateDBWeb(position);
-                                }
+                                // обновление записи в базе данных
+                                _updateDBWeb(position);
 
                                 // обновление _searchResults и _lists
                                 _lists[_lists.indexOf(position)] = position;
@@ -324,7 +309,7 @@ class _TableViewState extends State<TableView> {
                             flex: 2,
                             // fit: FlexFit.tight,
                             child: TextFormField(
-                              // readOnly: true,
+                              readOnly: isReadOnly,
                               decoration: const InputDecoration(
                                 filled: true,
                                 fillColor: Color.fromARGB(255, 255, 255, 255),
@@ -510,74 +495,6 @@ class _TableViewState extends State<TableView> {
     );
   }
 
-  Future<void> saveDataToPostgreSQL(
-      List<PositionClass> list, String tableName) async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
-
-    try {
-      await connection.open();
-
-      // Очищаем таблицу перед сохранением новых данных
-      await connection.execute('DELETE FROM $tableName');
-
-      for (final position in list) {
-        final code = position.code ?? 0;
-        final name = position.name ?? '';
-        final itog = position.itog ?? 0;
-        final ml = position.ml ?? 0;
-
-        await connection.execute(
-            'INSERT INTO $tableName (code, name, itog, ml) VALUES (@code, @name, @itog, @ml)',
-            substitutionValues: {
-              'code': code,
-              'name': name,
-              'itog': itog,
-              'ml': ml,
-            });
-      }
-
-      await connection.close();
-    } catch (e) {
-      print('Error saving data to PostgreSQL: $e');
-    }
-  }
-
-  Future<void> fetchAndSetItogFromDatabase(String tableName) async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
-
-    try {
-      await connection.open();
-
-      final result = await connection.query('SELECT itog FROM $tableName');
-
-      for (int i = 0; i < result.length; i++) {
-        final itogValue =
-            result[i][0]; // Получить значение "итог" из результата запроса
-
-        setState(() {
-          _lists[i].itog = itogValue;
-          _lists[i].itogController.text = itogValue.toString();
-        });
-      }
-
-      await connection.close();
-    } catch (e) {
-      print('Error fetching "itog" from the database: $e');
-    }
-  }
-
   Future<void> saveItog(List<PositionClass> list) async {
     for (final position in list) {
       final itog = (position.itog ?? 0) + (position.ml ?? 0);
@@ -588,11 +505,7 @@ class _TableViewState extends State<TableView> {
       position.mlController.text = '';
     }
 
-    if (kIsWeb) {
-      await saveDataToPostgreSQLBWeb(list, widget.tableName);
-    } else {
-      await saveDataToPostgreSQLB(list, widget.tableName);
-    }
+    await saveDataToPostgreSQLBWeb(list, widget.tableName);
     setState(() {});
   }
 
@@ -634,11 +547,7 @@ class _TableViewState extends State<TableView> {
         });
       }
     }
-    if (kIsWeb) {
-      saveDataToPostgreSQLBWeb(_lists, widget.tableName);
-    } else {
-      saveDataToPostgreSQLB(_lists, widget.tableName);
-    }
+    saveDataToPostgreSQLBWeb(_lists, widget.tableName);
   }
 
   Future<void> _uploadExcelFileWeb() async {
@@ -672,11 +581,7 @@ class _TableViewState extends State<TableView> {
         });
       }
     }
-    if (kIsWeb) {
-      saveDataToPostgreSQLBWeb(_lists, widget.tableName);
-    } else {
-      saveDataToPostgreSQLB(_lists, widget.tableName);
-    }
+    saveDataToPostgreSQLBWeb(_lists, widget.tableName);
   }
 
   List<DataColumn> getColumns(List<String> columns) =>
@@ -708,33 +613,33 @@ class _TableViewState extends State<TableView> {
     });
   }
 
-  Future<void> _updateDB(PositionClass position) async {
-    final connection = PostgreSQLConnection(
-      '37.140.241.144',
-      5432,
-      'postgres',
-      username: 'postgres',
-      password: '1',
-    );
+  // Future<void> _updateDB(PositionClass position) async {
+  //   final connection = PostgreSQLConnection(
+  //     '37.140.241.144',
+  //     5432,
+  //     'postgres',
+  //     username: 'postgres',
+  //     password: '1',
+  //   );
 
-    try {
-      await connection.open();
+  //   try {
+  //     await connection.open();
 
-      String query =
-          "UPDATE ${widget.tableName} SET name = @name, ml = @ml, itog = @itog WHERE code = @code";
+  //     String query =
+  //         "UPDATE ${widget.tableName} SET name = @name, ml = @ml, itog = @itog WHERE code = @code";
 
-      await connection.query(query, substitutionValues: {
-        'name': position.name,
-        'ml': position.ml,
-        'itog': position.itog,
-        'code': position.code,
-      });
+  //     await connection.query(query, substitutionValues: {
+  //       'name': position.name,
+  //       'ml': position.ml,
+  //       'itog': position.itog,
+  //       'code': position.code,
+  //     });
 
-      await connection.close();
-    } catch (e) {
-      print('Error updating table data in PostgreSQL: $e');
-    }
-  }
+  //     await connection.close();
+  //   } catch (e) {
+  //     print('Error updating table data in PostgreSQL: $e');
+  //   }
+  // }
 
   Future<void> _updateDBWeb(PositionClass position) async {
     final url =
@@ -769,11 +674,18 @@ class _TableViewState extends State<TableView> {
     setState(() {
       _lists.add(PositionClass(null, '', null, null));
     });
-    if (kIsWeb) {
-      saveDataToPostgreSQLBWeb(_lists, widget.tableName);
-      // fetchTableDataFromPostgreSQLWeb(_searchQuery);
-    } else {
-      saveDataToPostgreSQL(_lists, widget.tableName);
-    }
+    saveDataToPostgreSQLBWeb(_lists, widget.tableName);
+    // fetchTableDataFromPostgreSQLWeb(_searchQuery);
+  }
+}
+
+Future<bool> isReadonlyFunc() async {
+  UserState hui = await whoami(user!.uid);
+  print(hui.count);
+  // ignore: unrelated_type_equality_checks
+  if (hui.count == 1) {
+    return false;
+  } else {
+    return true;
   }
 }
