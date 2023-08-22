@@ -1,7 +1,5 @@
 import 'dart:convert';
-
 import 'package:new_flut_proj/table/classes.dart';
-import 'package:postgres/postgres.dart';
 import 'package:http/http.dart' as https;
 
 Future<void> saveDataToPostgreSQLBWeb(
@@ -32,11 +30,11 @@ Future<void> saveDataToPostgreSQLBWeb(
     );
 
     if (response.statusCode == 200) {
-      print('good job!');
-      print(
-          'Time taken to save data to PostgreSQL: ${stopwatch.elapsed}'); // Print the elapsed time
+      print('Good job!');
+      print('Time taken to save data to PostgreSQL: ${stopwatch.elapsed}');
+      // Print the elapsed time
     } else {
-      print('Error saving data toPostgreSQL blyaaa: ${response.statusCode}');
+      print('Error saving data to PostgreSQL: ${response.statusCode}');
     }
   } catch (e) {
     print('Error saving data to PostgreSQL: $e');
