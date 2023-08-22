@@ -29,48 +29,7 @@ class _TableViewState extends State<TableView> {
   List<PositionClass> _lists = [];
   List<PositionClass> _searchResults = [];
 
-  // Future<void> fetchTableDataFromPostgreSQL(String searchQuery) async {
-  //   final connection = PostgreSQLConnection(
-  //     '37.140.241.144',
-  //     5432,
-  //     'postgres',
-  //     username: 'postgres',
-  //     password: '1',
-  //   );
-
-  //   try {
-  //     await connection.open();
-
-  //     String query = 'SELECT code, name, ml, itog FROM ${widget.tableName}';
-  //     if (searchQuery.isNotEmpty) {
-  //       // Add a WHERE clause to the query to filter based on the search query
-  //       query += " WHERE LOWER(name) LIKE '%${searchQuery.toLowerCase()}%'";
-  //     }
-
-  //     final result = await connection.query(query);
-
-  //     _lists = result.map((row) {
-  //       int code = int.tryParse(row[0].toString()) ?? 0;
-  //       String name = row[1].toString();
-  //       int ml = int.tryParse(row[2].toString()) ?? 0;
-  //       int itog = int.tryParse(row[3].toString()) ?? 0;
-
-  //       return PositionClass(code, name, ml, itog);
-  //     }).toList();
-
-  //     _searchResults = _lists; // обновить результаты поиска
-  //     setState(() {});
-
-  //     await connection.close();
-  //   } catch (e) {
-  //     print('Error fetching table data from PostgreSQL: $e');
-  //   }
-  // }
-
   Future<void> fetchTableDataFromPostgreSQLWeb(String searchQuery) async {
-    // if (searchQuery.isEmpty) {
-    //   searchQuery = "";
-    // }
     final url = Uri.parse(
         'https://zakup.bar:8085/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
 
@@ -144,11 +103,6 @@ class _TableViewState extends State<TableView> {
     final columns = ['Код', 'Наим.', 'Ед. Изм.', 'Итог'];
     return Scaffold(
       appBar: AppBar(
-        // title: Text(
-        //   widget.tableName.split('_').last,
-        //   style: TextStyle(color: Colors.white),
-        // ),
-        // backgroundColor: const Color.fromARGB(186, 0, 0, 0),
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -278,7 +232,7 @@ class _TableViewState extends State<TableView> {
                                 position.name = val;
 
                                 // обновление записи в базе данных
-                                _updateDBWeb(position);
+                                // _updateDBWeb(position);
 
                                 // обновление _searchResults и _lists
                                 _lists[_lists.indexOf(position)] = position;
@@ -513,6 +467,7 @@ class _TableViewState extends State<TableView> {
   // ignore: unused_field
   bool _conversionSuccessful = false;
 
+// загрузка xlxs для телефона
   Future<void> _uploadExcelFile() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -525,21 +480,23 @@ class _TableViewState extends State<TableView> {
       });
 
       String excelData = await convertExcelToJson(_filePath);
-      // перенести в отдельную функцию, работа с excelData
       dynamic data = jsonDecode(excelData);
-      var resultArray = data["Page1"]
-          .where((row) => int.tryParse(row[0].toString()) != null)
-          .toList();
-      for (var i = 0; i < resultArray.length; i++) {
-        resultArray[i].removeAt(7); // remove 8th index
-        resultArray[i].removeAt(6); // remove 7th index
-        resultArray[i].removeAt(3); // remove 4th index
-        resultArray[i].removeAt(2); // remove 3rd index
-        setState(() {
-          _lists.add(PositionClass(
-              int.tryParse(resultArray[i][0]), resultArray[i][1], 0, 0));
-        });
-      }
+
+      data.forEach((pageName, pageData) {
+        if (pageData is List) {
+          var resultArray = pageData
+              .where((row) =>
+                  row is List && int.tryParse(row[0].toString()) != null)
+              .toList();
+
+          for (var i = 0; i < resultArray.length; i++) {
+            setState(() {
+              _lists.add(PositionClass(
+                  int.tryParse(resultArray[i][0]), resultArray[i][1], 0, 0));
+            });
+          }
+        }
+      });
 
       if (excelData.isNotEmpty) {
         setState(() {
@@ -550,6 +507,7 @@ class _TableViewState extends State<TableView> {
     saveDataToPostgreSQLBWeb(_lists, widget.tableName);
   }
 
+// загрузка .xlxs для веба
   Future<void> _uploadExcelFileWeb() async {
     FilePickerResult? pickedFile = await FilePicker.platform.pickFiles(
       type: FileType.custom,
@@ -558,30 +516,45 @@ class _TableViewState extends State<TableView> {
     );
 
     if (pickedFile != null) {
-      var bytes = pickedFile.files.single.bytes;
-      String excelData = await convertByteToJson(bytes);
-      dynamic data = jsonDecode(excelData);
-      var resultArray = data["Page1"]
-          .where((row) => int.tryParse(row[0].toString()) != null)
-          .toList();
-      for (var i = 0; i < resultArray.length; i++) {
-        resultArray[i].removeAt(7); // remove 8th index
-        resultArray[i].removeAt(6); // remove 7th index
-        resultArray[i].removeAt(3); // remove 4th index
-        resultArray[i].removeAt(2); // remove 3rd index
-        setState(() {
-          _lists.add(PositionClass(
-              int.tryParse(resultArray[i][0]), resultArray[i][1], 0, 0));
-        });
-      }
+      try {
+        var bytes = pickedFile.files.single.bytes;
+        if (bytes != null) {
+          print("Bytes are not null");
 
-      if (excelData.isNotEmpty) {
-        setState(() {
-          _conversionSuccessful = true;
-        });
+          String excelData = await convertByteToJson(bytes);
+          dynamic data = jsonDecode(excelData);
+
+          for (var table in data.keys) {
+            var resultArray = data[table]
+                ?.where((row) => int.tryParse(row[0].toString()) != null)
+                ?.toList();
+
+            if (resultArray != null) {
+              for (var i = 0; i < resultArray.length; i++) {
+                setState(() {
+                  _lists.add(PositionClass(int.tryParse(resultArray[i][0]),
+                      resultArray[i][1], 0, 0));
+                });
+              }
+            }
+          }
+
+          if (_lists.isNotEmpty) {
+            setState(() {
+              _conversionSuccessful = true;
+            });
+          }
+
+          saveDataToPostgreSQLBWeb(_lists, widget.tableName);
+        } else {
+          print("Bytes is null");
+        }
+      } catch (error) {
+        print("Error during file processing: $error");
       }
+    } else {
+      print("No file picked");
     }
-    saveDataToPostgreSQLBWeb(_lists, widget.tableName);
   }
 
   List<DataColumn> getColumns(List<String> columns) =>
@@ -611,63 +584,6 @@ class _TableViewState extends State<TableView> {
       _sortColumnIndex = columnIndex;
       _sortAsc = ascending;
     });
-  }
-
-  // Future<void> _updateDB(PositionClass position) async {
-  //   final connection = PostgreSQLConnection(
-  //     '37.140.241.144',
-  //     5432,
-  //     'postgres',
-  //     username: 'postgres',
-  //     password: '1',
-  //   );
-
-  //   try {
-  //     await connection.open();
-
-  //     String query =
-  //         "UPDATE ${widget.tableName} SET name = @name, ml = @ml, itog = @itog WHERE code = @code";
-
-  //     await connection.query(query, substitutionValues: {
-  //       'name': position.name,
-  //       'ml': position.ml,
-  //       'itog': position.itog,
-  //       'code': position.code,
-  //     });
-
-  //     await connection.close();
-  //   } catch (e) {
-  //     print('Error updating table data in PostgreSQL: $e');
-  //   }
-  // }
-
-  Future<void> _updateDBWeb(PositionClass position) async {
-    final url =
-        'https://zakup.bar:8085/apip/update'; // Replace with your API endpoint URL
-
-    try {
-      final response = await https.post(
-        Uri.parse(url),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'tableName': widget.tableName,
-          'position': {
-            'name': position.name,
-            'ml': position.ml,
-            'itog': position.itog,
-            'code': position.code,
-          },
-        }),
-      );
-
-      if (response.statusCode == 200) {
-        print('Database update successful');
-      } else {
-        print('Failed to update database. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error updating table data via API: $e');
-    }
   }
 
   void addNewField() {

@@ -46,7 +46,9 @@ Future<String> convertExcelToJson(String filePath) async {
 }
 
 Future<String> convertByteToJson(bytes) async {
+  print("Bytes length: ${bytes.length}");
   Excel excel = Excel.decodeBytes(bytes!);
+  print("Number of tables: ${excel.tables.keys.length}");
   var jsonData = {};
   for (var table in excel.tables.keys) {
     var tableData = [];
