@@ -52,6 +52,7 @@ dependencies:
   permission_handler:
   universal_html:
   encrypt:
+  socket_io_client:
   flutter:
     sdk: flutter
 

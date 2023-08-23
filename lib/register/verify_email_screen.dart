@@ -81,12 +81,11 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     if (isEmailVerified) {
       timer?.cancel();
       if (checkBoxValue1) {
-        createTableForUsers();
         Navigator.pushNamedAndRemoveUntil(
             context, '/kabinet', (route) => false);
       } else if (checkBoxValue2) {
         Navigator.pushNamedAndRemoveUntil(
-            context, '/lk-user', (route) => false);
+            context, '/LKpostav', (route) => false);
       } else if (checkBoxValue3) {
         Navigator.pushNamedAndRemoveUntil(
             context, '/lk-user', (route) => false);

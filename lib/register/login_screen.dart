@@ -4,6 +4,7 @@ import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:new_flut_proj/LK_Postavki/lk_post.dart';
 import '../lk_restaurant/lk_rest.dart';
 import '../lk_user/lk_user_sotrud.dart';
 import '../services/check_sotrud_in_rest.dart';
@@ -84,11 +85,17 @@ class _LoginScreenState extends State<LoginScreen> {
               context,
               MaterialPageRoute(builder: (context) => const Kabinet()),
             );
-          } else if (whoInstance.sotrud || whoInstance.comp) {
+          } else if (whoInstance.sotrud) {
             // ignore: use_build_context_synchronously
             Navigator.push(
               context,
               MaterialPageRoute(builder: (context) => LkUser()),
+            );
+          } else if (whoInstance.comp) {
+            // ignore: use_build_context_synchronously
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => LkPostavPage()),
             );
           }
         } else {
