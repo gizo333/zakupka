@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:new_flut_proj/LK_Postavki/lk_post.dart';
 import 'package:new_flut_proj/lk_restaurant/checkout_list.dart';
 import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
@@ -72,6 +73,7 @@ class MyApp extends StatelessWidget {
         '/requests': (context) => JoinRequestsPage(),
         '/listsNavigator': (context) => ListsNavigatorPage(),
         '/checkoutNavigator': (context) => CheckoutPage(),
+        '/LKpostav': (context) => LkPostavPage(),
       },
       initialRoute: '/',
     );
