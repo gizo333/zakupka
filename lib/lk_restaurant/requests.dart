@@ -1,10 +1,8 @@
 import 'dart:convert';
 import 'package:http/http.dart' as https;
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'dart:io';
 
 class JoinRequestsPage extends StatefulWidget {
   @override
@@ -32,7 +30,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 // чекает запросы к рестарану
   Future<dynamic> fetchJoinRequests() async {
     try {
-      final usersUrl = Uri.parse('http://37.140.241.144:8080/api/restaurant');
+      final usersUrl = Uri.parse('https://zakup.bar:8080/api/restaurant');
       final usersResponse = await https.get(usersUrl);
       String? userRestaurant;
 
@@ -58,7 +56,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       }
 
       final joinRequestsUrl =
-          Uri.parse('http://37.140.241.144:8080/api/join_requests');
+          Uri.parse('https://zakup.bar:8080/api/join_requests');
       final joinRequestsResponse = await https.get(joinRequestsUrl);
 
       if (joinRequestsResponse.statusCode == 200) {
@@ -84,8 +82,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
   Future<String> _fetchUserRestaurant(
       PostgreSQLConnection? connection, String userId) async {
-    final url =
-        Uri.parse('http://37.140.241.144:8080/api/restaurant/user/$userId');
+    final url = Uri.parse('https://zakup.bar:8080/api/restaurant/user/$userId');
 
     try {
       final response = await https.get(url);
@@ -105,8 +102,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
 // получает id сотрудника который привязан к ресторану
   Future<String?> getUserId(String nameRest) async {
-    final url = Uri.parse(
-        'http://37.140.241.144:8080/api/users_sotrud/user_id/$nameRest');
+    final url =
+        Uri.parse('https://zakup.bar:8080/api/users_sotrud/user_id/$nameRest');
     final response = await https.get(url);
 
     if (response.statusCode == 200) {
@@ -124,8 +121,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
 // чекает принадлежит ли сотрудник ресторану
   Future<String?> getRestName(String userId) async {
-    final url = Uri.parse(
-        'http://37.140.241.144:8080/api/users_sotrud/name_rest/$userId');
+    final url =
+        Uri.parse('https://zakup.bar:8080/api/users_sotrud/name_rest/$userId');
     final response = await https.get(url);
 
     if (response.statusCode == 200) {
@@ -141,7 +138,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   Future<void> insertRestaurantUser(String restaurantName, String currentUserId,
       String nameRestInSotrud, String userId_sotrud) async {
     final restaurantUsersUrl =
-        Uri.parse('http://37.140.241.144:8080/api/restaurant_users');
+        Uri.parse('https://zakup.bar:8080/api/restaurant_users');
     final headers = {"Content-Type": "application/json"};
 
     final body = jsonEncode({
@@ -166,8 +163,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   }
 
   Future<void> acceptJoinRequest(String restaurantName, String userId) async {
-    final userListUrl =
-        Uri.parse('http://37.140.241.144:8080/api/users_sotrud');
+    final userListUrl = Uri.parse('https://zakup.bar:8080/api/users_sotrud');
     final headers = {"Content-Type": "application/json"};
 
     try {

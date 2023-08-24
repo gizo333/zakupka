@@ -187,6 +187,7 @@ class _SignUpFormState extends State<SignUpForm> {
             'email': email,
             'password': password,
             'company': company,
+            'fullName': fullName,
             'phone': phone,
             'inn': inn,
           });
@@ -198,6 +199,7 @@ class _SignUpFormState extends State<SignUpForm> {
             'email': email,
             'password': password,
             'company': company,
+            'fullName': fullName,
             'phone': phone,
             'inn': inn,
           });
@@ -458,6 +460,19 @@ class _SignUpFormState extends State<SignUpForm> {
             controller: companyController,
             decoration: InputDecoration(
               labelText: 'Название компании',
+              border: OutlineInputBorder(),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _isButtonActive = isRegistrationButtonActive();
+              });
+            },
+          ),
+          SizedBox(height: 16.0),
+          TextField(
+            controller: fullNameController,
+            decoration: InputDecoration(
+              labelText: 'ФИО',
               border: OutlineInputBorder(),
             ),
             onChanged: (value) {

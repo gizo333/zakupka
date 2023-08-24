@@ -1,12 +1,11 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:http/http.dart' as https;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
-import '../connect_BD/connect.dart';
 import '../connect_BD/connect_web.dart';
+import '../services/who.dart';
 import 'restaurant_list_bloc.dart';
 
 class RestaurantListPage extends StatefulWidget {
@@ -62,6 +61,58 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       throw Exception('Ошибка при выполнении запроса: $e');
     }
   }
+
+Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
+      String userId, String nameCompany, RestaurantListProvider restaurantListProvider) async {
+    print('User Full Name: $userFullName');
+
+    // Отменить предыдущий запрос, если есть
+    if (restaurantListProvider.selectedRestaurant != null) {
+      final previousRestaurantName = restaurantListProvider.selectedRestaurant!;
+      final previousJoinRequestStatus = restaurantListProvider.getRequestStatus(
+          previousRestaurantName, userId);
+      if (previousJoinRequestStatus == 'pending') {
+        await cancelJoinRequest(
+            previousRestaurantName, userId, restaurantListProvider);
+      }
+    }
+
+    https
+        .post(
+      Uri.parse('https://zakup.bar:9000/api/comp_join_requests'),
+      headers: <String, String>{
+        'Content-Type': 'application/json; charset=UTF-8',
+      },
+      body: jsonEncode(<String, String>{
+        'restaurant_name': restaurantName,
+        'user_full_name': userFullName,
+        'user_id': userId,
+        'status': 'pending',
+        'name_company' : nameCompany,
+      }),
+    )
+        .then((response) {
+      if (response.statusCode == 200) {
+        print('Join request sent successfully');
+        // Обновление состояния запроса в провайдере
+        restaurantListProvider.selectedRestaurant = restaurantName;
+        if (!restaurantListProvider.joinRequests.containsKey(restaurantName)) {
+          restaurantListProvider.joinRequests[restaurantName] = {};
+        }
+        restaurantListProvider.joinRequests[restaurantName]![userId] =
+            'pending';
+        restaurantListProvider.notifyListeners();
+      } else {
+        print('Error sending join request: ${response.statusCode}');
+        throw Exception('Failed to send join request');
+      }
+    }).catchError((error) {
+      print('Error sending join request: $error');
+      throw error;
+    });
+  }
+
+
 
   Future<void> sendJoinRequest(String restaurantName, String userFullName,
       String userId, RestaurantListProvider restaurantListProvider) async {
@@ -249,17 +300,24 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                                       )
                                                     : ElevatedButton(
                                                         onPressed: () async {
+                                                          Who whoInstance =
+                                                              Who();
+                                                          await whoInstance
+                                                              .WhoYou();
                                                           final restaurantListProvider =
                                                               Provider.of<
                                                                       RestaurantListProvider>(
                                                                   context,
                                                                   listen:
                                                                       false);
-                                                          await sendJoinRequest(
-                                                              name,
-                                                              userFullName,
-                                                              userId,
-                                                              restaurantListProvider);
+                                                          if (whoInstance
+                                                              .sotrud) {
+                                                            await sendJoinRequest(
+                                                                name,
+                                                                userFullName,
+                                                                userId,
+                                                                restaurantListProvider);
+                                                          }
                                                           setState(() {
                                                             // Удалить предыдущий запрос и обновить состояние
                                                             _restaurantListProvider
@@ -295,17 +353,24 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                                       )
                                                     : ElevatedButton(
                                                         onPressed: () async {
+                                                          Who whoInstance =
+                                                              Who();
+                                                          await whoInstance
+                                                              .WhoYou();
                                                           final restaurantListProvider =
                                                               Provider.of<
                                                                       RestaurantListProvider>(
                                                                   context,
                                                                   listen:
                                                                       false);
-                                                          await sendJoinRequest(
-                                                              name,
-                                                              userFullName,
-                                                              userId,
-                                                              restaurantListProvider);
+                                                          if (whoInstance
+                                                              .sotrud) {
+                                                            await sendJoinRequest(
+                                                                name,
+                                                                userFullName,
+                                                                userId,
+                                                                restaurantListProvider);
+                                                          }
                                                         },
                                                         child: Text('Вступить'),
                                                       ),
