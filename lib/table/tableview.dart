@@ -1,30 +1,59 @@
 import 'dart:async';
+
+import 'package:flutter_excel/excel.dart';
 import 'dart:convert';
+// import 'package:excel/excel.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:postgres/postgres.dart';
 import 'classes.dart';
 import 'package:http/http.dart' as https;
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
 import '../services/who.dart';
-import 'package:socket_io_client/socket_io_client.dart' as IO;
 
 class TableView extends StatefulWidget {
   final String tableName;
 
   const TableView({required this.tableName, Key? key}) : super(key: key);
+  // const TableView({Key? key}) : super(key: key);
 
   @override
   State<TableView> createState() => _TableViewState();
 }
 
-class _TableViewState extends State<TableView> with WidgetsBindingObserver {
-  Duration _reconnectInterval = Duration(seconds: 1);
-  bool _isConnected = false;
-  bool _isReconnecting = false;
+class _TableViewState extends State<TableView> {
+  List<PositionClass> _lists = [];
+  List<PositionClass> _searchResults = [];
+
+  Future<void> fetchTableDataFromPostgreSQLWeb(String searchQuery) async {
+    final url = Uri.parse(
+        'https://zakup.bar:8085/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=$searchQuery');
+
+    try {
+      final response = await https.get(url);
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        _lists = (result as List<dynamic>).map((row) {
+          int code = int.tryParse(row['code'].toString()) ?? 0;
+          String name = row['name'].toString();
+          int ml = int.tryParse(row['ml'].toString()) ?? 0;
+          int itog = int.tryParse(row['itog'].toString()) ?? 0;
+
+          return PositionClass(code, name, ml, itog);
+        }).toList();
+        _searchResults = _lists; // обновить результаты поиска
+        setState(() {});
+      }
+    } catch (e) {
+      print('Вы пидор потому что $e');
+    }
+  }
+
   bool _sortAsc = true;
   bool _isButtonDisabled = false;
   // ignore: unused_field
@@ -34,112 +63,6 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
   bool isReadOnly = false;
 
   late String userId; // Идентификатор пользователя
-  List<PositionClass> _lists = [];
-  List<PositionClass> _searchResults = [];
-  late IO.Socket socket;
-
-  @override
-  void initState() {
-    super.initState();
-    initializeFirebase();
-    initializeSocket();
-    fetchTableDataFromSocket(_searchQuery);
-    WidgetsBinding.instance!.addObserver(this);
-    _lists = [];
-  }
-
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    super.didChangeAppLifecycleState(state);
-    if (state == AppLifecycleState.resumed) {
-      // При возвращении на страницу, когда приложение активно
-      if (!_isConnected) {
-        print('Reconnecting...');
-        initializeSocket(); // Попытка восстановления подключения
-      }
-    } else if (state == AppLifecycleState.inactive) {
-      // При переходе на другую страницу (неактивное состояние)
-      if (_isConnected) {
-        print('Disconnecting...');
-        socket.disconnect(); // Отключение от сервера
-      }
-    }
-  }
-
-  void fetchTableDataFromSocket(String searchQuery) {
-    socket.emit('fetchTableData', {
-      'tableName': widget.tableName,
-      'searchQuery': searchQuery,
-    });
-  }
-
-  void initializeSocket() {
-    socket = IO.io('https://zakup.bar:8085', <String, dynamic>{
-      'transports': ['websocket'],
-      'autoConnect': true,
-      'reconnection': true,
-      'reconnectionDelay': 1000,
-      'reconnectionAttempts': 5,
-    });
-
-    socket.on('tableData', (data) {
-      final result = data as List<dynamic>;
-      _lists = result.map((row) {
-        int code = int.tryParse(row['code'].toString()) ?? 0;
-        String name = row['name'].toString();
-        int ml = int.tryParse(row['ml'].toString()) ?? 0;
-        int itog = int.tryParse(row['itog'].toString()) ?? 0;
-
-        return PositionClass(code, name, ml, itog);
-      }).toList();
-      _searchResults = _lists;
-      setState(() {});
-    });
-
-    socket.on('connect', (_) {
-      print('Connected to server');
-      _isConnected = true;
-      socket.emit('joinTable', {'tableName': widget.tableName});
-    });
-
-    socket.on('disconnect', (_) {
-      print('Disconnected from server');
-      _isConnected = false;
-      _reconnect();
-    });
-
-    socket.on('tableDataError', (error) {
-      print('Error fetching table data: $error');
-    });
-
-    socket.on('reconnect', (attempt) {
-      print('Reconnected after attempt $attempt');
-    });
-
-    socket.on('reconnect_attempt', (attempt) {
-      print('Reconnect attempt $attempt');
-    });
-
-    socket.on('reconnect_failed', (_) {
-      print('Reconnection failed');
-    });
-  }
-
-  void _reconnect() {
-    if (!_isReconnecting) {
-      print('Reconnecting...');
-      _isReconnecting = true;
-      socket.disconnect();
-      Future.delayed(Duration(seconds: 2), () {
-        if (!_isConnected) {
-          initializeSocket(); // Попытка восстановления подключения
-        }
-        _isReconnecting = false;
-      }).catchError((error) {
-        print('Error during reconnection: $error');
-        _isReconnecting = false;
-      });
-    }
-  }
 
   Future<void> initializeFirebase() async {
     final currentUser = FirebaseAuth.instance.currentUser;
@@ -156,9 +79,16 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
   }
 
   @override
+  void initState() {
+    super.initState();
+    initializeFirebase();
+    fetchTableDataFromPostgreSQLWeb(_searchQuery);
+
+    _lists = [];
+  }
+
+  @override
   void dispose() {
-    socket.disconnect();
-    WidgetsBinding.instance!.removeObserver(this);
     for (var position in _lists) {
       position.nameController.dispose();
       position.codeController.dispose();
@@ -183,6 +113,7 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
               decoration: BoxDecoration(
                   color: Colors.white,
                   border: Border.all(
+                    // color: Colors.white,
                     width: 4,
                   ),
                   borderRadius: BorderRadius.circular(20)),
@@ -192,6 +123,8 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
                 decoration: const InputDecoration(
                   enabledBorder: InputBorder.none,
                   focusedBorder: InputBorder.none,
+                  // focusColor: Colors.white,
+                  // labelText: 'Поиск',
                   alignLabelWithHint: true,
                   hintText: 'Поиск',
                   floatingLabelStyle: TextStyle(color: Colors.white),
@@ -199,6 +132,9 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
                   floatingLabelAlignment: FloatingLabelAlignment.center,
                   prefixIcon: Icon(Icons.search),
                 ),
+                // onSubmitted: (value) {
+                //   FocusScope.of(context).unfocus();
+                // },
                 onChanged: (value) {
                   _searchQuery = value;
                   _searchResults = _lists
@@ -216,6 +152,7 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
       body: Container(
         color: const Color.fromARGB(255, 246, 246, 246),
         child: Column(
+          // crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Row(
               children: [
@@ -293,6 +230,11 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
                               keyboardType: TextInputType.number,
                               onChanged: (val) {
                                 position.name = val;
+
+                                // обновление записи в базе данных
+                                // _updateDBWeb(position);
+
+                                // обновление _searchResults и _lists
                                 _lists[_lists.indexOf(position)] = position;
                                 _searchResults = _lists
                                     .where((item) => item.name
@@ -319,6 +261,7 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
                           SizedBox(width: 15), // Промежуток шириной 10
                           Expanded(
                             flex: 2,
+                            // fit: FlexFit.tight,
                             child: TextFormField(
                               readOnly: isReadOnly,
                               decoration: const InputDecoration(
@@ -506,7 +449,66 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
     );
   }
 
+  Future<void> fetchItogsFromServer() async {
+    final url = Uri.parse(
+        'https://zakup.bar:8085/apip/tables/getitogs/${widget.tableName}');
+
+    try {
+      final response = await https.get(url);
+      if (response.statusCode == 200) {
+        final List<dynamic> itogsData = jsonDecode(response.body);
+
+        for (var itogData in itogsData) {
+          final int code = itogData['code'];
+          final int itog = itogData['itog'];
+
+          // Найдите соответствующий объект PositionClass и обновите его itog
+          final PositionClass position =
+              _lists.firstWhere((position) => position.code == code);
+          position.itog = itog;
+        }
+
+        setState(() {});
+      } else {
+        print('Error fetching itogs: ${response.statusCode}');
+      }
+    } catch (error) {
+      print('Error fetching itogs: $error');
+    }
+  }
+
+  Future<void> updateItogFromAPI() async {
+    final url = Uri.parse(
+        'https://zakup.bar:8085/api/tables/fetchtable?tableName=${widget.tableName}&searchQuery=');
+
+    try {
+      final response = await https.get(url);
+
+      if (response.statusCode == 200) {
+        final result = json.decode(response.body);
+        final newItogValues = Map<int, int>.fromIterable(
+          result as List<dynamic>,
+          key: (row) => int.tryParse(row['code'].toString()) ?? 0,
+          value: (row) => int.tryParse(row['itog'].toString()) ?? 0,
+        );
+
+        // Обновление значений itog в списке _lists
+        for (var position in _lists) {
+          final updatedItog = newItogValues[position.code] ?? 0;
+          position.itog = updatedItog;
+          position.itogController.text = updatedItog.toString();
+        }
+
+        setState(() {});
+      }
+    } catch (e) {
+      print('Ошибка при обновлении itog: $e');
+    }
+  }
+
   Future<void> saveItog(List<PositionClass> list) async {
+    await updateItogFromAPI();
+    // fetchItogsFromServer();
     for (final position in list) {
       final itog = (position.itog ?? 0) + (position.ml ?? 0);
 
@@ -516,7 +518,7 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
       position.mlController.text = '';
     }
 
-    await saveDataToPostgreSQLBWeb(list, widget.tableName);
+    saveDataToPostgreSQLBWeb(list, widget.tableName);
     setState(() {});
   }
 
@@ -648,6 +650,7 @@ class _TableViewState extends State<TableView> with WidgetsBindingObserver {
       _lists.add(PositionClass(null, '', null, null));
     });
     saveDataToPostgreSQLBWeb(_lists, widget.tableName);
+    // fetchTableDataFromPostgreSQLWeb(_searchQuery);
   }
 }
 
