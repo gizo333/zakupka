@@ -53,6 +53,7 @@ dependencies:
   universal_html:
   encrypt:
   socket_io_client:
+  carousel_slider:
   flutter:
     sdk: flutter
 

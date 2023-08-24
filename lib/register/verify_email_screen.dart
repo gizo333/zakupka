@@ -1,9 +1,10 @@
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '/pages/home_screen.dart';
 import '/services/snack_bar.dart';
-import '../lk_user/new_teble.dart';
 
 class VerifyEmailScreen extends StatefulWidget {
   final bool checkBoxValue1;
@@ -80,13 +81,13 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
 
     if (isEmailVerified) {
       timer?.cancel();
-      if (checkBoxValue1) {
+      if (widget.checkBoxValue1) {
         Navigator.pushNamedAndRemoveUntil(
             context, '/kabinet', (route) => false);
-      } else if (checkBoxValue2) {
+      } else if (widget.checkBoxValue2) {
         Navigator.pushNamedAndRemoveUntil(
             context, '/LKpostav', (route) => false);
-      } else if (checkBoxValue3) {
+      } else if (widget.checkBoxValue3) {
         Navigator.pushNamedAndRemoveUntil(
             context, '/lk-user', (route) => false);
       }
