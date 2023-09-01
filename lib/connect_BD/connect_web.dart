@@ -48,7 +48,31 @@ Future<List<dynamic>> getDataFromServer(
   }
 }
 
-Future<dynamic> executeServerRequest(String tableName, String fieldName,
+// коннект для поставщиков
+Future<dynamic> companyConnect(String tableName, String fieldName,
+    {dynamic body}) async {
+  final url = Uri.parse('https://zakup.bar:9000/api/$tableName/$fieldName');
+  final headers = {"Content-Type": "application/json"};
+
+  try {
+    final response =
+        await https.post(url, body: jsonEncode(body), headers: headers);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return data;
+    } else if (response.statusCode == 404) {
+      throw Exception('Resource not found: $tableName/$fieldName');
+    } else {
+      throw Exception('Server error: ${response.statusCode}');
+    }
+  } catch (e) {
+    throw Exception('Ошибка при выполнении запроса: $e');
+  }
+}
+
+// коннект для гостей
+Future<dynamic> sotrudConnect(String tableName, String fieldName,
     {dynamic body}) async {
   final url = Uri.parse('https://zakup.bar:8080/api/$tableName/$fieldName');
   final headers = {"Content-Type": "application/json"};

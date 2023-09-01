@@ -14,7 +14,7 @@ class LkPostavPage extends StatefulWidget {
 class _LkPostavPageState extends State<LkPostavPage> {
   final user = FirebaseAuth.instance.currentUser;
   List<String> buttonLabels = [
-    'Сотрудники',
+    'Мои Рестораны',
     'Рестораны',
     'Кнопка 3',
     'Кнопка 4'
@@ -103,8 +103,8 @@ class _LkPostavPageState extends State<LkPostavPage> {
     // Ваша логика для обработки нажатия кнопки с данным label
     print('Нажата кнопка: $label');
 
-    if (label == 'Сотрудники') {
-      Navigator.pushNamed(context, '/lk-user');
+    if (label == 'Мои Рестораны') {
+      Navigator.pushNamed(context, '/myRest');
     }
     if (label == 'Рестораны') {
       Navigator.pushNamed(context, '/restaurantList');

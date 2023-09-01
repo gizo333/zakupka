@@ -28,13 +28,22 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   }
 
 // чекает запросы к рестарану
-  Future<dynamic> fetchJoinRequests() async {
+  Future<List<JoinRequest>> fetchJoinRequests() async {
     try {
       final usersUrl = Uri.parse('https://zakup.bar:8080/api/restaurant');
       final usersResponse = await https.get(usersUrl);
-      String? userRestaurant;
 
-      if (usersResponse.statusCode == 200) {
+      final joinRequestsUrl1 =
+          Uri.parse('https://zakup.bar:8080/api/join_requests');
+      final joinRequestsResponse1 = await https.get(joinRequestsUrl1);
+
+      final joinRequestsUrl2 =
+          Uri.parse('https://zakup.bar:8080/api/comp_join_requests');
+      final joinRequestsResponse2 = await https.get(joinRequestsUrl2);
+
+      if (usersResponse.statusCode == 200 &&
+          joinRequestsResponse1.statusCode == 200 &&
+          joinRequestsResponse2.statusCode == 200) {
         final usersData = jsonDecode(usersResponse.body);
         final currentUser = usersData.firstWhere(
             (user) => user['user_id'] == currentUserId,
@@ -44,36 +53,35 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
           throw Exception('Пользователь с ID $currentUserId не найден');
         }
 
-        userRestaurant = currentUser['restaurant'];
+        final userRestaurant = currentUser['restaurant'];
 
         if (userRestaurant == null) {
           throw Exception(
               'Авторизованный ресторан для пользователя с ID $currentUserId не найден');
         }
-      } else {
-        throw Exception(
-            'Ошибка при получении данных о пользователях: ${usersResponse.statusCode}');
-      }
 
-      final joinRequestsUrl =
-          Uri.parse('https://zakup.bar:8080/api/join_requests');
-      final joinRequestsResponse = await https.get(joinRequestsUrl);
+        final joinRequestsData1 = jsonDecode(joinRequestsResponse1.body);
+        final joinRequestsData2 = jsonDecode(joinRequestsResponse2.body);
 
-      if (joinRequestsResponse.statusCode == 200) {
-        final joinRequestsData = jsonDecode(joinRequestsResponse.body);
-        final filteredJoinRequestsList = joinRequestsData
+        final allJoinRequestsData = [
+          ...joinRequestsData1,
+          ...joinRequestsData2
+        ];
+
+        final filteredJoinRequestsList = allJoinRequestsData
             .where((item) => item['restaurant_name'] == userRestaurant)
             .map((item) => JoinRequest(
                   restaurantName: item['restaurant_name'],
                   userFullName: item['user_full_name'],
                   userId: item['user_id'],
+                  nameCompany: item['name_company'] ?? '',
                 ))
             .toList();
 
         return filteredJoinRequestsList;
       } else {
         throw Exception(
-            'Ошибка при получении данных о запросах на присоединение: ${joinRequestsResponse.statusCode}');
+            'Ошибка при получении данных: Пользователи - ${usersResponse.statusCode}, Запросы на присоединение 1 - ${joinRequestsResponse1.statusCode}, Запросы на присоединение 2 - ${joinRequestsResponse2.statusCode}');
       }
     } catch (e) {
       throw Exception('Ошибка при выполнении запроса: $e');
@@ -135,8 +143,12 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   }
 
 // функция вставляет значения в промежуточную таблицу, связывает ресторан с сотрудником
-  Future<void> insertRestaurantUser(String restaurantName, String currentUserId,
-      String nameRestInSotrud, String userId_sotrud) async {
+  Future<void> insertRestaurantUser(
+      String restaurantName,
+      String currentUserId,
+      String nameRestInSotrud,
+      String userId_sotrud,
+      String userFullName) async {
     final restaurantUsersUrl =
         Uri.parse('https://zakup.bar:8080/api/restaurant_users');
     final headers = {"Content-Type": "application/json"};
@@ -146,6 +158,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       'user_id_in_restaurant': currentUserId,
       'name_rest_in_sotrud': nameRestInSotrud,
       'user_id_varchar': userId_sotrud,
+      'full_name': userFullName,
     });
     try {
       final response =
@@ -159,6 +172,129 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
       }
     } catch (e) {
       print('Произошла ошибка при вставке данных: $e');
+    }
+  }
+
+  Future<void> insertCompRestaurant(String restaurantName, String nameCompany,
+      String userFullName, String currentUserId, String userIdComp) async {
+    final restaurantUsersUrl =
+        Uri.parse('https://zakup.bar:9000/api/restaurant_comp');
+    final headers = {"Content-Type": "application/json"};
+
+    final body = jsonEncode({
+      'restaurant_name': restaurantName,
+      'name_comp': nameCompany,
+      'fullname_user_comp': userFullName,
+      'user_id_in_restaurant': currentUserId,
+      'user_id_in_companies': userIdComp,
+    });
+    try {
+      final response =
+          await https.post(restaurantUsersUrl, headers: headers, body: body);
+
+      if (response.statusCode == 200) {
+        //print('Успешная вставка'); // Успешная вставка
+      } else {
+        print('Ошибка при вставке: ${response.statusCode}'); // Обработка ошибки
+        // print('Response body: ${response.body}'); // Вывод тела ответа
+      }
+    } catch (e) {
+      print('Произошла ошибка при вставке данных: $e');
+    }
+  }
+
+  Future<void> acceptCompJoinRequest(
+      String restaurantName, String userId) async {
+    // Определение URL для получения списка пользователей
+    final userListUrl = Uri.parse('https://zakup.bar:8080/api/companies');
+
+    // Заголовки для запросов (указание формата данных)
+    final headers = {"Content-Type": "application/json"};
+
+    try {
+      // Отправка GET-запроса для получения списка пользователей
+      final response = await https.get(userListUrl, headers: headers);
+
+      // Проверка успешности GET-запроса
+      if (response.statusCode == 200) {
+        // Декодирование ответа в JSON-формате и преобразование в список
+        final userList = jsonDecode(response.body) as List<dynamic>;
+
+        // Поиск пользователя по userId в полученном списке
+        final user = userList.firstWhere((user) => user['user_id'] == userId,
+            orElse: () => null);
+
+        if (user != null) {
+          List<String> currentNameRest = user['name_rest'] != null
+              ? List<String>.from(user['name_rest'])
+              : [];
+
+          currentNameRest.add(restaurantName);
+
+          if (user['name_rest'] == null ||
+              user['name_rest'] != restaurantName) {
+            final updateUser = {
+              'name_rest': restaurantName,
+            };
+            final updateUserJson = jsonEncode(updateUser);
+
+            final updateUserUrl = Uri.parse(
+                'https://zakup.bar:9000/api/companies/user_id/$userId'); // запись в массив БД
+            final updateResponse = await https.patch(updateUserUrl,
+                headers: headers, body: updateUserJson);
+
+            // Проверка успешности PATCH-запроса
+            if (updateResponse.statusCode == 200) {
+              // Подготовка данных для обновления статуса
+              final updateStatus = {
+                'status': 'accepted',
+              };
+              final updateStatusJson = jsonEncode(updateStatus);
+
+              // Определение URL для обновления статуса запроса на присоединение
+              final updateStatusUrl = Uri.parse(
+                  'https://zakup.bar:5000/status/comp_join_requests/user_id/${user['user_id']}'); // в работе
+
+              // Отправка PATCH-запроса для обновления статуса запроса на присоединение
+              final updateStatusResponse = await https.patch(updateStatusUrl,
+                  headers: headers, body: updateStatusJson);
+
+              // Проверка успешности PATCH-запроса для обновления статуса
+              if (updateStatusResponse.statusCode == 200) {
+                // Определение URL для удаления запроса на присоединение
+                final deleteJoinRequestUrl = Uri.parse(
+                    'https://zakup.bar:5000/delete/comp_join_requests/user_id/${user['user_id']}'); // в работе
+
+                // Отправка DELETE-запроса для удаления запроса на присоединение
+                final deleteResponse =
+                    await https.delete(deleteJoinRequestUrl, headers: headers);
+
+                // Проверка успешности DELETE-запроса
+                if (deleteResponse.statusCode == 200) {
+                  // Выполнение каких-либо действий при успешном удалении
+                } else {
+                  throw Exception(
+                      'Error deleting request: ${deleteResponse.statusCode}');
+                }
+              } else {
+                throw Exception(
+                    'Error updating status: ${updateStatusResponse.statusCode}');
+              }
+            }
+          } else {
+            print('Field name_rest already set to the desired value');
+            // Обработка случая, когда поле уже имеет требуемое значение
+          }
+        } else {
+          print('User with user_id "$userId" not found');
+          // Обработка случая, когда пользователь не найден
+        }
+      } else {
+        throw Exception('Error getting user list: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error accepting company join request: $e');
+      throw e;
     }
   }
 
@@ -180,13 +316,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         final user = userList.firstWhere((user) => user['user_id'] == userId,
             orElse: () => null);
         if (user != null) {
-          // Check if the name_rest field is null or different
           if (user['name_rest'] == null ||
               user['name_rest'] != restaurantName) {
-            // print('Updating user data for user ID: ${user['user_id']}');
-            // print('Restaurant name: $restaurantName');
-            // print('User ID: $userId');
-
             final updateUser = {
               'name_rest': restaurantName,
             };
@@ -266,9 +397,9 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text('Запросы на присоединение'),
+        title: const Text('Запросы на присоединение'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context);
           },
@@ -278,7 +409,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
         future: fetchJoinRequests(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(
+            return const Center(
               child: CircularProgressIndicator(),
             );
           } else if (snapshot.hasData) {
@@ -291,35 +422,117 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                 return Column(
                   children: [
                     ListTile(
-                      title: Text(request.restaurantName),
-                      subtitle: Text(request.userFullName),
+                      contentPadding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        horizontal: 16,
+                      ),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        side: BorderSide(
+                          color: const Color.fromARGB(255, 148, 136, 136)!,
+                          width: 1,
+                        ),
+                      ),
+                      title: Text(
+                        request.restaurantName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            request.userFullName,
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            'Запрос от пользователя: ${request.userFullName}',
+                            style: TextStyle(
+                              color: Colors.grey[400],
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          if (request.nameCompany != null)
+                            RichText(
+                              text: TextSpan(
+                                text: 'Запрос от компании: ',
+                                style: TextStyle(
+                                  color: Colors.grey[400],
+                                  fontStyle: FontStyle.italic,
+                                ),
+                                children: [
+                                  TextSpan(
+                                    text: request.nameCompany,
+                                    style: const TextStyle(
+                                      color: Colors
+                                          .red, // Замените на желаемый цвет
+                                      fontStyle: FontStyle.italic,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                        ],
+                      ),
                       trailing: ElevatedButton(
                         onPressed: () async {
-                          await acceptJoinRequest(
-                              request.restaurantName, request.userId);
+                          print('request.nameCompany: ${request.nameCompany}');
+                          print(
+                              'request.nameCompany: ${request.hasNameCompany}');
+                          if (request.hasNameCompany) {
+                            print('Entering acceptCompJoinRequest branch');
+                            await acceptCompJoinRequest(
+                              request.restaurantName,
+                              request.userId,
+                            );
 
-                          // Получаем имя ресторана
-                          final nameRestInSotrud =
-                              await getRestName(request.userId);
+                            await insertCompRestaurant(
+                              request.restaurantName,
+                              request.nameCompany,
+                              request.userFullName,
+                              currentUserId,
+                              request.userId,
+                            );
 
-                          if (nameRestInSotrud != null) {
-                            await insertRestaurantUser(
+                            print('Вызвана функция acceptCompJoinRequest');
+                          } else if (request.hasNameCompany == false) {
+                            print('Entering acceptJoinRequest branch');
+                            await acceptJoinRequest(
+                              request.restaurantName,
+                              request.userId,
+                            );
+                            print('Вызвана функция acceptJoinRequest');
+
+                            final nameRestInSotrud =
+                                await getRestName(request.userId);
+                            if (nameRestInSotrud != null) {
+                              await insertRestaurantUser(
                                 request.restaurantName,
                                 currentUserId,
                                 nameRestInSotrud,
-                                request.userId);
+                                request.userId,
+                                request.userFullName,
+                              );
+                            }
                             print(
-                                'Имя ресторана для пользователя ${request.userId}: $nameRestInSotrud');
+                              'Имя ресторана для пользователя ${request.userId}: $nameRestInSotrud',
+                            );
                           } else {
                             print('Ошибка при получении имени ресторана');
                           }
 
                           setState(() {});
                         },
-                        child: Text('Принять'),
+                        child: const Text('Принять'),
                       ),
                     ),
-                    Divider(
+                    const Divider(
                       height: 1,
                       thickness: 1,
                       color: Colors.grey,
@@ -334,7 +547,7 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
             );
           }
 
-          return Center(
+          return const Center(
             child: Text('No data available'),
           );
         },
@@ -346,11 +559,14 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 class JoinRequest {
   final String restaurantName;
   final String userFullName;
-  final String userId; // Add userId property
+  final String userId;
+  final String? nameCompany; // Добавленное поле
+  final bool hasNameCompany;
 
   JoinRequest({
     required this.restaurantName,
     required this.userFullName,
-    required this.userId, // Include userId in the constructor
-  });
+    required this.userId,
+    required this.nameCompany, // Включено в конструктор
+  }) : hasNameCompany = nameCompany != null && nameCompany.isNotEmpty;
 }

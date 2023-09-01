@@ -36,7 +36,35 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     return filteredData;
   }
 
-  Future<String> getUserFullName(String userId) async {
+// Получаем имя компании
+  Future<String> getCompanyName(String userId) async {
+    try {
+      final response = await https.get(
+        Uri.parse('https://zakup.bar:9000/api/name_company/$userId'),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data.containsKey('name_company')) {
+          return data['name_company'] as String;
+        } else {
+          print('Company name not found');
+          return '';
+        }
+      } else if (response.statusCode == 404) {
+        print('Company not found');
+        return '';
+      } else {
+        throw Exception('Error getting company name: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error making request: $e');
+      throw Exception('Error making request: $e');
+    }
+  }
+
+// получаем имя пользователя
+  Future<String> getUserCombinedFullName(String userId) async {
     try {
       final response = await https.get(
         Uri.parse('https://zakup.bar:8080/api/user_full_name/$userId'),
@@ -44,8 +72,8 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data is Map && data.containsKey('full_name')) {
-          return data['full_name'] as String;
+        if (data is Map && data.containsKey('combined_full_name')) {
+          return data['combined_full_name'] as String;
         } else {
           print('No such user');
           return '';
@@ -62,8 +90,13 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     }
   }
 
-Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
-      String userId, String nameCompany, RestaurantListProvider restaurantListProvider) async {
+// Отправка запросов для поставщиков
+  Future<void> sendCompJoinRequest(
+      String restaurantName,
+      String userFullName,
+      String userId,
+      String companyName,
+      RestaurantListProvider restaurantListProvider) async {
     print('User Full Name: $userFullName');
 
     // Отменить предыдущий запрос, если есть
@@ -74,6 +107,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
       if (previousJoinRequestStatus == 'pending') {
         await cancelJoinRequest(
             previousRestaurantName, userId, restaurantListProvider);
+        print('Canceled previous join request for User ID: $userId');
       }
     }
 
@@ -88,7 +122,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
         'user_full_name': userFullName,
         'user_id': userId,
         'status': 'pending',
-        'name_company' : nameCompany,
+        'name_company': companyName,
       }),
     )
         .then((response) {
@@ -112,8 +146,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
     });
   }
 
-
-
+// Отправка запросов за сотрудников
   Future<void> sendJoinRequest(String restaurantName, String userFullName,
       String userId, RestaurantListProvider restaurantListProvider) async {
     print('User Full Name: $userFullName');
@@ -124,7 +157,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
       final previousJoinRequestStatus = restaurantListProvider.getRequestStatus(
           previousRestaurantName, userId);
       if (previousJoinRequestStatus == 'pending') {
-        await cancelJoinRequest(
+        await cancelSotrudJoinRequest(
             previousRestaurantName, userId, restaurantListProvider);
       }
     }
@@ -163,15 +196,17 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
     });
   }
 
+// удаления запроса для поставщика
   Future<void> cancelJoinRequest(String restaurantName, String userId,
       RestaurantListProvider restaurantListProvider) async {
-    //if (kIsWeb) {
-    //Использовать HTTP для веб-версии
-    final response = await executeServerRequest('join_requests', '', body: {
+    print('Cancelling join request for User ID: $userId');
+
+    final response = await companyConnect('comp_join_requests', '', body: {
       "restaurant_name": restaurantName,
       "user_id": userId,
       "operation": "delete"
     });
+
     if (response.containsKey('error')) {
       // Обработка ошибки при удалении записи
       print('Error canceling join request: ${response['error']}');
@@ -186,6 +221,35 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
     }
     restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
     restaurantListProvider.notifyListeners();
+    print('Join request cancelled successfully for User ID2312321: $userId');
+  }
+
+// удаление запроса  для гостей
+  Future<void> cancelSotrudJoinRequest(String restaurantName, String userId,
+      RestaurantListProvider restaurantListProvider) async {
+    print('Cancelling join request for User ID: $userId');
+
+    final response = await sotrudConnect('join_requests', '', body: {
+      "restaurant_name": restaurantName,
+      "user_id": userId,
+      "operation": "delete"
+    });
+
+    if (response.containsKey('error')) {
+      // Обработка ошибки при удалении записи
+      print('Error canceling join request: ${response['error']}');
+      throw Exception('Error canceling join request');
+    } else {
+      // Успешное удаление записи
+      print('Join request canceled successfully');
+      // Дополнительные действия после успешного удаления записи
+    }
+    if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
+      restaurantListProvider.currentJoinRequestRestaurant = null;
+    }
+    restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
+    restaurantListProvider.notifyListeners();
+    print('Join request cancelled successfully for User ID2312321: $userId');
   }
 
   @override
@@ -195,9 +259,9 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
     );
     return Scaffold(
       appBar: AppBar(
-        title: Text('Список ресторанов'),
+        title: const Text('Список ресторанов'),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back),
           onPressed: () {
             Navigator.pop(context); // Возврат на предыдущую страницу
           },
@@ -213,7 +277,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                   searchQuery = value;
                 });
               },
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: 'Поиск ресторанов',
                 suffixIcon: Icon(Icons.search),
               ),
@@ -224,7 +288,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
               future: fetchRestaurants(searchQuery),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
+                  return const Center(
                     child: CircularProgressIndicator(),
                   );
                 } else if (snapshot.hasData) {
@@ -234,23 +298,23 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                     builder: (context, userSnapshot) {
                       if (userSnapshot.connectionState ==
                           ConnectionState.waiting) {
-                        return Center(
+                        return const Center(
                           child: CircularProgressIndicator(),
                         );
                       } else if (userSnapshot.hasData) {
                         final userId = userSnapshot.data!.uid;
                         return FutureBuilder<String>(
-                          future: getUserFullName(userId),
+                          future: getUserCombinedFullName(userId),
                           builder: (context, fullNameSnapshot) {
                             switch (fullNameSnapshot.connectionState) {
                               case ConnectionState.none:
-                                return Text('Future not started yet');
+                                return const Text('Future not started yet');
                               case ConnectionState.waiting:
-                                return Center(
+                                return const Center(
                                   child: CircularProgressIndicator(),
                                 );
                               case ConnectionState.active:
-                                return Text(
+                                return const Text(
                                     'Future still active, not done yet');
                               case ConnectionState.done:
                                 if (fullNameSnapshot.hasError) {
@@ -277,16 +341,31 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                 ? isRequestSent
                                                     ? ElevatedButton(
                                                         onPressed: () async {
+                                                          Who whoInstance =
+                                                              Who();
+                                                          await whoInstance
+                                                              .WhoYou();
                                                           final restaurantListProvider =
+                                                              // ignore: use_build_context_synchronously
                                                               Provider.of<
                                                                       RestaurantListProvider>(
                                                                   context,
                                                                   listen:
                                                                       false);
-                                                          await cancelJoinRequest(
-                                                              name,
-                                                              userId,
-                                                              restaurantListProvider);
+                                                          if (whoInstance
+                                                              .sotrud) {
+                                                            await cancelSotrudJoinRequest(
+                                                                name,
+                                                                userId,
+                                                                restaurantListProvider);
+                                                          }
+                                                          if (whoInstance
+                                                              .comp) {
+                                                            await cancelJoinRequest(
+                                                                name,
+                                                                userId,
+                                                                restaurantListProvider);
+                                                          }
                                                           setState(() {
                                                             // Удалить запрос из списка и обновить состояние
                                                             _restaurantListProvider
@@ -296,7 +375,8 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                                     userId);
                                                           });
                                                         },
-                                                        child: Text('Отменить'),
+                                                        child: const Text(
+                                                            'Отменить'),
                                                       )
                                                     : ElevatedButton(
                                                         onPressed: () async {
@@ -305,11 +385,15 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                           await whoInstance
                                                               .WhoYou();
                                                           final restaurantListProvider =
+                                                              // ignore: use_build_context_synchronously
                                                               Provider.of<
                                                                       RestaurantListProvider>(
                                                                   context,
                                                                   listen:
                                                                       false);
+                                                          String companyName =
+                                                              await getCompanyName(
+                                                                  userId);
                                                           if (whoInstance
                                                               .sotrud) {
                                                             await sendJoinRequest(
@@ -317,6 +401,16 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                                 userFullName,
                                                                 userId,
                                                                 restaurantListProvider);
+                                                          }
+                                                          if (whoInstance
+                                                              .comp) {
+                                                            await sendCompJoinRequest(
+                                                              name,
+                                                              userFullName,
+                                                              userId,
+                                                              companyName,
+                                                              restaurantListProvider,
+                                                            );
                                                           }
                                                           setState(() {
                                                             // Удалить предыдущий запрос и обновить состояние
@@ -333,23 +427,40 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                             });
                                                           });
                                                         },
-                                                        child: Text('Вступить'),
+                                                        child: const Text(
+                                                            'Вступить'),
                                                       )
                                                 : isRequestSent
                                                     ? ElevatedButton(
                                                         onPressed: () async {
+                                                          Who whoInstance =
+                                                              Who();
+                                                          await whoInstance
+                                                              .WhoYou();
                                                           final restaurantListProvider =
+                                                              // ignore: use_build_context_synchronously
                                                               Provider.of<
                                                                       RestaurantListProvider>(
                                                                   context,
                                                                   listen:
                                                                       false);
-                                                          await cancelJoinRequest(
-                                                              name,
-                                                              userId,
-                                                              restaurantListProvider);
+                                                          if (whoInstance
+                                                              .sotrud) {
+                                                            await cancelSotrudJoinRequest(
+                                                                name,
+                                                                userId,
+                                                                restaurantListProvider);
+                                                          }
+                                                          if (whoInstance
+                                                              .comp) {
+                                                            await cancelJoinRequest(
+                                                                name,
+                                                                userId,
+                                                                restaurantListProvider);
+                                                          }
                                                         },
-                                                        child: Text('Отменить'),
+                                                        child: const Text(
+                                                            'Отменить'),
                                                       )
                                                     : ElevatedButton(
                                                         onPressed: () async {
@@ -357,7 +468,11 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                               Who();
                                                           await whoInstance
                                                               .WhoYou();
+                                                          String companyName =
+                                                              await getCompanyName(
+                                                                  userId);
                                                           final restaurantListProvider =
+                                                              // ignore: use_build_context_synchronously
                                                               Provider.of<
                                                                       RestaurantListProvider>(
                                                                   context,
@@ -371,11 +486,22 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                                                 userId,
                                                                 restaurantListProvider);
                                                           }
+                                                          if (whoInstance
+                                                              .comp) {
+                                                            await sendCompJoinRequest(
+                                                              name,
+                                                              userFullName,
+                                                              userId,
+                                                              companyName,
+                                                              restaurantListProvider,
+                                                            );
+                                                          }
                                                         },
-                                                        child: Text('Вступить'),
+                                                        child: const Text(
+                                                            'Вступить'),
                                                       ),
                                           ),
-                                          Divider(
+                                          const Divider(
                                             height: 1,
                                             thickness: 1,
                                             color: Colors.grey,
@@ -385,7 +511,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                                     },
                                   );
                                 } else {
-                                  return Center(
+                                  return const Center(
                                     child: Text('Unknown error occurred'),
                                   );
                                 }
@@ -397,7 +523,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                           child: Text('Error: ${userSnapshot.error}'),
                         );
                       }
-                      return Center(
+                      return const Center(
                         child: Text('1'),
                       );
                     },
@@ -407,7 +533,7 @@ Future<void> sendCompJoinRequest(String restaurantName, String userFullName,
                     child: Text('Error: ${snapshot.error}'),
                   );
                 }
-                return Center(
+                return const Center(
                   child: Text('2'),
                 );
               },

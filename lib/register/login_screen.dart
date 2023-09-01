@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:email_validator/email_validator.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
@@ -89,13 +88,13 @@ class _LoginScreenState extends State<LoginScreen> {
             // ignore: use_build_context_synchronously
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => LkUser()),
+              MaterialPageRoute(builder: (context) => const LkUser()),
             );
           } else if (whoInstance.comp) {
             // ignore: use_build_context_synchronously
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => LkPostavPage()),
+              MaterialPageRoute(builder: (context) => const LkPostavPage()),
             );
           }
         } else {
@@ -145,104 +144,119 @@ class _LoginScreenState extends State<LoginScreen> {
         padding: const EdgeInsets.all(30.0),
         child: Form(
           key: formKey,
-          child: Column(
-            children: [
-              TextFormField(
-                keyboardType: TextInputType.emailAddress,
-                autocorrect: false,
-                controller: emailTextInputController,
-                validator: (email) =>
-                    email != null && !EmailValidator.validate(email)
-                        ? 'Введите правильный Email'
-                        : null,
-                decoration: const InputDecoration(
-                  border: OutlineInputBorder(),
-                  hintText: 'Введите Email',
-                ),
-              ),
-              const SizedBox(height: 30),
-              TextFormField(
-                autocorrect: false,
-                controller: passwordTextInputController,
-                obscureText: isHiddenPassword,
-                onChanged: (value) {
-                  setState(() {
-                    isWrongPassword = false;
-                  });
-                },
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Введите пароль';
-                  }
-                  if (value.length < 6) {
-                    return 'Минимум 6 символов';
-                  }
-                  if (isWrongPassword) {
-                    return 'Неверный пароль';
-                  }
-                  return null;
-                },
-                autovalidateMode: AutovalidateMode.onUserInteraction,
-                decoration: InputDecoration(
-                  border: const OutlineInputBorder(),
-                  hintText: 'Введите пароль',
-                  suffix: InkWell(
-                    onTap: togglePasswordView,
-                    child: Icon(
-                      isHiddenPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.black,
+          child: Align(
+            alignment: Alignment.center,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 400,
+                  decoration: BoxDecoration(
+                    borderRadius:
+                        BorderRadius.circular(12), // Закругление углов
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.6), // Цвет тени
+                        spreadRadius: 3, // Распределение тени
+                        blurRadius: 1, // Размытие тени
+                        offset: const Offset(0, 3), // Смещение тени
+                      ),
+                    ],
+                  ),
+                  child: TextFormField(
+                    keyboardType: TextInputType.emailAddress,
+                    autocorrect: false,
+                    controller: emailTextInputController,
+                    validator: (email) =>
+                        email != null && !EmailValidator.validate(email)
+                            ? 'Введите правильный Email'
+                            : null,
+                    decoration: const InputDecoration(
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide.none, // Убираем внешние границы
+                      ),
+                      filled: true,
+                      fillColor: Colors.white, // Цвет фона
+                      hintText: 'Введите Email',
+                      contentPadding:
+                          EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                      // Остальные параметры стиля
                     ),
                   ),
                 ),
-                style: TextStyle(
-                  color: isWrongPassword ? Colors.red : Colors.black,
-                ),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  login().then((_) async {
-                    // Получаем текущего пользователя
-                    var currentUser = FirebaseAuth.instance.currentUser;
-                    // if (currentUser != null) {
-                    //   // Получаем экземпляр Who
-                    //   Who whoInstance = Who();
-                    //   // Вызываем функцию для определения типа пользователя
-                    //   await whoInstance.WhoYou();
-                    //   // Теперь используем этот же экземпляр для проверки типа пользователя
-                    //   if (whoInstance.rest) {
-                    //     Navigator.push(context,
-                    //         MaterialPageRoute(builder: (context) => Kabinet()));
-                    //   } else if (whoInstance.sotrud) {
-                    //     Navigator.push(context,
-                    //         MaterialPageRoute(builder: (context) => LkUser()));
-                    //   } else if (whoInstance.comp) {
-                    //     Navigator.push(context,
-                    //         MaterialPageRoute(builder: (context) => LkUser()));
-                    //   }
-                    // }
-                  });
-                },
-                child: const Center(child: Text('Войти')),
-              ),
-              const SizedBox(height: 30),
-              TextButton(
-                onPressed: () => Navigator.of(context).pushNamed('/signup'),
-                child: const Text(
-                  'Регистрация',
-                  style: TextStyle(
-                    decoration: TextDecoration.underline,
+                const SizedBox(height: 30),
+                Container(
+                  width: 400,
+                  child: TextFormField(
+                    autocorrect: false,
+                    controller: passwordTextInputController,
+                    obscureText: isHiddenPassword,
+                    onChanged: (value) {
+                      setState(() {
+                        isWrongPassword = false;
+                      });
+                    },
+                    validator: (value) {
+                      if (value == null || value.isEmpty) {
+                        return 'Введите пароль';
+                      }
+                      if (value.length < 6) {
+                        return 'Минимум 6 символов';
+                      }
+                      if (isWrongPassword) {
+                        return 'Неверный пароль';
+                      }
+                      return null;
+                    },
+                    autovalidateMode: AutovalidateMode.onUserInteraction,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      hintText: 'Введите пароль',
+                      suffix: InkWell(
+                        onTap: togglePasswordView,
+                        child: Icon(
+                          isHiddenPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                          color: Colors.black,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(
+                      color: isWrongPassword ? Colors.red : Colors.black,
+                    ),
                   ),
                 ),
-              ),
-              TextButton(
-                onPressed: () =>
-                    Navigator.of(context).pushNamed('/reset_password'),
-                child: const Text('Сбросить пароль'),
-              ),
-            ],
+                const SizedBox(height: 30),
+                Container(
+                  width: 200, // Установите желаемую ширину для контейнера
+                  child: ElevatedButton(
+                    onPressed: () {
+                      login().then((_) async {
+                        // Получаем текущего пользователя
+                        var currentUser = FirebaseAuth.instance.currentUser;
+                      });
+                    },
+                    child: const Center(child: Text('Войти')),
+                  ),
+                ),
+                const SizedBox(height: 30),
+                TextButton(
+                  onPressed: () => Navigator.of(context).pushNamed('/signup'),
+                  child: const Text(
+                    'Регистрация',
+                    style: TextStyle(
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      Navigator.of(context).pushNamed('/reset_password'),
+                  child: const Text('Сбросить пароль'),
+                ),
+              ],
+            ),
           ),
         ),
       ),

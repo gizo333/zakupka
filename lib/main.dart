@@ -11,6 +11,8 @@ import 'package:new_flut_proj/theme/app_bar.dart';
 import 'package:provider/provider.dart';
 import '/pages/account_screen.dart';
 import '/pages/home_screen.dart';
+import 'LK_Postavki/my_rest.dart';
+import 'LK_Postavki/zakaz.dart';
 import 'list_to_rest/restaurant_list_bloc.dart';
 import 'lk_restaurant/requests.dart';
 import 'register/login_screen.dart';
@@ -74,6 +76,8 @@ class MyApp extends StatelessWidget {
         '/listsNavigator': (context) => ListsNavigatorPage(),
         '/checkoutNavigator': (context) => CheckoutPage(),
         '/LKpostav': (context) => LkPostavPage(),
+        '/myRest': (context) => MyRestPage(),
+        '/zakaz': (context) => ZakazCompPage(),
       },
       initialRoute: '/',
     );
