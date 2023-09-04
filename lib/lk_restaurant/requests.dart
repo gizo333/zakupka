@@ -3,6 +3,9 @@ import 'package:http/http.dart' as https;
 import 'package:flutter/material.dart';
 import 'package:postgres/postgres.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:provider/provider.dart';
+import '../list_to_rest/list_to_rest.dart';
+import '../list_to_rest/restaurant_list_bloc.dart';
 
 class JoinRequestsPage extends StatefulWidget {
   @override
@@ -395,6 +398,8 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
 
   @override
   Widget build(BuildContext context) {
+    final restaurantListProvider =
+        Provider.of<RestaurantListProvider>(context, listen: false);
     return Scaffold(
       appBar: AppBar(
         title: const Text('Запросы на присоединение'),
@@ -480,56 +485,75 @@ class _JoinRequestsPageState extends State<JoinRequestsPage> {
                             ),
                         ],
                       ),
-                      trailing: ElevatedButton(
-                        onPressed: () async {
-                          print('request.nameCompany: ${request.nameCompany}');
-                          print(
-                              'request.nameCompany: ${request.hasNameCompany}');
-                          if (request.hasNameCompany) {
-                            print('Entering acceptCompJoinRequest branch');
-                            await acceptCompJoinRequest(
-                              request.restaurantName,
-                              request.userId,
-                            );
+                      trailing: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Flexible(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (request.hasNameCompany) {
+                                  await acceptCompJoinRequest(
+                                    request.restaurantName,
+                                    request.userId,
+                                  );
 
-                            await insertCompRestaurant(
-                              request.restaurantName,
-                              request.nameCompany,
-                              request.userFullName,
-                              currentUserId,
-                              request.userId,
-                            );
+                                  await insertCompRestaurant(
+                                    request.restaurantName,
+                                    request.nameCompany,
+                                    request.userFullName,
+                                    currentUserId,
+                                    request.userId,
+                                  );
+                                } else if (request.hasNameCompany == false) {
+                                  await acceptJoinRequest(
+                                    request.restaurantName,
+                                    request.userId,
+                                  );
 
-                            print('Вызвана функция acceptCompJoinRequest');
-                          } else if (request.hasNameCompany == false) {
-                            print('Entering acceptJoinRequest branch');
-                            await acceptJoinRequest(
-                              request.restaurantName,
-                              request.userId,
-                            );
-                            print('Вызвана функция acceptJoinRequest');
+                                  final nameRestInSotrud =
+                                      await getRestName(request.userId);
+                                  if (nameRestInSotrud != null) {
+                                    await insertRestaurantUser(
+                                      request.restaurantName,
+                                      currentUserId,
+                                      nameRestInSotrud,
+                                      request.userId,
+                                      request.userFullName,
+                                    );
+                                  }
+                                }
 
-                            final nameRestInSotrud =
-                                await getRestName(request.userId);
-                            if (nameRestInSotrud != null) {
-                              await insertRestaurantUser(
-                                request.restaurantName,
-                                currentUserId,
-                                nameRestInSotrud,
-                                request.userId,
-                                request.userFullName,
-                              );
-                            }
-                            print(
-                              'Имя ресторана для пользователя ${request.userId}: $nameRestInSotrud',
-                            );
-                          } else {
-                            print('Ошибка при получении имени ресторана');
-                          }
+                                setState(() {});
+                              },
+                              child: const Text('Принять'),
+                            ),
+                          ),
 
-                          setState(() {});
-                        },
-                        child: const Text('Принять'),
+                          SizedBox(height: 14), // Разделитель
+                          Flexible(
+                            child: ElevatedButton(
+                              onPressed: () async {
+                                if (request.hasNameCompany == false) {
+                                  await restaurantListProvider
+                                      .cancelSotrudJoinRequest(
+                                          request.restaurantName,
+                                          request.userId,
+                                          restaurantListProvider);
+                                } else if (request.hasNameCompany) {
+                                  await restaurantListProvider
+                                      .cancelJoinRequest(
+                                          request.restaurantName,
+                                          request.userId,
+                                          restaurantListProvider);
+                                }
+                                setState(
+                                    () {}); // Обновление списка после отмены
+                              },
+                              child: const Text(
+                                  'Отменить'), // Добавленная кнопка "Отменить"
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                     const Divider(
