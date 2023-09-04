@@ -105,7 +105,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       final previousJoinRequestStatus = restaurantListProvider.getRequestStatus(
           previousRestaurantName, userId);
       if (previousJoinRequestStatus == 'pending') {
-        await cancelJoinRequest(
+        await restaurantListProvider.cancelJoinRequest(
             previousRestaurantName, userId, restaurantListProvider);
         print('Canceled previous join request for User ID: $userId');
       }
@@ -157,7 +157,7 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
       final previousJoinRequestStatus = restaurantListProvider.getRequestStatus(
           previousRestaurantName, userId);
       if (previousJoinRequestStatus == 'pending') {
-        await cancelSotrudJoinRequest(
+        await restaurantListProvider.cancelSotrudJoinRequest(
             previousRestaurantName, userId, restaurantListProvider);
       }
     }
@@ -196,61 +196,61 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
     });
   }
 
-// удаления запроса для поставщика
-  Future<void> cancelJoinRequest(String restaurantName, String userId,
-      RestaurantListProvider restaurantListProvider) async {
-    print('Cancelling join request for User ID: $userId');
+// // удаления запроса для поставщика
+//   Future<void> cancelJoinRequest(String restaurantName, String userId,
+//       RestaurantListProvider restaurantListProvider) async {
+//     print('Cancelling join request for User ID: $userId');
 
-    final response = await companyConnect('comp_join_requests', '', body: {
-      "restaurant_name": restaurantName,
-      "user_id": userId,
-      "operation": "delete"
-    });
+//     final response = await companyConnect('comp_join_requests', '', body: {
+//       "restaurant_name": restaurantName,
+//       "user_id": userId,
+//       "operation": "delete"
+//     });
 
-    if (response.containsKey('error')) {
-      // Обработка ошибки при удалении записи
-      print('Error canceling join request: ${response['error']}');
-      throw Exception('Error canceling join request');
-    } else {
-      // Успешное удаление записи
-      print('Join request canceled successfully');
-      // Дополнительные действия после успешного удаления записи
-    }
-    if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
-      restaurantListProvider.currentJoinRequestRestaurant = null;
-    }
-    restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
-    restaurantListProvider.notifyListeners();
-    print('Join request cancelled successfully for User ID2312321: $userId');
-  }
+//     if (response.containsKey('error')) {
+//       // Обработка ошибки при удалении записи
+//       print('Error canceling join request: ${response['error']}');
+//       throw Exception('Error canceling join request');
+//     } else {
+//       // Успешное удаление записи
+//       print('Join request canceled successfully');
+//       // Дополнительные действия после успешного удаления записи
+//     }
+//     if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
+//       restaurantListProvider.currentJoinRequestRestaurant = null;
+//     }
+//     restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
+//     restaurantListProvider.notifyListeners();
+//     print('Join request cancelled successfully for User ID2312321: $userId');
+//   }
 
 // удаление запроса  для гостей
-  Future<void> cancelSotrudJoinRequest(String restaurantName, String userId,
-      RestaurantListProvider restaurantListProvider) async {
-    print('Cancelling join request for User ID: $userId');
+  // static Future<void> cancelSotrudJoinRequest(String restaurantName,
+  //     String userId, RestaurantListProvider restaurantListProvider) async {
+  //   print('Cancelling join request for User ID: $userId');
 
-    final response = await sotrudConnect('join_requests', '', body: {
-      "restaurant_name": restaurantName,
-      "user_id": userId,
-      "operation": "delete"
-    });
+  //   final response = await sotrudConnect('join_requests', '', body: {
+  //     "restaurant_name": restaurantName,
+  //     "user_id": userId,
+  //     "operation": "delete"
+  //   });
 
-    if (response.containsKey('error')) {
-      // Обработка ошибки при удалении записи
-      print('Error canceling join request: ${response['error']}');
-      throw Exception('Error canceling join request');
-    } else {
-      // Успешное удаление записи
-      print('Join request canceled successfully');
-      // Дополнительные действия после успешного удаления записи
-    }
-    if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
-      restaurantListProvider.currentJoinRequestRestaurant = null;
-    }
-    restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
-    restaurantListProvider.notifyListeners();
-    print('Join request cancelled successfully for User ID2312321: $userId');
-  }
+  //   if (response.containsKey('error')) {
+  //     // Обработка ошибки при удалении записи
+  //     print('Error canceling join request: ${response['error']}');
+  //     throw Exception('Error canceling join request');
+  //   } else {
+  //     // Успешное удаление записи
+  //     print('Join request canceled successfully');
+  //     // Дополнительные действия после успешного удаления записи
+  //   }
+  //   if (restaurantListProvider.currentJoinRequestRestaurant == restaurantName) {
+  //     restaurantListProvider.currentJoinRequestRestaurant = null;
+  //   }
+  //   restaurantListProvider.joinRequests[restaurantName]?.remove(userId);
+  //   restaurantListProvider.notifyListeners();
+  //   print('Join request cancelled successfully for User ID2312321: $userId');
+  // }
 
   @override
   Widget build(BuildContext context) {
@@ -354,17 +354,19 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                                                       false);
                                                           if (whoInstance
                                                               .sotrud) {
-                                                            await cancelSotrudJoinRequest(
-                                                                name,
-                                                                userId,
-                                                                restaurantListProvider);
+                                                            await restaurantListProvider
+                                                                .cancelSotrudJoinRequest(
+                                                                    name,
+                                                                    userId,
+                                                                    restaurantListProvider);
                                                           }
                                                           if (whoInstance
                                                               .comp) {
-                                                            await cancelJoinRequest(
-                                                                name,
-                                                                userId,
-                                                                restaurantListProvider);
+                                                            await restaurantListProvider
+                                                                .cancelJoinRequest(
+                                                                    name,
+                                                                    userId,
+                                                                    restaurantListProvider);
                                                           }
                                                           setState(() {
                                                             // Удалить запрос из списка и обновить состояние
@@ -446,17 +448,19 @@ class _RestaurantListPageState extends State<RestaurantListPage> {
                                                                       false);
                                                           if (whoInstance
                                                               .sotrud) {
-                                                            await cancelSotrudJoinRequest(
-                                                                name,
-                                                                userId,
-                                                                restaurantListProvider);
+                                                            await restaurantListProvider
+                                                                .cancelSotrudJoinRequest(
+                                                                    name,
+                                                                    userId,
+                                                                    restaurantListProvider);
                                                           }
                                                           if (whoInstance
                                                               .comp) {
-                                                            await cancelJoinRequest(
-                                                                name,
-                                                                userId,
-                                                                restaurantListProvider);
+                                                            await restaurantListProvider
+                                                                .cancelJoinRequest(
+                                                                    name,
+                                                                    userId,
+                                                                    restaurantListProvider);
                                                           }
                                                         },
                                                         child: const Text(
