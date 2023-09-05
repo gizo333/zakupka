@@ -13,6 +13,7 @@ import 'package:http/http.dart' as https;
 import './sort_help.dart';
 import './json_help.dart';
 import 'save_to_bd.dart';
+import 'package:web_socket_channel/web_socket_channel.dart';
 import '../services/who.dart';
 
 class TableView extends StatefulWidget {
@@ -78,12 +79,41 @@ class _TableViewState extends State<TableView> {
     });
   }
 
+  WebSocketChannel? _channel;
+  void _connectToWebSocket() {
+    final webSocketUrl = Uri.parse('wss://zakup.bar:8085');
+    _channel = WebSocketChannel.connect(webSocketUrl);
+    _channel!.stream.listen((message) {
+      _handleWebSocketMessage(message);
+    });
+  }
+
+  void _handleWebSocketMessage(String message) {
+    print('_handleWebSocketMessage print');
+    final List<dynamic> result = json.decode(message);
+    final newItogValues = Map<int, int>.fromIterable(
+      result as List<dynamic>,
+      key: (row) => int.tryParse(row['code'].toString()) ?? 0,
+      value: (row) => int.tryParse(row['itog'].toString()) ?? 0,
+    );
+
+    // Обновление значений itog в списке _lists
+    for (var position in _lists) {
+      final updatedItog = newItogValues[position.code] ?? 0;
+      position.itog = updatedItog;
+      position.itogController.text = updatedItog.toString();
+    }
+    updateItogFromAPISocket();
+
+    setState(() {});
+  }
+
   @override
   void initState() {
     super.initState();
     initializeFirebase();
+    // _connectToWebSocket();
     fetchTableDataFromPostgreSQLWeb(_searchQuery);
-
     _lists = [];
   }
 
@@ -95,6 +125,7 @@ class _TableViewState extends State<TableView> {
       position.mlController.dispose();
       position.itogController.dispose();
     }
+    _channel?.sink.close();
     super.dispose();
   }
 
@@ -506,9 +537,35 @@ class _TableViewState extends State<TableView> {
     }
   }
 
+  Future<void> updateItogFromAPISocket() async {
+    // Assuming you have the WebSocket URL of your server
+    final socket = WebSocketChannel.connect(Uri.parse('wss://zakup.bar:8085'));
+    // Emit the 'updateItog' event to the server
+    // socket.sink.add('updateItog');
+    socket.sink.add('updateItog'); // Отправляем сигнал обновления таблицы
+    print('updateItogFromAPISocket print');
+
+    // socket.stream.listen((message) {
+    //   final result = json.decode(message);
+    //   final newItogValues = Map<int, int>.fromIterable(
+    //     result as List<dynamic>,
+    //     key: (row) => int.tryParse(row['code'].toString()) ?? 0,
+    //     value: (row) => int.tryParse(row['itog'].toString()) ?? 0,
+    //   );
+
+    //   // Update the itog values in your Flutter UI
+    //   for (var position in _lists) {
+    //     final updatedItog = newItogValues[position.code] ?? 0;
+    //     position.itog = updatedItog;
+    //     position.itogController.text = updatedItog.toString();
+    //   }
+    print('its work');
+    setState(() {});
+    ;
+  }
+
   Future<void> saveItog(List<PositionClass> list) async {
     await updateItogFromAPI();
-    // fetchItogsFromServer();
     for (final position in list) {
       final itog = (position.itog ?? 0) + (position.ml ?? 0);
 
