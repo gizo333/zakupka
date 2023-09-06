@@ -1,22 +1,34 @@
+import 'dart:convert';
+import 'package:http/http.dart' as https;
+
 import 'package:flutter/material.dart';
+import 'package:new_flut_proj/services/who.dart';
 
 class OrderSummaryPage extends StatefulWidget {
   final Map<String, List<String>> orderSummary;
+  Map<String, String> supplierMap;
 
-  OrderSummaryPage({required this.orderSummary});
+  OrderSummaryPage({required this.orderSummary, required this.supplierMap});
 
   @override
   _OrderSummaryPageState createState() => _OrderSummaryPageState();
 }
 
 class _OrderSummaryPageState extends State<OrderSummaryPage> {
-  Map<String, List<Map<String, String>>> companyData = {};
-
   @override
   void initState() {
     super.initState();
+    if (widget.supplierMap.isNotEmpty) {
+      selectedSupplier = widget.supplierMap.entries.first.value;
+    } else {
+      selectedSupplier =
+          ''; // Здесь вы можете установить значение по умолчанию, если supplierMap пуст
+    }
     initializeCompanyData();
   }
+
+  String selectedSupplier = '';
+  Map<String, List<Map<String, String>>> companyData = {};
 
   void initializeCompanyData() {
     // Initialize company data for each company's notes.
@@ -45,12 +57,53 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
     }
   }
 
-  void sendOrderData(String company) {
-    print('Отправить поставщику: $company');
+  Future<void> sendOrderData(String company) async {
+    final orderData = <Map<String, String>>[];
+
     for (int i = 0; i < companyData[company]!.length; i++) {
       var data = companyData[company]![i];
-      print(
-          'Номер записки: ${i + 1}, Количество: ${data['quantity']}, Единица измерения: ${data['unit']}');
+      final notes = widget.orderSummary[company]!;
+      final orderItem = {
+        'assortiment': notes[i], // наименовение
+        'quantity': data['quantity']!, // количество
+        'unit': data['unit']!, // ед изм
+      };
+      orderData.add(orderItem);
+    }
+
+    final companyInfo = {
+      'company_name': company,
+      'restaurant_uid': user!.uid, // Assuming you have 'user' defined
+      'orderData': List<Map<String, String>>.from(orderData),
+      'postav_uid': selectedSupplier,
+    };
+
+    final url = Uri.parse(
+        'https://zakup.bar:8085/api/insertOrderData'); // Replace with your API endpoint
+    final headers = {
+      'Content-Type': 'application/json',
+    };
+
+    final jsonInfo = json.encode(companyInfo);
+    print(companyInfo);
+
+    try {
+      final response = await https.post(
+        url,
+        headers: headers,
+        body: jsonInfo,
+      );
+
+      if (response.statusCode == 200) {
+        // Request was successful
+        print('Order data sent successfully');
+      } else {
+        // Handle the error
+        print('Error sending order data: ${response.statusCode}');
+      }
+    } catch (error) {
+      // Handle network or other errors
+      print('Error sending order data: $error');
     }
   }
 
@@ -112,15 +165,38 @@ class _OrderSummaryPageState extends State<OrderSummaryPage> {
                                   ),
                                 ],
                               ),
-                            Text("Имя поставщика: null"),
+                            SizedBox(
+                              width: 10,
+                              height: 10,
+                            ),
+                            DropdownButtonFormField<String>(
+                              value: selectedSupplier,
+                              onChanged: (newValue) {
+                                setState(() {
+                                  selectedSupplier = newValue!;
+                                });
+                              },
+                              items: widget.supplierMap.entries.map((entry) {
+                                final fullname  = entry.key;
+                                final userCompanyId = entry.value;
+                                return DropdownMenuItem<String>(
+                                  value: userCompanyId,
+                                  child: Text(fullname),
+                                );
+                              }).toList(),
+                              decoration: InputDecoration(
+                                labelText: 'Имя поставщика',
+                                border: OutlineInputBorder(),
+                              ),
+                            )
                           ],
                         ),
                         trailing:
                             SizedBox.shrink(), // Remove the button from here
                       ),
                       ElevatedButton(
-                        onPressed: () {
-                          sendOrderData(company);
+                        onPressed: () async {
+                          await sendOrderData(company);
                         },
                         child: Text('Отправить'),
                       ),
