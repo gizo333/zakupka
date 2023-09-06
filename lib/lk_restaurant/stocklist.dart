@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import '../services/who.dart';
 import 'order_ready_page.dart';
+import 'package:http/http.dart' as https;
 
 class StockPage extends StatefulWidget {
   final List<String> companiesToBuyList;
@@ -15,9 +19,42 @@ class _StockPageState extends State<StockPage> {
 
   Map<String, List<TextEditingController>> textControllersMap = {};
 
+  String selectedSupplier = ''; // Initialize with a default value
+  List<String> supplierNames = [];
+  Map<String, String> supplierMap = {};
+
+  Future<void> fetchSupplierNames() async {
+    final url = Uri.parse(
+        'https://zakup.bar:8085/api/getPostNameUid?user_id_in_restaurant=${user!.uid}');
+
+    try {
+      final response = await https.get(url);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> responseData = json.decode(response.body);
+        if (responseData.isNotEmpty) {
+          for (var i = 0; i < responseData.length; i++) {
+            final userCompanyId = responseData[i]['user_id_in_companies'];
+            final fullname = responseData[i]['fullname_user_comp'];
+            supplierMap[fullname] = userCompanyId;
+            setState(() {});
+          }
+        }
+        print(supplierMap);
+      } else {
+        // Handle the error if the response status code is not 200
+        print('Error: ${response.statusCode}');
+      }
+    } catch (error) {
+      // Handle network or other errors
+      print('Error fetching supplier names: $error');
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    fetchSupplierNames();
     initializeOrderSummaryMap();
   }
 
@@ -32,7 +69,8 @@ class _StockPageState extends State<StockPage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => OrderSummaryPage(orderSummary: orderSummaryMap),
+        builder: (context) => OrderSummaryPage(
+            orderSummary: orderSummaryMap, supplierMap: supplierMap),
       ),
     );
   }

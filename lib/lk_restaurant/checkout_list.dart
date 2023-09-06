@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import '../services/who.dart';
 import 'stocklist.dart';
 
 class CheckoutPage extends StatefulWidget {
@@ -27,6 +30,7 @@ class _CheckoutPageState extends State<CheckoutPage> {
     super.initState();
     filteredCompanies.addAll(companies);
   }
+
 
   @override
   Widget build(BuildContext context) {
