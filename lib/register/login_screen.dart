@@ -94,7 +94,7 @@ class _LoginScreenState extends State<LoginScreen> {
             // ignore: use_build_context_synchronously
             Navigator.push(
               context,
-              MaterialPageRoute(builder: (context) => const LkPostavPage()),
+              MaterialPageRoute(builder: (context) => LkPostavPage()),
             );
           }
         } else {
