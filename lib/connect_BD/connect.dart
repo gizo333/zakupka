@@ -17,4 +17,4 @@ PostgreSQLConnection createDatabaseConnection() {
 
   return postgresConnection;
 }
-// не используеться 
+// данный коннект не используеться, удалить в будущем
