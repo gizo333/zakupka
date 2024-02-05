@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as https;
 import 'package:firebase_auth/firebase_auth.dart';
 
+import 'package:new_flut_proj/LK_Postavki/bottom_bar.dart';
+
+import 'package:provider/provider.dart';
+
 class MyRestPage extends StatefulWidget {
   @override
   _MyRestPageState createState() => _MyRestPageState();
@@ -43,6 +47,7 @@ class _MyRestPageState extends State<MyRestPage> {
 
   @override
   Widget build(BuildContext context) {
+    final bottomState = Provider.of<BottomNavState>(context);
     return Scaffold(
       appBar: AppBar(
         title: const Text('MyRest'),
@@ -57,7 +62,7 @@ class _MyRestPageState extends State<MyRestPage> {
               },
               child: Text(
                 restaurant,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.blue, // Цвет текста кнопки
                   decoration:
                       TextDecoration.underline, // Добавление подчеркивания
@@ -67,6 +72,10 @@ class _MyRestPageState extends State<MyRestPage> {
           }).toList(),
         ),
       ),
+      bottomNavigationBar: buildMyBottomNavigationBar(
+          context, bottomState.currentIndex, (index) {
+        bottomState.setCurrentIndex(index);
+      }),
     );
   }
 }

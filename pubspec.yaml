@@ -54,6 +54,7 @@ dependencies:
   encrypt:
   socket_io_client:
   carousel_slider:
+  clipboard:
   flutter:
     sdk: flutter
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:new_flut_proj/LK_Postavki/lk_post.dart';
+import 'package:new_flut_proj/LK_Postavki/bottom_bar.dart';
 import 'package:new_flut_proj/lk_restaurant/checkout_list.dart';
 import 'package:new_flut_proj/lk_restaurant/lists_navigator.dart';
 import 'package:new_flut_proj/pages/ResetPasswordScreen.dart';
@@ -31,8 +32,16 @@ void main() async {
   );
 
   runApp(
-    ChangeNotifierProvider(
-      create: (context) => RestaurantListProvider(),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(
+          create: (context) => BottomNavState(),
+        ),
+        ChangeNotifierProvider(
+          create: (context) => RestaurantListProvider(),
+        ),
+        // Добавьте другие провайдеры здесь, если необходимо
+      ],
       child: MyApp(),
     ),
   );
